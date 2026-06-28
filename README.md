@@ -1,17 +1,64 @@
 # CareBridge
 
-CareBridge is a Laravel and React application for coordinating capacity-based hospital transfers. Hospitals can publish capacity, create transfer requests, accept or decline incoming requests, reserve matching bed capacity, track active transfers, and review basic analytics.
+CareBridge is a hospital capacity coordination and transfer tracking system. It is designed for situations where a patient may be rejected or delayed because a hospital is full, and staff need a clear way to find another hospital with available capacity.
+
+The system helps sending hospitals request help, receiving hospitals triage incoming requests, coordinators monitor the network, and admins manage users, hospitals, settings, and audit logs.
+
+## Project Purpose
+
+Many hospital systems focus on internal records. CareBridge focuses on the coordination moment when one hospital cannot accept a patient because capacity is full. Instead of treating this as a simple patient transfer tool, it acts as a shared capacity workspace for hospitals that need to route patients safely and quickly.
+
+## Main Features
+
+- Landing page that explains the system idea and workflow.
+- Login, signup, forgot password, and reset password pages.
+- Role-based dashboards and navigation.
+- Dark mode across public and authenticated pages.
+- Hospital capacity management for available general, emergency, ICU, and ambulance capacity.
+- Transfer request creation for rejected or capacity-limited patients.
+- Suggested receiving hospitals based on matching available bed type.
+- Incoming request triage for receiving staff.
+- Accept, decline, reserve, start transfer, mark arrived, complete, cancel, and escalate actions.
+- Patient delivery monitoring with transport team, ambulance unit, contact, ETA, location, and delivery notes.
+- Coordinator command view for active network requests.
+- Admin management for users, hospitals, system settings, and demo data refresh.
+- Audit logs with filters for action, role, search term, and date range.
+- Analytics for status distribution, urgency, case type, completion rate, and transfer activity.
+- Notification alerts for recent transfer activity.
+
+## User Roles
+
+| Role | Main Purpose |
+| --- | --- |
+| Sending Staff | Create transfer requests, monitor outbound transfers, reroute declined requests, and start reserved transfers. |
+| Receiving Staff | Update own hospital capacity, review incoming requests, accept or decline, reserve beds, mark arrivals, and complete transfers. |
+| Coordinator | Monitor network-wide activity, use the command view, escalate requests, add coordinator notes, and view analytics. |
+| Admin | Manage users, hospitals, settings, audit logs, demo data, analytics, and the command view. |
+
+## Core Workflow
+
+1. A sending staff user creates a transfer request because their hospital is full or cannot accept the patient.
+2. CareBridge suggests receiving hospitals with matching available capacity.
+3. The receiving hospital reviews the incoming request.
+4. Receiving staff accepts with optional conditions or declines with a reason.
+5. Accepted requests can reserve matching bed capacity.
+6. Sending staff starts the transfer and records transport information.
+7. Receiving staff marks patient arrival and completes the transfer.
+8. Coordinators and admins can monitor, escalate, and audit the workflow.
 
 ## Tech Stack
 
 - Laravel 12
-- Laravel Sanctum token authentication
-- React 19 with Vite
-- Tailwind CSS package installed, with app-specific CSS in `resources/css/app.css`
-- Recharts for analytics charts
+- Laravel Sanctum
+- React 19
+- React Router
+- Vite
+- Recharts
+- Axios
+- PHP 8.2+
 - SQLite by default for local development
 
-## Setup
+## Local Setup
 
 ```bash
 composer install
@@ -20,50 +67,43 @@ php artisan key:generate
 php artisan migrate --seed
 npm install
 npm run build
+php artisan serve
 ```
 
-For local development, run:
+Open the app at:
+
+```text
+http://127.0.0.1:8000
+```
+
+For active frontend development, run Vite separately:
+
+```bash
+npm run dev
+```
+
+The project also includes a Composer development script:
 
 ```bash
 composer run dev
 ```
 
-That starts the Laravel server, queue listener, logs, and Vite dev server together.
-
 ## Demo Accounts
 
-All seeded demo accounts use this password:
+All seeded demo accounts use:
 
 ```text
 password123
 ```
 
-Useful accounts:
+| Role | Email |
+| --- | --- |
+| Sending Staff | sarah@citygeneral.com |
+| Receiving Staff | mark@stmary.com |
+| Coordinator | maria@carebridge.com |
+| Admin | admin@carebridge.com |
 
-- Sending staff: `sarah@citygeneral.com`
-- Receiving staff: `mark@stmary.com`
-- Coordinator: `maria@carebridge.com`
-- Admin: `admin@carebridge.com`
-
-## Core Workflow
-
-1. A hospital staff user creates a transfer request for another hospital.
-2. The receiving hospital accepts or declines the request.
-3. Accepted requests can be reserved by the receiving hospital.
-4. Reserving a request consumes one matching bed from the receiving hospital capacity record.
-5. The sending hospital starts the transfer.
-6. The receiving hospital completes the transfer.
-7. Each action is recorded in `transfer_logs`.
-
-## Permissions
-
-- Staff can see transfers involving their own hospital.
-- Coordinators and admins can see all transfers.
-- Only the receiving hospital, coordinators, or admins can accept, decline, reserve, and complete a transfer.
-- Only the sending hospital, coordinators, or admins can start a reserved transfer.
-- Users can only update their own hospital capacity unless they are a coordinator or admin.
-
-## Tests
+## Testing
 
 Run the backend test suite:
 
@@ -71,11 +111,26 @@ Run the backend test suite:
 php artisan test
 ```
 
-The feature tests cover transfer authorization, reservation capacity checks, capacity update permissions, and the transfer lifecycle.
+Run the frontend production build:
 
-## Known Next Steps
+```bash
+npm run build
+```
 
-- Add user and hospital administration screens.
-- Add a transfer detail page with the full status history.
-- Replace polling with realtime notifications or broadcasts.
-- Add browser-level frontend tests for the React workflow.
+## Documentation
+
+Full project documentation is available here:
+
+- [Project Documentation](docs/PROJECT_DOCUMENTATION.md)
+
+## Repository Notes
+
+The repository intentionally excludes local secrets and generated dependencies:
+
+- `.env`
+- `vendor/`
+- `node_modules/`
+- `public/build/`
+- test and cache output
+
+Use `.env.example` as the starting point for local configuration.
