@@ -8,6 +8,16 @@ The system helps sending hospitals request help, receiving hospitals triage inco
 
 Many hospital systems focus on internal records. CareBridge focuses on the coordination moment when one hospital cannot accept a patient because capacity is full. Instead of treating this as a simple patient transfer tool, it acts as a shared capacity workspace for hospitals that need to route patients safely and quickly.
 
+## Use Case Scenario
+
+A patient arrives at a hospital needing urgent care, but the hospital is already full. There are no available beds, and the staff cannot safely admit another patient.
+
+Without CareBridge, the patient or staff may need to look for another hospital manually. This can mean calling different hospitals one by one, waiting for confirmation, repeating the patient's situation, and hoping the available bed information is still accurate. This creates stress, delay, and uncertainty.
+
+With CareBridge, staff can create a request in the system. CareBridge shows which hospital can accept the patient based on available capacity, such as emergency beds, ICU beds, or general beds. The receiving hospital can accept, decline, or reserve the needed capacity directly in the system.
+
+Because of this, the hassle of manually searching for another hospital is reduced. The patient does not have to keep looking for an available hospital, and staff can quickly coordinate with a hospital that has space.
+
 ## Main Features
 
 - Landing page that explains the system idea and workflow.
@@ -38,7 +48,7 @@ Many hospital systems focus on internal records. CareBridge focuses on the coord
 ## Core Workflow
 
 1. A sending staff user creates a transfer request because their hospital is full or cannot accept the patient.
-2. CareBridge suggests receiving hospitals with matching available capacity.
+2. CareBridge suggests hospitals with matching available capacity.
 3. The receiving hospital reviews the incoming request.
 4. Receiving staff accepts with optional conditions or declines with a reason.
 5. Accepted requests can reserve matching bed capacity.
@@ -88,20 +98,22 @@ The project also includes a Composer development script:
 composer run dev
 ```
 
-## Demo Accounts
+## Demo Access
 
-All seeded demo accounts use:
+The seeders create demo users for each role. All seeded demo accounts use:
 
 ```text
 password123
 ```
 
-| Role | Email |
-| --- | --- |
-| Sending Staff | sarah@citygeneral.com |
-| Receiving Staff | mark@stmary.com |
-| Coordinator | maria@carebridge.com |
-| Admin | admin@carebridge.com |
+Demo access includes:
+
+- Sending staff account
+- Receiving staff account
+- Coordinator account
+- Admin account
+
+The exact seeded emails are defined in `database/seeders/UserSeeder.php`.
 
 ## Testing
 

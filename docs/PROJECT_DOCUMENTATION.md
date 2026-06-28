@@ -27,7 +27,17 @@ CareBridge addresses this by giving hospitals a shared workflow for:
 - Provide coordinators and admins with network-wide visibility.
 - Keep a clear audit trail for operational review.
 
-## 4. Target Users
+## 4. Use Case Scenario
+
+A patient arrives at a hospital needing urgent care, but the hospital is already full. There are no available beds, and the staff cannot safely admit another patient.
+
+Without CareBridge, the patient or staff may need to look for another hospital manually. This can mean calling different hospitals one by one, waiting for confirmation, repeating the patient's situation, and hoping the available bed information is still accurate. This creates stress, delay, and uncertainty.
+
+With CareBridge, staff can create a request in the system. CareBridge shows which hospital can accept the patient based on available capacity, such as emergency beds, ICU beds, or general beds. The receiving hospital can accept, decline, or reserve the needed capacity directly in the system.
+
+Because of this, the hassle of manually searching for another hospital is reduced. The patient does not have to keep looking for an available hospital, and staff can quickly coordinate with a hospital that has space.
+
+## 5. Target Users
 
 ### Sending Staff
 
@@ -45,13 +55,13 @@ Coordinators monitor activity across hospitals. They do not replace hospital sta
 
 Admins manage system records. They can create and update users, hospitals, system settings, demo data, audit logs, analytics, and the command view.
 
-## 5. What Makes CareBridge Different
+## 6. What Makes CareBridge Different
 
 CareBridge is built around capacity rejection, not elective hospital transfer.
 
-Traditional hospital systems often focus on internal patient records. CareBridge focuses on the moment when a hospital is full and a person needs a receiving hospital that can accept them safely. The system helps staff decide where the patient can go, what capacity is available, what status the request is in, and who performed each action.
+Traditional hospital systems often focus on internal patient records. CareBridge focuses on the moment when a hospital is full and a person needs another hospital that can accept them safely. The system helps staff decide where the patient can go, what capacity is available, what status the request is in, and who performed each action.
 
-## 6. System Modules
+## 7. System Modules
 
 ### Public Pages
 
@@ -77,7 +87,7 @@ Traditional hospital systems often focus on internal patient records. CareBridge
 - Audit Logs
 - Settings
 
-## 7. Feature List
+## 8. Feature List
 
 ### Authentication
 
@@ -232,7 +242,7 @@ Dark mode is available across:
 
 The selected theme is stored in local storage.
 
-## 8. Roles and Permissions
+## 9. Roles and Permissions
 
 | Capability | Sending Staff | Receiving Staff | Coordinator | Admin |
 | --- | --- | --- | --- | --- |
@@ -255,7 +265,7 @@ The selected theme is stored in local storage.
 | View audit logs | No | No | No | Yes |
 | Update system settings | No | No | No | Yes |
 
-## 9. Transfer Status Lifecycle
+## 10. Transfer Status Lifecycle
 
 ```mermaid
 flowchart LR
@@ -270,7 +280,7 @@ flowchart LR
     D --> H
 ```
 
-## 10. Delivery Status Lifecycle
+## 11. Delivery Status Lifecycle
 
 ```mermaid
 flowchart LR
@@ -279,7 +289,7 @@ flowchart LR
     C --> D["Delivered"]
 ```
 
-## 11. Main Data Tables
+## 12. Main Data Tables
 
 ### hospitals
 
@@ -389,7 +399,7 @@ Important fields:
 - `key`
 - `value`
 
-## 12. API Summary
+## 13. API Summary
 
 ### Public Authentication
 
@@ -462,7 +472,7 @@ Important fields:
 | POST | `/api/admin/demo-refresh` | Refresh demo data. |
 | GET | `/api/audit-logs` | View filtered audit logs. |
 
-## 13. Frontend Structure
+## 14. Frontend Structure
 
 Important frontend directories:
 
@@ -500,7 +510,7 @@ Important components:
 - `StatCard.jsx`
 - `ThemeToggle.jsx`
 
-## 14. Backend Structure
+## 15. Backend Structure
 
 Important backend directories:
 
@@ -535,7 +545,7 @@ Important models:
 - `TransferLog`
 - `SystemSetting`
 
-## 15. Local Installation
+## 16. Local Installation
 
 ### Requirements
 
@@ -575,15 +585,9 @@ php artisan serve
 npm run dev
 ```
 
-## 16. Demo Data
+## 17. Demo Data
 
-Seeded hospitals:
-
-- City General Hospital
-- St. Mary Medical Center
-- Riverside Community Hospital
-- Metro Emergency Center
-- Sunrise Regional Hospital
+The seeders create several demo hospital records with different bed and ambulance capacity levels. These records are used for testing hospital capacity, transfer recommendations, incoming requests, and role-based workflows.
 
 Seeded login password:
 
@@ -591,16 +595,16 @@ Seeded login password:
 password123
 ```
 
-Demo accounts:
+Demo access includes:
 
-| Role | Name | Email |
-| --- | --- | --- |
-| Sending Staff | Dr. Sarah Chen | sarah@citygeneral.com |
-| Receiving Staff | Nurse Mark Thompson | mark@stmary.com |
-| Coordinator | Coordinator Maria Santos | maria@carebridge.com |
-| Admin | Admin John Doe | admin@carebridge.com |
+- Sending staff account
+- Receiving staff account
+- Coordinator account
+- Admin account
 
-## 17. Testing
+The exact seeded names and emails are defined in `database/seeders/UserSeeder.php`.
+
+## 18. Testing
 
 Run all backend tests:
 
@@ -629,7 +633,7 @@ Current feature tests cover:
 - Admin settings.
 - Audit filters.
 
-## 18. Security Notes
+## 19. Security Notes
 
 - Authentication uses Laravel Sanctum tokens.
 - `.env` is ignored and should never be committed.
@@ -638,7 +642,7 @@ Current feature tests cover:
 - Hospital capacity updates are restricted to receiving staff from the same hospital.
 - Transfer actions are checked against sending and receiving hospital ownership.
 
-## 19. Known Limitations
+## 20. Known Limitations
 
 - Notifications currently use polling rather than realtime broadcasting.
 - There are no browser automation tests yet.
@@ -646,7 +650,7 @@ Current feature tests cover:
 - Password reset tokens are returned for local/demo flow rather than sent by email.
 - The system is a coordination tool, not a complete EHR.
 
-## 20. Recommended Future Improvements
+## 21. Recommended Future Improvements
 
 - Add realtime notifications with Laravel broadcasting.
 - Add browser-level tests for major React workflows.
@@ -657,7 +661,7 @@ Current feature tests cover:
 - Add role approval for public signup requests.
 - Add deployment documentation for shared hosting, VPS, or cloud deployment.
 
-## 21. Repository
+## 22. Repository
 
 GitHub repository:
 
