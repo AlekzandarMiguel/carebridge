@@ -4,9 +4,9 @@ import { login } from '../api/axios';
 import ThemeToggle from '../components/ThemeToggle';
 
 const demoAccounts = [
-    ['Intake Staff', 'sarah@citygeneral.com'],
-    ['Acceptance Staff', 'mark@stmary.com'],
-    ['Coordinator', 'maria@carebridge.com'],
+    ['Intake Staff', 'intake.bpmc@carebridge.com'],
+    ['Acceptance Staff', 'acceptance.bethel@carebridge.com'],
+    ['Coordinator', 'coordinator@carebridge.com'],
     ['Dispatcher', 'dispatcher@carebridge.com'],
     ['Admin', 'admin@carebridge.com'],
 ];
@@ -25,7 +25,7 @@ export default function Login({ theme, toggleTheme }) {
             const res = await login(loginEmail, loginPassword);
             localStorage.setItem('carebridge_token', res.data.token);
             localStorage.setItem('carebridge_user', JSON.stringify(res.data.user));
-            navigate('/dashboard');
+            navigate(res.data.role_settings?.home || '/dashboard');
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
         } finally {
@@ -91,7 +91,7 @@ export default function Login({ theme, toggleTheme }) {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="sarah@citygeneral.com"
+                                placeholder="intake.bpmc@carebridge.com"
                                 required
                             />
                         </div>

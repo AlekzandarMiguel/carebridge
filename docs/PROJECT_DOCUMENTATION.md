@@ -154,7 +154,8 @@ A rejected patient case contains:
 - Attachments.
 - SLA state.
 - ETA state.
-- Map route URL.
+- Built-in route map.
+- Priority score and label.
 
 ### Accepting Hospital Recommendations
 
@@ -163,6 +164,7 @@ Intake staff can view suggested accepting hospitals. Recommendations are ranked 
 - General case uses general beds.
 - Emergency case uses emergency beds.
 - ICU case uses ICU beds.
+- Distance, estimated travel time, total available beds, and ambulance availability improve the match ranking.
 
 ### Acceptance Queue Triage
 
@@ -193,6 +195,32 @@ The delivery workflow tracks:
 - SLA state for pending or accepted cases.
 - ETA state for active delivery movement.
 - Built-in route map based on hospital coordinates.
+
+### Dispatcher Board
+
+Dispatchers have a dedicated board for:
+
+- Unassigned active cases.
+- Cases assigned to the logged-in dispatcher.
+- Other active department cases.
+- ETA and SLA risk signals.
+- Ambulance unit and transport contact visibility.
+- Route distance and travel estimate updates.
+- Delivery event updates.
+
+Coordinator and admin delivery overrides require a reason that is saved to the audit trail.
+
+### Privacy Guard
+
+Rejected patient intake blocks obvious personal details in notes, rejection reason, placement need, and delivery notes. Staff should use the patient reference code instead of full names, phone numbers, or email addresses.
+
+### Priority Scoring
+
+Each placement case receives a computed priority score. The score considers urgency, waiting time, case type, unassigned delivery state, escalation, SLA breach, and ETA lateness.
+
+### Final Case Summary
+
+The case detail page can download a text summary report containing placement route, priority, delivery timeline, transport details, documents context, and audit trail.
 
 ### Department Command View
 
@@ -260,7 +288,7 @@ Audit logs record operational actions such as:
 - Accepted
 - Declined
 - Reserved
-- In transfer
+- In delivery
 - Patient arrived
 - Completed
 - Cancelled
@@ -699,7 +727,7 @@ Important models:
 - PHP 8.2 or newer
 - Composer
 - Node.js and npm
-- SQLite, MySQL, or another Laravel-supported database
+- MySQL or MariaDB for local development
 
 ### Setup Commands
 
@@ -734,7 +762,7 @@ npm run dev
 
 ## 17. Demo Data
 
-The seeders create several demo hospital records with different bed and ambulance capacity levels. These records are used for testing hospital capacity, transfer recommendations, incoming requests, and role-based workflows.
+The seeders create a Bukidnon-based demo network with legitimate hospital names and different bed and ambulance capacity levels. These records are used for testing capacity, placement recommendations, incoming requests, dispatcher work, and role-based workflows.
 
 Seeded login password:
 
@@ -744,13 +772,15 @@ password123
 
 Demo access includes:
 
-- Intake staff account
-- Acceptance staff account
-- Coordinator account
-- Dispatcher account
-- Admin account
+- Intake Staff: `intake.bpmc@carebridge.com`
+- Acceptance Staff: `acceptance.bethel@carebridge.com`
+- Coordinator: `coordinator@carebridge.com`
+- Dispatcher: `dispatcher@carebridge.com`
+- Admin: `admin@carebridge.com`
 
 The exact seeded names and emails are defined in `database/seeders/UserSeeder.php`.
+
+Seeded Bukidnon demo hospitals include Bukidnon Provincial Medical Center, Bethel Baptist Hospital Inc., Malaybalay Polymedic General Hospital, Adventist Medical Center - Valencia City, Valencia Polymedic General Hospital, and Valencia Medical Hospital. Coordinates and contact placeholders are for local demonstration and should be verified before production use.
 
 ## 18. Testing
 

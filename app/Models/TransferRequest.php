@@ -76,6 +76,8 @@ class TransferRequest extends Model
         'delivery_eta_state',
         'needs_attention',
         'route_map_url',
+        'priority_score',
+        'priority_label',
     ];
 
     public function sendingHospital()
@@ -171,6 +173,47 @@ class TransferRequest extends Model
         return $this->is_escalated
             || in_array($this->sla_state, ['warning', 'breached'])
             || $this->delivery_eta_state === 'late';
+    }
+
+    public function getPriorityScoreAttribute(): int
+    {
+        $score = match ($this->urgency_level) {
+            'critical' => 50,
+            'urgent' => 32,
+            default => 15,
+        };
+
+        $score += min(30, (int) floor($this->waiting_minutes / 5));
+
+        if (in_array($this->status, ['declined', 'pending'])) {
+            $score += 12;
+        }
+
+        if ($this->is_escalated || $this->sla_state === 'breached' || $this->delivery_eta_state === 'late') {
+            $score += 18;
+        }
+
+        if (!$this->assigned_dispatcher_id && in_array($this->status, ['accepted', 'reserved', 'in_transfer'])) {
+            $score += 10;
+        }
+
+        if ($this->case_type === 'icu') {
+            $score += 8;
+        } elseif ($this->case_type === 'emergency') {
+            $score += 5;
+        }
+
+        return min(100, $score);
+    }
+
+    public function getPriorityLabelAttribute(): string
+    {
+        return match (true) {
+            $this->priority_score >= 80 => 'Critical',
+            $this->priority_score >= 55 => 'High',
+            $this->priority_score >= 32 => 'Watch',
+            default => 'Normal',
+        };
     }
 
     public function getRouteMapUrlAttribute(): ?string

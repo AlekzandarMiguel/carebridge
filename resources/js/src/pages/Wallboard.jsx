@@ -46,7 +46,7 @@ export default function Wallboard() {
 
             <div className="wallboard-grid">
                 {(cases || []).map((item) => (
-                    <Link to={`/transfer-requests/${item.id}`} className={`wallboard-card ${item.needs_attention ? 'needs-attention' : ''}`} key={item.id}>
+                    <Link to={`/placement-cases/${item.id}`} className={`wallboard-card ${item.needs_attention ? 'needs-attention' : ''}`} key={item.id}>
                         <div className="flex-between">
                             <strong>{item.patient_reference_code}</strong>
                             <StatusBadge status={item.status} />

@@ -37,6 +37,11 @@ Because of this, the hassle of manually searching for another hospital is reduce
 - SLA and ETA warning states for cases that are waiting too long or running late.
 - Secure case attachments for referral notes, lab results, imaging, consent, transport forms, and supporting documents.
 - Built-in route map that plots the delivery path from origin to final accepting destination using hospital coordinates.
+- Dedicated dispatcher board for unassigned cases, assigned cases, ETA risk, ambulance information, and delivery updates.
+- Automatic priority scoring based on urgency, waiting time, status, assignment, case type, SLA state, and ETA risk.
+- Patient privacy guard that blocks obvious personal details in intake notes and asks staff to use reference codes.
+- Downloadable case summary report from the case detail page.
+- Local notification preferences for SLA, assigned case, arrival, completion, and decline alerts.
 - Command view for Rejected, Searching, Accepted, Dispatching, En Route, Arrived, and Completed lanes.
 - Department wallboard for active cases, assignment gaps, ETA risk, and SLA risk.
 - Archive and restore workflow for closed cases.
@@ -70,7 +75,7 @@ Because of this, the hassle of manually searching for another hospital is reduce
 6. If the reservation expires before departure, the capacity is released automatically.
 7. A coordinator or dispatcher assigns the case for delivery monitoring.
 8. Intake staff starts patient delivery and records transport information.
-9. Dispatchers update route estimates and delivery timeline events until handoff.
+9. Dispatchers use the dispatcher board to claim unassigned cases, update route estimates, and add delivery timeline events until handoff.
 10. Acceptance staff marks patient arrival and completes the handoff.
 11. Coordinators, dispatchers, and admins can monitor, escalate, export, and audit the workflow.
 
@@ -118,7 +123,7 @@ composer run dev
 
 ## Demo Access
 
-The seeders create demo users for each role. All seeded demo accounts use:
+The seeders create a Bukidnon-based demo network using legitimate hospital names for local presentation. All seeded demo accounts use:
 
 ```text
 password123
@@ -126,13 +131,26 @@ password123
 
 Demo access includes:
 
-- Intake staff account
-- Acceptance staff account
-- Coordinator account
-- Dispatcher account
-- Admin account
+- Intake Staff: `intake.bpmc@carebridge.com`
+- Acceptance Staff: `acceptance.bethel@carebridge.com`
+- Coordinator: `coordinator@carebridge.com`
+- Dispatcher: `dispatcher@carebridge.com`
+- Admin: `admin@carebridge.com`
 
 The exact seeded emails are defined in `database/seeders/UserSeeder.php`.
+
+## Bukidnon Demo Hospitals
+
+The local demo hospital list uses Bukidnon hospitals instead of fictional Metro City seed data:
+
+- Bukidnon Provincial Medical Center
+- Bethel Baptist Hospital Inc.
+- Malaybalay Polymedic General Hospital
+- Adventist Medical Center - Valencia City
+- Valencia Polymedic General Hospital
+- Valencia Medical Hospital
+
+Coordinates and contact placeholders are for local demonstration and should be verified with the facility before production use.
 
 ## Testing
 

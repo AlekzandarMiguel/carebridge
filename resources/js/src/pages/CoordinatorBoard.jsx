@@ -193,7 +193,7 @@ export default function CoordinatorBoard() {
                         </div>
                         <div className="board-card-list">
                             {laneRequests.map((req) => (
-                                <Link to={`/transfer-requests/${req.id}`} className="board-card" key={req.id}>
+                                <Link to={`/placement-cases/${req.id}`} className="board-card" key={req.id}>
                                     <div className="flex-between">
                                         <strong>{req.patient_reference_code}</strong>
                                         <StatusBadge status={req.status} />

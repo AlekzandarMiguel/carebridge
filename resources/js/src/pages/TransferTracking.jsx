@@ -227,6 +227,7 @@ export default function TransferTracking() {
                                             <th>To</th>
                                             <th>Case</th>
                                             <th>Urgency</th>
+                                            <th>Priority</th>
                                             <th>Status</th>
                                             <th>Archive</th>
                                             <th>Patient Delivery</th>
@@ -244,6 +245,7 @@ export default function TransferTracking() {
                                                 <td className={`urgency-${req.urgency_level}`}>
                                                     {req.urgency_level}
                                                 </td>
+                                                <td><span className={`priority-score priority-${req.urgency_level}`}>{req.priority_score}</span><br /><small>{req.priority_label}</small></td>
                                                 <td><StatusBadge status={req.status} /></td>
                                                 <td>{req.archived_at ? 'Archived' : 'Active'}</td>
                                                 <td>
@@ -326,11 +328,11 @@ export default function TransferTracking() {
                                                             </button>
                                                         )}
                                                         {req.status === 'declined' && canActAsSending(req) && (
-                                                            <Link className="btn btn-warning btn-sm" to={`/create-transfer?from=${req.id}`}>
+                                                            <Link className="btn btn-warning btn-sm" to={`/intake?from=${req.id}`}>
                                                                 Reroute
                                                             </Link>
                                                         )}
-                                                        <Link className="btn btn-outline btn-sm" to={`/transfer-requests/${req.id}`}>
+                                                        <Link className="btn btn-outline btn-sm" to={`/placement-cases/${req.id}`}>
                                                             Details
                                                         </Link>
                                                     </div>

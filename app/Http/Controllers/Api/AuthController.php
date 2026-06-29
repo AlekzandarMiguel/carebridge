@@ -50,6 +50,7 @@ class AuthController extends Controller
         return response()->json([
             'user' => $user,
             'token' => $token,
+            'role_settings' => $this->roleSettings($user->role),
         ]);
     }
 
@@ -239,7 +240,7 @@ class AuthController extends Controller
         $settings = [
             'sending_staff' => [
                 'label' => 'Intake Staff',
-                'home' => '/create-transfer',
+                'home' => '/intake',
                 'permissions' => [
                     'Submit rejected patient cases',
                     'Use suggested accepting hospitals by case type',
@@ -276,7 +277,7 @@ class AuthController extends Controller
             ],
             'dispatcher' => [
                 'label' => 'Dispatcher',
-                'home' => '/coordinator-board',
+                'home' => '/dispatcher-board',
                 'permissions' => [
                     'View department command board',
                     'Assign active rejected patient cases',

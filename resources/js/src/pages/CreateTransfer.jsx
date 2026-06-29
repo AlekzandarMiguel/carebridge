@@ -157,7 +157,7 @@ export default function CreateTransfer() {
                     <button className="btn btn-primary" onClick={() => setSuccess(false)}>
                         Create Another Case
                     </button>
-                    <button className="btn btn-outline" onClick={() => navigate('/transfer-tracking')}>
+                    <button className="btn btn-outline" onClick={() => navigate('/placement-tracking')}>
                         View Delivery Tracking
                     </button>
                 </div>

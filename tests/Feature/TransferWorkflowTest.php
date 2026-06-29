@@ -143,7 +143,7 @@ class TransferWorkflowTest extends TestCase
 
         $this->putJson("/api/transfer-requests/{$transfer->id}/reserve")
             ->assertUnprocessable()
-            ->assertJsonPath('message', 'No matching bed capacity is available at the receiving hospital.');
+            ->assertJsonPath('message', 'No matching bed capacity is available at the accepting hospital.');
     }
 
     public function test_operational_actions_are_limited_to_staff_roles(): void
@@ -335,6 +335,61 @@ class TransferWorkflowTest extends TestCase
         $this->assertDatabaseHas('transfer_logs', [
             'transfer_request_id' => $transfer->id,
             'action' => 'delivery_update',
+        ]);
+    }
+
+    public function test_intake_privacy_guard_rejects_personal_details(): void
+    {
+        [$sendingHospital, $receivingHospital] = $this->createHospitals();
+        $sender = $this->createUser($sendingHospital, 'sending_staff');
+
+        Sanctum::actingAs($sender);
+
+        $this->postJson('/api/transfer-requests', [
+            'receiving_hospital_id' => $receivingHospital->id,
+            'patient_reference_code' => 'PT-2026-0099',
+            'case_type' => 'general',
+            'urgency_level' => 'normal',
+            'notes' => 'Patient name: Juan Dela Cruz needs placement.',
+            'privacy_confirmed' => true,
+        ])->assertUnprocessable()
+            ->assertJsonPath('message', 'Remove personal patient information from notes. Use the patient reference code instead.');
+    }
+
+    public function test_coordinator_delivery_override_requires_audit_reason(): void
+    {
+        [$sendingHospital, $receivingHospital, $otherHospital] = $this->createHospitals();
+        $sender = $this->createUser($sendingHospital, 'sending_staff');
+        $coordinator = $this->createUser($otherHospital, 'coordinator');
+
+        $transfer = TransferRequest::create([
+            'sending_hospital_id' => $sendingHospital->id,
+            'receiving_hospital_id' => $receivingHospital->id,
+            'patient_reference_code' => 'PT-2026-0100',
+            'case_type' => 'general',
+            'urgency_level' => 'urgent',
+            'status' => 'reserved',
+            'created_by' => $sender->id,
+            'privacy_confirmed' => true,
+        ]);
+
+        Sanctum::actingAs($coordinator);
+
+        $this->putJson("/api/transfer-requests/{$transfer->id}/route-estimate", [
+            'route_distance_km' => 11.4,
+            'estimated_travel_minutes' => 22,
+        ])->assertUnprocessable()
+            ->assertJsonPath('message', 'Coordinator/admin overrides require a reason for the audit trail.');
+
+        $this->putJson("/api/transfer-requests/{$transfer->id}/route-estimate", [
+            'route_distance_km' => 11.4,
+            'estimated_travel_minutes' => 22,
+            'override_reason' => 'Dispatcher unavailable during SLA breach.',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('transfer_logs', [
+            'transfer_request_id' => $transfer->id,
+            'action' => 'route_updated',
         ]);
     }
 
@@ -641,29 +696,29 @@ class TransferWorkflowTest extends TestCase
     private function createHospitals(array $receivingCapacityOverrides = []): array
     {
         $sendingHospital = Hospital::create([
-            'name' => 'City General Hospital',
-            'address' => '123 Main St',
-            'latitude' => 14.599512,
-            'longitude' => 120.984222,
-            'contact_number' => '555-0101',
+            'name' => 'Bukidnon Provincial Medical Center',
+            'address' => 'Malaybalay City, Bukidnon',
+            'latitude' => 8.1575,
+            'longitude' => 125.1278,
+            'contact_number' => 'Contact hospital directly',
             'status' => 'active',
         ]);
 
         $receivingHospital = Hospital::create([
-            'name' => 'St. Mary Medical Center',
-            'address' => '456 Oak Ave',
-            'latitude' => 14.609100,
-            'longitude' => 121.022300,
-            'contact_number' => '555-0102',
+            'name' => 'Bethel Baptist Hospital Inc.',
+            'address' => 'Malaybalay City, Bukidnon',
+            'latitude' => 8.1506,
+            'longitude' => 125.1244,
+            'contact_number' => 'Contact hospital directly',
             'status' => 'active',
         ]);
 
         $otherHospital = Hospital::create([
-            'name' => 'Riverside Community Hospital',
-            'address' => '789 River Rd',
-            'latitude' => 14.579400,
-            'longitude' => 121.035900,
-            'contact_number' => '555-0103',
+            'name' => 'Adventist Medical Center - Valencia City',
+            'address' => 'Valencia City, Bukidnon',
+            'latitude' => 7.9076,
+            'longitude' => 125.0948,
+            'contact_number' => 'Contact hospital directly',
             'status' => 'active',
         ]);
 

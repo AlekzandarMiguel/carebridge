@@ -59,7 +59,7 @@ export default function ForgotPassword({ theme, toggleTheme }) {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="sarah@citygeneral.com"
+                            placeholder="intake.bpmc@carebridge.com"
                             required
                         />
                     </div>

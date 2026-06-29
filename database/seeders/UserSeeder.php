@@ -12,6 +12,17 @@ class UserSeeder extends Seeder
         User::whereIn('email', [
             'maria@overflowcare.com',
             'admin@overflowcare.com',
+            'maria@carebridge.com',
+            'sarah@citygeneral.com',
+            'james@citygeneral.com',
+            'emily@stmary.com',
+            'mark@stmary.com',
+            'david@riverside.com',
+            'lisa@riverside.com',
+            'alex@metroemerg.com',
+            'rachel@metroemerg.com',
+            'michael@sunrise.com',
+            'anna@sunrise.com',
         ])->get()->each(function (User $user) {
             $hasHistory = $user->createdTransferRequests()->exists()
                 || $user->acceptedTransferRequests()->exists()
@@ -27,30 +38,30 @@ class UserSeeder extends Seeder
         });
 
         $users = [
-            // Hospital 1 - City General Hospital
-            ['name' => 'Dr. Sarah Chen', 'email' => 'sarah@citygeneral.com', 'role' => 'sending_staff', 'hospital_id' => 1],
-            ['name' => 'Nurse James Wilson', 'email' => 'james@citygeneral.com', 'role' => 'receiving_staff', 'hospital_id' => 1],
+            // Bukidnon Provincial Medical Center
+            ['name' => 'Intake Staff - Bukidnon Provincial Medical Center', 'email' => 'intake.bpmc@carebridge.com', 'role' => 'sending_staff', 'hospital_id' => 1],
+            ['name' => 'Acceptance Staff - Bukidnon Provincial Medical Center', 'email' => 'acceptance.bpmc@carebridge.com', 'role' => 'receiving_staff', 'hospital_id' => 1],
 
-            // Hospital 2 - St. Mary Medical Center
-            ['name' => 'Dr. Emily Rodriguez', 'email' => 'emily@stmary.com', 'role' => 'sending_staff', 'hospital_id' => 2],
-            ['name' => 'Nurse Mark Thompson', 'email' => 'mark@stmary.com', 'role' => 'receiving_staff', 'hospital_id' => 2],
+            // Bethel Baptist Hospital Inc.
+            ['name' => 'Intake Staff - Bethel Baptist Hospital', 'email' => 'intake.bethel@carebridge.com', 'role' => 'sending_staff', 'hospital_id' => 2],
+            ['name' => 'Acceptance Staff - Bethel Baptist Hospital', 'email' => 'acceptance.bethel@carebridge.com', 'role' => 'receiving_staff', 'hospital_id' => 2],
 
-            // Hospital 3 - Riverside Community Hospital
-            ['name' => 'Dr. David Park', 'email' => 'david@riverside.com', 'role' => 'sending_staff', 'hospital_id' => 3],
-            ['name' => 'Nurse Lisa Nguyen', 'email' => 'lisa@riverside.com', 'role' => 'receiving_staff', 'hospital_id' => 3],
+            // Malaybalay Polymedic General Hospital
+            ['name' => 'Intake Staff - Malaybalay Polymedic', 'email' => 'intake.malaybalay@carebridge.com', 'role' => 'sending_staff', 'hospital_id' => 3],
+            ['name' => 'Acceptance Staff - Malaybalay Polymedic', 'email' => 'acceptance.malaybalay@carebridge.com', 'role' => 'receiving_staff', 'hospital_id' => 3],
 
-            // Hospital 4 - Metro Emergency Center
-            ['name' => 'Dr. Alex Turner', 'email' => 'alex@metroemerg.com', 'role' => 'sending_staff', 'hospital_id' => 4],
-            ['name' => 'Nurse Rachel Kim', 'email' => 'rachel@metroemerg.com', 'role' => 'receiving_staff', 'hospital_id' => 4],
+            // Adventist Medical Center - Valencia City
+            ['name' => 'Intake Staff - Adventist Medical Center Valencia', 'email' => 'intake.adventistvalencia@carebridge.com', 'role' => 'sending_staff', 'hospital_id' => 4],
+            ['name' => 'Acceptance Staff - Adventist Medical Center Valencia', 'email' => 'acceptance.adventistvalencia@carebridge.com', 'role' => 'receiving_staff', 'hospital_id' => 4],
 
-            // Hospital 5 - Sunrise Regional Hospital
-            ['name' => 'Dr. Michael Brooks', 'email' => 'michael@sunrise.com', 'role' => 'sending_staff', 'hospital_id' => 5],
-            ['name' => 'Nurse Anna Scott', 'email' => 'anna@sunrise.com', 'role' => 'receiving_staff', 'hospital_id' => 5],
+            // Valencia Polymedic General Hospital
+            ['name' => 'Intake Staff - Valencia Polymedic', 'email' => 'intake.valenciapolymedic@carebridge.com', 'role' => 'sending_staff', 'hospital_id' => 5],
+            ['name' => 'Acceptance Staff - Valencia Polymedic', 'email' => 'acceptance.valenciapolymedic@carebridge.com', 'role' => 'receiving_staff', 'hospital_id' => 5],
 
-            // Coordinators
-            ['name' => 'Coordinator Maria Santos', 'email' => 'maria@carebridge.com', 'role' => 'coordinator', 'hospital_id' => 1],
-            ['name' => 'Dispatcher Nina Cruz', 'email' => 'dispatcher@carebridge.com', 'role' => 'dispatcher', 'hospital_id' => 1],
-            ['name' => 'Admin John Doe', 'email' => 'admin@carebridge.com', 'role' => 'admin', 'hospital_id' => 1],
+            // Department monitors
+            ['name' => 'Bukidnon Placement Coordinator', 'email' => 'coordinator@carebridge.com', 'role' => 'coordinator', 'hospital_id' => 1],
+            ['name' => 'Bukidnon Delivery Dispatcher', 'email' => 'dispatcher@carebridge.com', 'role' => 'dispatcher', 'hospital_id' => 1],
+            ['name' => 'CareBridge Admin', 'email' => 'admin@carebridge.com', 'role' => 'admin', 'hospital_id' => 1],
         ];
 
         foreach ($users as $userData) {

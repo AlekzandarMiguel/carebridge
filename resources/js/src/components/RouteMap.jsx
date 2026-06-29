@@ -30,9 +30,24 @@ export default function RouteMap({ transfer }) {
         );
     }
 
-    const start = { x: 78, y: 226 };
-    const end = { x: 522, y: 72 };
-    const control = { x: 274, y: 48 };
+    const latitudes = [Number(origin.latitude), Number(destination.latitude)];
+    const longitudes = [Number(origin.longitude), Number(destination.longitude)];
+    const minLat = Math.min(...latitudes);
+    const maxLat = Math.max(...latitudes);
+    const minLng = Math.min(...longitudes);
+    const maxLng = Math.max(...longitudes);
+    const latRange = Math.max(0.02, maxLat - minLat);
+    const lngRange = Math.max(0.02, maxLng - minLng);
+    const project = (hospital) => ({
+        x: 70 + ((Number(hospital.longitude) - minLng) / lngRange) * 460,
+        y: 238 - ((Number(hospital.latitude) - minLat) / latRange) * 176,
+    });
+    const start = project(origin);
+    const end = project(destination);
+    const control = {
+        x: (start.x + end.x) / 2,
+        y: Math.min(start.y, end.y) - 72,
+    };
     const current = {
         x: ((1 - progress) ** 2 * start.x) + (2 * (1 - progress) * progress * control.x) + (progress ** 2 * end.x),
         y: ((1 - progress) ** 2 * start.y) + (2 * (1 - progress) * progress * control.y) + (progress ** 2 * end.y),
@@ -59,13 +74,13 @@ export default function RouteMap({ transfer }) {
                     </linearGradient>
                 </defs>
                 <rect x="22" y="22" width="556" height="256" rx="18" className="route-map-grid" />
-                <path d="M78 226 C184 74 350 28 522 72" className="route-map-shadow" />
-                <path d="M78 226 C184 74 350 28 522 72" className="route-map-line" stroke={`url(#routeGradient-${transfer.id})`} />
+                <path d={`M${start.x} ${start.y} C${control.x - 80} ${control.y} ${control.x + 80} ${control.y} ${end.x} ${end.y}`} className="route-map-shadow" />
+                <path d={`M${start.x} ${start.y} C${control.x - 80} ${control.y} ${control.x + 80} ${control.y} ${end.x} ${end.y}`} className="route-map-line" stroke={`url(#routeGradient-${transfer.id})`} />
                 <circle cx={start.x} cy={start.y} r="16" className="route-node route-node-start" />
                 <circle cx={end.x} cy={end.y} r="16" className="route-node route-node-end" />
                 <circle cx={current.x} cy={current.y} r="12" className="route-current" />
-                <text x="78" y="262" textAnchor="middle">{origin.name}</text>
-                <text x="522" y="44" textAnchor="middle">{destination.name}</text>
+                <text x={start.x} y={Math.min(272, start.y + 34)} textAnchor="middle">{origin.name}</text>
+                <text x={end.x} y={Math.max(34, end.y - 24)} textAnchor="middle">{destination.name}</text>
             </svg>
             <div className="route-map-foot">
                 <span>Last update: {transfer.delivery_last_location || 'Waiting for dispatch'}</span>

@@ -10,13 +10,26 @@ class HospitalSeeder extends Seeder
 {
     public function run(): void
     {
+        Hospital::whereIn('name', [
+            'City General Hospital',
+            'St. Mary Medical Center',
+            'Riverside Community Hospital',
+            'Metro Emergency Center',
+            'Sunrise Regional Hospital',
+        ])->whereNotIn('id', [1, 2, 3, 4, 5, 6])
+            ->update([
+                'status' => 'inactive',
+                'address' => 'Retired fictional demo record',
+            ]);
+
         $hospitals = [
             [
-                'name' => 'City General Hospital',
-                'address' => '123 Main St, Metro City',
-                'latitude' => 14.599512,
-                'longitude' => 120.984222,
-                'contact_number' => '555-0101',
+                'id' => 1,
+                'name' => 'Bukidnon Provincial Medical Center',
+                'address' => 'Malaybalay City, Bukidnon',
+                'latitude' => 8.1575,
+                'longitude' => 125.1278,
+                'contact_number' => 'Contact hospital directly',
                 'capacity' => [
                     'general_beds_available' => 12,
                     'emergency_beds_available' => 5,
@@ -25,11 +38,12 @@ class HospitalSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'St. Mary Medical Center',
-                'address' => '456 Oak Ave, Metro City',
-                'latitude' => 14.609100,
-                'longitude' => 121.022300,
-                'contact_number' => '555-0102',
+                'id' => 2,
+                'name' => 'Bethel Baptist Hospital Inc.',
+                'address' => 'Malaybalay City, Bukidnon',
+                'latitude' => 8.1506,
+                'longitude' => 125.1244,
+                'contact_number' => 'Contact hospital directly',
                 'capacity' => [
                     'general_beds_available' => 8,
                     'emergency_beds_available' => 3,
@@ -38,11 +52,12 @@ class HospitalSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'Riverside Community Hospital',
-                'address' => '789 River Rd, Metro City',
-                'latitude' => 14.579400,
-                'longitude' => 121.035900,
-                'contact_number' => '555-0103',
+                'id' => 3,
+                'name' => 'Malaybalay Polymedic General Hospital',
+                'address' => 'Malaybalay City, Bukidnon',
+                'latitude' => 8.1469,
+                'longitude' => 125.1287,
+                'contact_number' => 'Contact hospital directly',
                 'capacity' => [
                     'general_beds_available' => 20,
                     'emergency_beds_available' => 8,
@@ -51,11 +66,12 @@ class HospitalSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'Metro Emergency Center',
-                'address' => '321 Emergency Blvd, Metro City',
-                'latitude' => 14.554700,
-                'longitude' => 121.024400,
-                'contact_number' => '555-0104',
+                'id' => 4,
+                'name' => 'Adventist Medical Center - Valencia City',
+                'address' => 'Valencia City, Bukidnon',
+                'latitude' => 7.9076,
+                'longitude' => 125.0948,
+                'contact_number' => 'Contact hospital directly',
                 'capacity' => [
                     'general_beds_available' => 4,
                     'emergency_beds_available' => 10,
@@ -64,11 +80,12 @@ class HospitalSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'Sunrise Regional Hospital',
-                'address' => '654 Sunrise Dr, Metro City',
-                'latitude' => 14.633100,
-                'longitude' => 121.043700,
-                'contact_number' => '555-0105',
+                'id' => 5,
+                'name' => 'Valencia Polymedic General Hospital',
+                'address' => 'Valencia City, Bukidnon',
+                'latitude' => 7.9041,
+                'longitude' => 125.0925,
+                'contact_number' => 'Contact hospital directly',
                 'capacity' => [
                     'general_beds_available' => 15,
                     'emergency_beds_available' => 4,
@@ -76,16 +93,35 @@ class HospitalSeeder extends Seeder
                     'ambulance_available' => 2,
                 ],
             ],
+            [
+                'id' => 6,
+                'name' => 'Valencia Medical Hospital',
+                'address' => 'Valencia City, Bukidnon',
+                'latitude' => 7.9060,
+                'longitude' => 125.0972,
+                'contact_number' => 'Contact hospital directly',
+                'capacity' => [
+                    'general_beds_available' => 10,
+                    'emergency_beds_available' => 4,
+                    'icu_beds_available' => 2,
+                    'ambulance_available' => 1,
+                ],
+            ],
         ];
 
         foreach ($hospitals as $data) {
             $hospital = Hospital::updateOrCreate(
-                ['name' => $data['name']],
+                ['id' => $data['id']],
                 [
                     'address' => $data['address'],
                     'latitude' => $data['latitude'],
                     'longitude' => $data['longitude'],
+                    'name' => $data['name'],
                     'contact_number' => $data['contact_number'],
+                    'transfer_contact_name' => 'Placement desk',
+                    'transfer_contact_phone' => null,
+                    'emergency_contact_name' => 'Emergency receiving desk',
+                    'emergency_contact_phone' => null,
                     'status' => 'active',
                 ],
             );

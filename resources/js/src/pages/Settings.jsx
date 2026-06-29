@@ -2,6 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { getSettings, updateSettings } from '../api/axios';
 
 export default function Settings() {
+    const defaultNotificationPrefs = {
+        sla_breach: true,
+        assigned_case: true,
+        arrival: true,
+        completed_delivery: true,
+        declined_case: true,
+    };
     const [data, setData] = useState(null);
     const [form, setForm] = useState({
         name: '',
@@ -14,6 +21,16 @@ export default function Settings() {
     const [saving, setSaving] = useState(false);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
+    const [notificationPrefs, setNotificationPrefs] = useState(() => {
+        try {
+            return {
+                ...defaultNotificationPrefs,
+                ...JSON.parse(localStorage.getItem('carebridge_notification_preferences') || '{}'),
+            };
+        } catch (e) {
+            return defaultNotificationPrefs;
+        }
+    });
 
     useEffect(() => {
         fetchSettings();
@@ -72,6 +89,13 @@ export default function Settings() {
         } finally {
             setSaving(false);
         }
+    };
+
+    const toggleNotificationPref = (key) => {
+        const next = { ...notificationPrefs, [key]: !notificationPrefs[key] };
+        setNotificationPrefs(next);
+        localStorage.setItem('carebridge_notification_preferences', JSON.stringify(next));
+        setSuccess('Notification preferences saved on this device.');
     };
 
     if (loading) return <div className="loading">Loading settings...</div>;
@@ -143,6 +167,30 @@ export default function Settings() {
                                     <span>OK</span>
                                     <p>{permission}</p>
                                 </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="card">
+                    <div className="card-header">Notification Preferences</div>
+                    <div className="card-body">
+                        <div className="settings-list">
+                            {[
+                                ['sla_breach', 'SLA breach and long-wait alerts'],
+                                ['assigned_case', 'Assigned case alerts'],
+                                ['arrival', 'Patient arrival alerts'],
+                                ['completed_delivery', 'Completed delivery alerts'],
+                                ['declined_case', 'Declined case and reroute alerts'],
+                            ].map(([key, label]) => (
+                                <label className="settings-list-item preference-row" key={key}>
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(notificationPrefs[key])}
+                                        onChange={() => toggleNotificationPref(key)}
+                                    />
+                                    <p>{label}</p>
+                                </label>
                             ))}
                         </div>
                     </div>

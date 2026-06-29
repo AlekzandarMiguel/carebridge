@@ -150,6 +150,12 @@ class TransferRequestController extends Controller
             return response()->json(['message' => 'Accepting hospital must be different from the rejected patient origin.'], 422);
         }
 
+        if ($field = $this->firstPrivacyRiskField($validated)) {
+            return response()->json([
+                'message' => "Remove personal patient information from {$field}. Use the patient reference code instead.",
+            ], 422);
+        }
+
         $transferRequest = TransferRequest::create([
             ...$validated,
             'documents_ready' => $validated['documents_ready'] ?? (!empty($validated['document_checklist'] ?? []) && collect($validated['document_checklist'])->every(fn ($ready) => (bool) $ready)),
@@ -636,10 +642,22 @@ class TransferRequestController extends Controller
         $validated = $request->validate([
             'route_distance_km' => 'nullable|numeric|min:0|max:9999',
             'estimated_travel_minutes' => 'nullable|integer|min:0|max:10080',
+            'override_reason' => 'nullable|string|max:500',
         ]);
 
-        $transferRequest->update($validated);
-        $transferRequest->logAction($request->user()->id, 'route_updated', 'Route distance and travel estimate updated.');
+        if ($reasonError = $this->monitorOverrideReasonError($request, $validated['override_reason'] ?? null)) {
+            return $reasonError;
+        }
+
+        $transferRequest->update([
+            'route_distance_km' => $validated['route_distance_km'] ?? null,
+            'estimated_travel_minutes' => $validated['estimated_travel_minutes'] ?? null,
+        ]);
+        $remarks = 'Route distance and travel estimate updated.';
+        if (!empty($validated['override_reason'])) {
+            $remarks .= ' Override reason: '.$validated['override_reason'];
+        }
+        $transferRequest->logAction($request->user()->id, 'route_updated', $remarks);
 
         return response()->json([
             'message' => 'Route estimate updated.',
@@ -660,7 +678,12 @@ class TransferRequestController extends Controller
             'location' => 'nullable|string|max:120',
             'notes' => 'nullable|string|max:500',
             'occurred_at' => 'nullable|date',
+            'override_reason' => 'nullable|string|max:500',
         ]);
+
+        if ($reasonError = $this->monitorOverrideReasonError($request, $validated['override_reason'] ?? null)) {
+            return $reasonError;
+        }
 
         $user = $request->user();
         $eventLabels = [
@@ -691,7 +714,11 @@ class TransferRequestController extends Controller
         }
 
         $transferRequest->update($updates);
-        $transferRequest->logAction($user->id, 'delivery_update', $eventLabels[$validated['event_type']].' added to delivery timeline.');
+        $remarks = $eventLabels[$validated['event_type']].' added to delivery timeline.';
+        if (!empty($validated['override_reason'])) {
+            $remarks .= ' Override reason: '.$validated['override_reason'];
+        }
+        $transferRequest->logAction($user->id, 'delivery_update', $remarks);
 
         return response()->json([
             'message' => 'Delivery update added.',
@@ -1038,5 +1065,48 @@ class TransferRequestController extends Controller
             + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($lonDelta / 2) ** 2;
 
         return $earthRadiusKm * 2 * atan2(sqrt($a), sqrt(1 - $a));
+    }
+
+    private function firstPrivacyRiskField(array $payload): ?string
+    {
+        foreach (['patient_reference_code', 'notes', 'rejection_reason', 'placement_need', 'delivery_notes'] as $field) {
+            if (!isset($payload[$field]) || !is_string($payload[$field])) {
+                continue;
+            }
+
+            if ($this->containsPatientPrivacyRisk($payload[$field])) {
+                return str_replace('_', ' ', $field);
+            }
+        }
+
+        return null;
+    }
+
+    private function monitorOverrideReasonError(Request $request, ?string $reason): ?JsonResponse
+    {
+        if (!in_array($request->user()->role, ['coordinator', 'admin'])) {
+            return null;
+        }
+
+        if (filled($reason)) {
+            return null;
+        }
+
+        return response()->json([
+            'message' => 'Coordinator/admin overrides require a reason for the audit trail.',
+        ], 422);
+    }
+
+    private function containsPatientPrivacyRisk(string $value): bool
+    {
+        $normalized = trim($value);
+
+        if ($normalized === '') {
+            return false;
+        }
+
+        return (bool) preg_match('/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i', $normalized)
+            || (bool) preg_match('/(?:\+?63|0)\s?9\d{2}[\s.-]?\d{3}[\s.-]?\d{4}/', $normalized)
+            || (bool) preg_match('/\b(patient|pt|name)\s*[:=]\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+/i', $normalized);
     }
 }

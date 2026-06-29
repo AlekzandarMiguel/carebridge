@@ -14,6 +14,7 @@ const TransferTracking = lazy(() => import('./pages/TransferTracking'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const TransferDetail = lazy(() => import('./pages/TransferDetail'));
 const CoordinatorBoard = lazy(() => import('./pages/CoordinatorBoard'));
+const DispatcherBoard = lazy(() => import('./pages/DispatcherBoard'));
 const HospitalDirectory = lazy(() => import('./pages/HospitalDirectory'));
 const AdminManagement = lazy(() => import('./pages/AdminManagement'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
@@ -79,12 +80,16 @@ function App() {
                     }
                 />
                 <Route
-                    path="/create-transfer"
+                    path="/intake"
                     element={
                         <ProtectedRoute allowedRoles={['sending_staff']}>
                             <Layout theme={theme} toggleTheme={toggleTheme}><CreateTransfer /></Layout>
                         </ProtectedRoute>
                     }
+                />
+                <Route
+                    path="/create-transfer"
+                    element={<Navigate to="/intake" replace />}
                 />
                 <Route
                     path="/incoming-requests"
@@ -95,10 +100,22 @@ function App() {
                     }
                 />
                 <Route
-                    path="/transfer-tracking"
+                    path="/placement-tracking"
                     element={
                         <ProtectedRoute>
                             <Layout theme={theme} toggleTheme={toggleTheme}><TransferTracking /></Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/transfer-tracking"
+                    element={<Navigate to="/placement-tracking" replace />}
+                />
+                <Route
+                    path="/placement-cases/:id"
+                    element={
+                        <ProtectedRoute>
+                            <Layout theme={theme} toggleTheme={toggleTheme}><TransferDetail /></Layout>
                         </ProtectedRoute>
                     }
                 />
@@ -107,6 +124,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <Layout theme={theme} toggleTheme={toggleTheme}><TransferDetail /></Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/dispatcher-board"
+                    element={
+                        <ProtectedRoute allowedRoles={['dispatcher']}>
+                            <Layout theme={theme} toggleTheme={toggleTheme}><DispatcherBoard /></Layout>
                         </ProtectedRoute>
                     }
                 />

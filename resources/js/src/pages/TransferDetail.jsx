@@ -29,8 +29,8 @@ export default function TransferDetail() {
     const [error, setError] = useState('');
     const [coordinatorNotes, setCoordinatorNotes] = useState('');
     const [handoffNotes, setHandoffNotes] = useState('');
-    const [routeForm, setRouteForm] = useState({ route_distance_km: '', estimated_travel_minutes: '' });
-    const [eventForm, setEventForm] = useState({ event_type: 'location_update', location: '', notes: '' });
+    const [routeForm, setRouteForm] = useState({ route_distance_km: '', estimated_travel_minutes: '', override_reason: '' });
+    const [eventForm, setEventForm] = useState({ event_type: 'location_update', location: '', notes: '', override_reason: '' });
     const [attachmentForm, setAttachmentForm] = useState({ document_type: 'supporting_document', file: null });
     const [attachmentLoading, setAttachmentLoading] = useState(false);
     const user = JSON.parse(localStorage.getItem('carebridge_user') || '{}');
@@ -44,6 +44,7 @@ export default function TransferDetail() {
             setRouteForm({
                 route_distance_km: res.data.transfer_request.route_distance_km || '',
                 estimated_travel_minutes: res.data.transfer_request.estimated_travel_minutes || '',
+                override_reason: '',
             });
         } catch (err) {
             setError(err.response?.data?.message || 'Unable to load rejected patient case detail.');
@@ -92,6 +93,7 @@ export default function TransferDetail() {
             await updateRouteEstimate(transfer.id, {
                 route_distance_km: routeForm.route_distance_km || null,
                 estimated_travel_minutes: routeForm.estimated_travel_minutes || null,
+                override_reason: routeForm.override_reason || null,
             });
             setMessage('Route estimate saved.');
             loadTransfer();
@@ -106,7 +108,7 @@ export default function TransferDetail() {
         setError('');
         try {
             await addDeliveryEvent(transfer.id, eventForm);
-            setEventForm({ event_type: 'location_update', location: '', notes: '' });
+            setEventForm({ event_type: 'location_update', location: '', notes: '', override_reason: '' });
             setMessage('Delivery timeline updated.');
             loadTransfer();
         } catch (err) {
@@ -183,6 +185,43 @@ export default function TransferDetail() {
         }
     };
 
+    const downloadCaseSummary = () => {
+        const lines = [
+            'CareBridge Placement Case Summary',
+            `Reference: ${transfer.patient_reference_code}`,
+            `Status: ${transfer.status}`,
+            `Priority: ${transfer.priority_label || '-'} (${transfer.priority_score || '-'})`,
+            `Rejected From: ${transfer.sending_hospital?.name || '-'}`,
+            `Accepting Hospital: ${transfer.receiving_hospital?.name || '-'}`,
+            `Case Type: ${transfer.case_type}`,
+            `Urgency: ${transfer.urgency_level}`,
+            `Rejected Reason: ${transfer.rejection_reason || '-'}`,
+            `Placement Need: ${transfer.placement_need || '-'}`,
+            `Dispatcher: ${transfer.assigned_dispatcher?.name || 'Unassigned'}`,
+            `Ambulance / Unit: ${transfer.ambulance_unit || '-'}`,
+            `Transport Contact: ${transfer.transport_contact || '-'}`,
+            `Route: ${transfer.route_distance_km || '-'} km / ${transfer.estimated_travel_minutes || '-'} min`,
+            `Last Location: ${transfer.delivery_last_location || '-'}`,
+            `Delivery Notes: ${transfer.delivery_notes || '-'}`,
+            '',
+            'Timeline',
+            ...timeline.map(([label, date]) => `${label}: ${formatDate(date)}`),
+            ...(transfer.delivery_events || []).map((event) => `${event.label || event.event_type}: ${formatDate(event.occurred_at)} ${event.location || ''} ${event.notes || ''}`),
+            '',
+            'Audit Trail',
+            ...(transfer.logs || []).map((log) => `${formatDate(log.created_at)} - ${log.action}: ${log.remarks || '-'} (${log.user?.name || 'System'})`),
+        ];
+        const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${transfer.patient_reference_code}-summary.txt`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    };
+
     if (loading) return <div className="loading">Loading rejected patient case detail...</div>;
     if (!transfer) return <div className="empty-state"><p>{error || 'Case not found.'}</p></div>;
 
@@ -206,6 +245,7 @@ export default function TransferDetail() {
                 <div className="hero-metrics">
                     <div><strong>{transfer.patient_reference_code}</strong><small>Reference</small></div>
                     <div><strong>{transfer.urgency_level}</strong><small>Urgency</small></div>
+                    <div><strong>{transfer.priority_score}</strong><small>{transfer.priority_label} priority</small></div>
                     <div><StatusBadge status={transfer.status} /><small>Status</small></div>
                 </div>
             </div>
@@ -221,12 +261,13 @@ export default function TransferDetail() {
                 </div>
                 <div className="action-buttons">
                     <button className="btn btn-outline" onClick={() => window.print()}>Print Summary</button>
+                    <button className="btn btn-outline" type="button" onClick={downloadCaseSummary}>Download Summary</button>
                     {canMonitor && (
                         <button className="btn btn-outline" type="button" onClick={toggleArchive}>
                             {transfer.archived_at ? 'Restore Case' : 'Archive Case'}
                         </button>
                     )}
-                    <Link to="/transfer-tracking" className="btn btn-outline">Back</Link>
+                    <Link to="/placement-tracking" className="btn btn-outline">Back</Link>
                 </div>
             </div>
 
@@ -244,6 +285,7 @@ export default function TransferDetail() {
                         <div><span>Accepting Hospital</span><strong>{transfer.receiving_hospital?.name || '-'}</strong></div>
                         <div><span>Case Type</span><strong>{transfer.case_type}</strong></div>
                         <div><span>Urgency</span><strong>{transfer.urgency_level}</strong></div>
+                        <div><span>Priority Score</span><strong>{transfer.priority_score} - {transfer.priority_label}</strong></div>
                         <div><span>Rejected Patient Reason</span><strong>{transfer.rejection_reason || '-'}</strong></div>
                         <div><span>Placement Need</span><strong>{transfer.placement_need || '-'}</strong></div>
                         <div><span>Documents Ready</span><strong>{transfer.documents_ready ? 'Yes' : 'No'}</strong></div>
@@ -325,6 +367,16 @@ export default function TransferDetail() {
                                     />
                                 </div>
                             </div>
+                            {canMonitor && (
+                                <div className="form-group">
+                                    <label>Override Reason</label>
+                                    <input
+                                        value={routeForm.override_reason}
+                                        onChange={(e) => setRouteForm({ ...routeForm, override_reason: e.target.value })}
+                                        placeholder="Required for coordinator/admin route updates"
+                                    />
+                                </div>
+                            )}
                             <button className="btn btn-primary btn-sm" type="button" onClick={saveRouteEstimate}>Save Route</button>
                         </div>
                     </div>
@@ -353,6 +405,16 @@ export default function TransferDetail() {
                                     <label>Notes</label>
                                     <textarea value={eventForm.notes} onChange={(e) => setEventForm({ ...eventForm, notes: e.target.value })} placeholder="Short delivery update..." />
                                 </div>
+                                {canMonitor && (
+                                    <div className="form-group">
+                                        <label>Override Reason</label>
+                                        <input
+                                            value={eventForm.override_reason}
+                                            onChange={(e) => setEventForm({ ...eventForm, override_reason: e.target.value })}
+                                            placeholder="Required for coordinator/admin delivery updates"
+                                        />
+                                    </div>
+                                )}
                                 <button className="btn btn-primary btn-sm" type="submit">Add Update</button>
                             </form>
                         </div>

@@ -7,10 +7,11 @@ import ThemeToggle from './ThemeToggle';
 const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: 'DB' },
     { path: '/hospital-capacity', label: 'Capacity Desk', icon: 'HC', roles: ['receiving_staff'] },
-    { path: '/create-transfer', label: 'Rejected Intake', icon: '+', roles: ['sending_staff'] },
+    { path: '/intake', label: 'Rejected Intake', icon: '+', roles: ['sending_staff'] },
     { path: '/incoming-requests', label: 'Acceptance Queue', icon: 'IN', roles: ['receiving_staff'] },
-    { path: '/transfer-tracking', label: 'Case Tracking', icon: 'CT', roles: ['sending_staff', 'receiving_staff'] },
-    { path: '/transfer-tracking', label: 'Delivery Board', icon: 'DT', roles: ['dispatcher', 'coordinator', 'admin'] },
+    { path: '/placement-tracking', label: 'Case Tracking', icon: 'CT', roles: ['sending_staff', 'receiving_staff'] },
+    { path: '/dispatcher-board', label: 'Dispatcher Board', icon: 'DT', roles: ['dispatcher'] },
+    { path: '/placement-tracking', label: 'Delivery Board', icon: 'DT', roles: ['coordinator', 'admin'] },
     { path: '/coordinator-board', label: 'Command View', icon: 'CV', roles: ['coordinator', 'admin'] },
     { path: '/wallboard', label: 'Wallboard', icon: 'WB', roles: ['coordinator', 'dispatcher', 'admin'] },
     { path: '/hospital-directory', label: 'Placement Directory', icon: 'PD', roles: ['sending_staff', 'coordinator', 'dispatcher', 'admin'] },
@@ -22,11 +23,11 @@ const navItems = [
 
 const notificationLabels = {
     created: 'Created',
-    pending: 'Pending',
+    pending: 'Searching',
     accepted: 'Accepted',
     declined: 'Declined',
-    reserved: 'Reserved',
-    in_transfer: 'In Transfer',
+    reserved: 'Dispatching',
+    in_transfer: 'In Delivery',
     patient_arrived: 'Patient Arrived',
     escalated: 'Escalated',
     coordinator_note: 'Coordinator Note',
@@ -100,7 +101,7 @@ export default function Layout({ children, theme, toggleTheme }) {
     const handleGlobalSearch = (event) => {
         event.preventDefault();
         const value = globalSearch.trim();
-        navigate(value ? `/transfer-tracking?q=${encodeURIComponent(value)}` : '/transfer-tracking');
+        navigate(value ? `/placement-tracking?q=${encodeURIComponent(value)}` : '/placement-tracking');
     };
 
     return (

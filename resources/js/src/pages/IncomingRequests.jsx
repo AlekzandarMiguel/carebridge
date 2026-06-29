@@ -206,7 +206,7 @@ export default function IncomingRequests() {
                                                             Reserve
                                                         </button>
                                                     )}
-                                                    <Link className="btn btn-outline btn-sm" to={`/transfer-requests/${req.id}`}>
+                                                    <Link className="btn btn-outline btn-sm" to={`/placement-cases/${req.id}`}>
                                                         Details
                                                     </Link>
                                                 </div>

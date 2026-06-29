@@ -60,6 +60,20 @@ class AuthSettingsTest extends TestCase
             ->assertJsonValidationErrors('email');
     }
 
+    public function test_suspended_users_cannot_sign_in(): void
+    {
+        $hospital = $this->createHospital();
+        $user = $this->createUser($hospital);
+        $user->update(['account_status' => 'suspended']);
+
+        $this->postJson('/api/auth/login', [
+            'email' => $user->email,
+            'password' => 'password123',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('email')
+            ->assertJsonPath('errors.email.0', 'Your account has been suspended. Contact an admin for access.');
+    }
+
     public function test_public_registration_cannot_create_privileged_roles(): void
     {
         $hospital = $this->createHospital();
@@ -127,9 +141,9 @@ class AuthSettingsTest extends TestCase
     private function createHospital(): Hospital
     {
         return Hospital::create([
-            'name' => 'City General Hospital',
-            'address' => '123 Main St',
-            'contact_number' => '555-0101',
+            'name' => 'Bukidnon Provincial Medical Center',
+            'address' => 'Malaybalay City, Bukidnon',
+            'contact_number' => 'Contact hospital directly',
             'status' => 'active',
         ]);
     }
