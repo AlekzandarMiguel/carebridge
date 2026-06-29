@@ -130,7 +130,10 @@ class AuthSettingsTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('user.name', 'Updated User')
-            ->assertJsonPath('role_settings.label', 'Intake Staff');
+            ->assertJsonPath('role_settings.label', 'Intake Staff')
+            ->assertJsonPath('role_settings.responsibility', 'Receives rejected patient cases and creates the placement case with rejection reason, urgency, required service, documents, and suggested destination.')
+            ->assertJsonPath('role_settings.pages.0', 'Rejected Intake')
+            ->assertJsonPath('role_settings.boundaries.0', 'Cannot accept or reserve capacity for another hospital');
 
         $user->refresh();
 

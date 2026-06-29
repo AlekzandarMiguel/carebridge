@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getSettings, updateSettings } from '../api/axios';
+import { roleProfile } from '../utils/roles';
 
 export default function Settings() {
     const defaultNotificationPrefs = {
@@ -102,6 +103,14 @@ export default function Settings() {
     if (!data) return <div className="empty-state"><p>Unable to load settings.</p></div>;
 
     const { user, role_settings } = data;
+    const profile = {
+        ...roleProfile(user.role),
+        ...role_settings,
+        purpose: role_settings.responsibility || roleProfile(user.role).purpose,
+        pages: role_settings.pages || roleProfile(user.role).pages,
+        permissions: role_settings.permissions || roleProfile(user.role).actions,
+        boundaries: role_settings.boundaries || roleProfile(user.role).boundaries,
+    };
 
     return (
         <div>
@@ -153,21 +162,31 @@ export default function Settings() {
                 <div className="card">
                     <div className="card-header">Role Settings</div>
                     <div className="card-body">
-                        <div className="role-panel">
+                        <div className="role-panel role-onboarding-panel">
                             <div>
-                                <span className="role-label">{role_settings.label}</span>
+                                <span className="role-label">{profile.label}</span>
                                 <h3>{user.hospital?.name || 'System-wide access'}</h3>
-                                <p>Default home: {role_settings.home}</p>
+                                <p>Your responsibility is: {profile.purpose}</p>
                             </div>
+                            <strong>{profile.home}</strong>
+                        </div>
+
+                        <div className="settings-role-pages">
+                            {profile.pages.map((page) => <span key={page}>{page}</span>)}
                         </div>
 
                         <div className="settings-list">
-                            {role_settings.permissions.map((permission) => (
+                            {profile.permissions.map((permission) => (
                                 <div className="settings-list-item" key={permission}>
                                     <span>OK</span>
                                     <p>{permission}</p>
                                 </div>
                             ))}
+                        </div>
+
+                        <div className="role-boundary-box">
+                            <strong>Role limits</strong>
+                            {profile.boundaries.map((boundary) => <p key={boundary}>{boundary}</p>)}
                         </div>
                     </div>
                 </div>

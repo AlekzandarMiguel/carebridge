@@ -60,8 +60,9 @@ export default function AuditLogs() {
                     <div className="form-group">
                         <select value={filters.role} onChange={(e) => { setPage(1); setFilters({ ...filters, role: e.target.value }); }}>
                             <option value="">All roles</option>
-                            <option value="sending_staff">Sending Staff</option>
-                            <option value="receiving_staff">Receiving Staff</option>
+                            <option value="sending_staff">Intake Staff</option>
+                            <option value="receiving_staff">Acceptance Staff</option>
+                            <option value="dispatcher">Dispatcher</option>
                             <option value="coordinator">Coordinator</option>
                             <option value="admin">Admin</option>
                         </select>

@@ -26,7 +26,7 @@ class HospitalCapacityController extends Controller
         $user = $request->user();
 
         if ($user->role !== 'receiving_staff') {
-            return response()->json(['message' => 'Only receiving staff can update hospital capacity.'], 403);
+            return response()->json(['message' => 'Only Acceptance Staff can update hospital capacity.'], 403);
         }
 
         if ((int) $user->hospital_id !== $hospitalId) {

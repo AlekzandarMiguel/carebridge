@@ -1,34 +1,70 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getDashboard } from '../api/axios';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
-import { getUser, roleLabel } from '../utils/roles';
+import { getUser, roleLabel, roleProfile } from '../utils/roles';
 
 const roleDashboard = {
     sending_staff: {
         title: 'Rejected Case Intake',
         subtitle: 'Submit rejected patient cases, monitor placement, and start delivery after capacity is reserved.',
         cards: ['total_requests', 'pending_requests', 'accepted_requests', 'in_transfer', 'en_route_patients', 'completed_requests', 'declined_requests'],
+        focus: 'Intake lane',
+        recentTitle: 'Recent Cases You Started',
+        quickActions: [
+            ['Create rejected case', '/intake'],
+            ['Track active cases', '/placement-tracking'],
+            ['Find accepting hospital', '/hospital-directory'],
+        ],
     },
     receiving_staff: {
         title: 'Acceptance Desk',
         subtitle: 'Review rejected patient cases, reserve capacity, confirm arrivals, and complete handoffs.',
         cards: ['pending_requests', 'accepted_requests', 'in_transfer', 'arrived_patients', 'completed_requests', 'declined_requests'],
+        focus: 'Acceptance lane',
+        recentTitle: 'Recent Requests Sent To You',
+        quickActions: [
+            ['Open acceptance queue', '/incoming-requests'],
+            ['Update own capacity', '/hospital-capacity'],
+            ['Review handoffs', '/placement-tracking'],
+        ],
     },
     coordinator: {
-        title: 'Department Dispatcher Dashboard',
+        title: 'Coordinator Command Dashboard',
         subtitle: 'Monitor rejected patient placement and delivery pressure without changing hospital actions.',
         cards: ['total_requests', 'waiting_patients', 'delayed_cases', 'unassigned_cases', 'assigned_cases', 'in_transfer', 'completed_requests'],
+        focus: 'Oversight lane',
+        recentTitle: 'Recent Department Cases',
+        quickActions: [
+            ['Open command view', '/coordinator-board'],
+            ['Watch wallboard', '/wallboard'],
+            ['Review audit logs', '/audit-logs'],
+        ],
     },
     dispatcher: {
         title: 'Delivery Dispatcher Dashboard',
         subtitle: 'Assign active cases, watch route estimates, and keep rejected patient delivery updates moving.',
         cards: ['waiting_patients', 'unassigned_cases', 'assigned_cases', 'in_transfer', 'en_route_patients', 'delayed_cases', 'avg_travel_minutes'],
+        focus: 'Delivery lane',
+        recentTitle: 'Recent Delivery Cases',
+        quickActions: [
+            ['Open dispatcher board', '/dispatcher-board'],
+            ['Watch wallboard', '/wallboard'],
+            ['Check placement directory', '/hospital-directory'],
+        ],
     },
     admin: {
         title: 'Department Admin Dashboard',
         subtitle: 'Review department-wide activity while managing configuration separately.',
         cards: ['total_requests', 'waiting_patients', 'assigned_cases', 'completed_requests', 'declined_requests'],
+        focus: 'Governance lane',
+        recentTitle: 'Recent System Cases',
+        quickActions: [
+            ['Manage users and roles', '/admin'],
+            ['Open command view', '/coordinator-board'],
+            ['Review audit logs', '/audit-logs'],
+        ],
     },
 };
 
@@ -76,7 +112,11 @@ export default function Dashboard() {
         title: `${roleLabel(user.role)} Dashboard`,
         subtitle: 'Review your assigned placement and delivery workspace.',
         cards: Object.keys(statCards),
+        focus: 'Workspace',
+        recentTitle: 'Recent Cases',
+        quickActions: [],
     };
+    const profile = roleProfile(user.role);
 
     const formatDate = (dateStr) => {
         return new Date(dateStr).toLocaleDateString('en-US', {
@@ -88,9 +128,34 @@ export default function Dashboard() {
         <div>
             <div className="page-heading-row">
                 <div>
+                    <span className="section-eyebrow">{dashboard.focus}</span>
                     <h2>{dashboard.title}</h2>
                     <p>{dashboard.subtitle}</p>
                 </div>
+            </div>
+
+            <div className="role-workbench">
+                <section className="role-purpose-panel">
+                    <div>
+                        <span>Your responsibility</span>
+                        <h3>{profile.label}</h3>
+                        <p>{profile.purpose}</p>
+                    </div>
+                    <div className="role-boundary-list">
+                        {profile.boundaries.slice(0, 3).map((item) => (
+                            <span key={item}>{item}</span>
+                        ))}
+                    </div>
+                </section>
+
+                <section className="quick-action-panel">
+                    <span>Primary work</span>
+                    <div className="quick-action-grid">
+                        {dashboard.quickActions.map(([label, path]) => (
+                            <Link to={path} key={path}>{label}</Link>
+                        ))}
+                    </div>
+                </section>
             </div>
 
             <div className="stats-grid">
@@ -117,7 +182,7 @@ export default function Dashboard() {
             </div>
 
             <div className="card">
-                <div className="card-header">Recent Rejected Patient Cases</div>
+                <div className="card-header">{dashboard.recentTitle}</div>
                 <div className="card-body">
                     {recent_requests.length === 0 ? (
                         <div className="empty-state">

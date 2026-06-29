@@ -14,7 +14,7 @@ class IncomingRequestController extends Controller
         $user = $request->user();
 
         if ($user->role !== 'receiving_staff') {
-            return response()->json(['message' => 'Only receiving staff can view incoming requests.'], 403);
+            return response()->json(['message' => 'Only Acceptance Staff can view the acceptance queue.'], 403);
         }
 
         $hospitalId = $user->hospital_id;

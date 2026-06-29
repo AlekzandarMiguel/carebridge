@@ -19,6 +19,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class TransferRequestController extends Controller
 {
     private const MONITOR_ROLES = ['coordinator', 'dispatcher', 'admin'];
+    private const OVERSIGHT_ROLES = ['coordinator', 'admin'];
 
     public function index(Request $request): JsonResponse
     {
@@ -541,8 +542,8 @@ class TransferRequestController extends Controller
     {
         $user = $request->user();
 
-        if (!in_array($user->role, self::MONITOR_ROLES)) {
-            return response()->json(['message' => 'Only department monitors can escalate placement cases.'], 403);
+        if (!in_array($user->role, self::OVERSIGHT_ROLES)) {
+            return response()->json(['message' => 'Only coordinators and admins can escalate placement cases.'], 403);
         }
 
         $transferRequest = TransferRequest::findOrFail($id);
@@ -575,8 +576,8 @@ class TransferRequestController extends Controller
     {
         $user = $request->user();
 
-        if (!in_array($user->role, self::MONITOR_ROLES)) {
-            return response()->json(['message' => 'Only department monitors can add coordination notes.'], 403);
+        if (!in_array($user->role, self::OVERSIGHT_ROLES)) {
+            return response()->json(['message' => 'Only coordinators and admins can add coordination notes.'], 403);
         }
 
         $transferRequest = TransferRequest::findOrFail($id);
@@ -611,11 +612,11 @@ class TransferRequestController extends Controller
 
         $dispatcher = User::whereKey($validated['assigned_dispatcher_id'])
             ->where('account_status', 'approved')
-            ->whereIn('role', self::MONITOR_ROLES)
+            ->where('role', 'dispatcher')
             ->first();
 
         if (!$dispatcher) {
-            return response()->json(['message' => 'Selected user must be an approved department monitor.'], 422);
+            return response()->json(['message' => 'Selected user must be an approved dispatcher.'], 422);
         }
 
         $transferRequest->update([
@@ -642,6 +643,11 @@ class TransferRequestController extends Controller
         $validated = $request->validate([
             'route_distance_km' => 'nullable|numeric|min:0|max:9999',
             'estimated_travel_minutes' => 'nullable|integer|min:0|max:10080',
+            'transport_team' => 'nullable|string|max:120',
+            'ambulance_unit' => 'nullable|string|max:80',
+            'transport_contact' => 'nullable|string|max:80',
+            'estimated_arrival_at' => 'nullable|date',
+            'delivery_last_location' => 'nullable|string|max:120',
             'override_reason' => 'nullable|string|max:500',
         ]);
 
@@ -649,11 +655,15 @@ class TransferRequestController extends Controller
             return $reasonError;
         }
 
-        $transferRequest->update([
-            'route_distance_km' => $validated['route_distance_km'] ?? null,
-            'estimated_travel_minutes' => $validated['estimated_travel_minutes'] ?? null,
-        ]);
-        $remarks = 'Route distance and travel estimate updated.';
+        $updates = [];
+        foreach (['route_distance_km', 'estimated_travel_minutes', 'transport_team', 'ambulance_unit', 'transport_contact', 'estimated_arrival_at', 'delivery_last_location'] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $updates[$field] = $validated[$field];
+            }
+        }
+
+        $transferRequest->update($updates);
+        $remarks = 'Delivery route and transport details updated.';
         if (!empty($validated['override_reason'])) {
             $remarks .= ' Override reason: '.$validated['override_reason'];
         }
@@ -808,8 +818,8 @@ class TransferRequestController extends Controller
     {
         $user = $request->user();
 
-        if (!in_array($user->role, self::MONITOR_ROLES)) {
-            return response()->json(['message' => 'Only department monitors can archive cases.'], 403);
+        if (!in_array($user->role, self::OVERSIGHT_ROLES)) {
+            return response()->json(['message' => 'Only coordinators and admins can archive cases.'], 403);
         }
 
         $transferRequest = TransferRequest::findOrFail($id);
@@ -835,8 +845,8 @@ class TransferRequestController extends Controller
     {
         $user = $request->user();
 
-        if (!in_array($user->role, self::MONITOR_ROLES)) {
-            return response()->json(['message' => 'Only department monitors can restore archived cases.'], 403);
+        if (!in_array($user->role, self::OVERSIGHT_ROLES)) {
+            return response()->json(['message' => 'Only coordinators and admins can restore archived cases.'], 403);
         }
 
         $transferRequest = TransferRequest::findOrFail($id);
@@ -884,7 +894,7 @@ class TransferRequestController extends Controller
             'board' => collect($statuses)->mapWithKeys(fn ($status) => [
                 $status => $requests->get($status, collect())->values(),
             ]),
-            'dispatchers' => User::whereIn('role', self::MONITOR_ROLES)
+            'dispatchers' => User::where('role', 'dispatcher')
                 ->where('account_status', 'approved')
                 ->orderBy('role')
                 ->orderBy('name')

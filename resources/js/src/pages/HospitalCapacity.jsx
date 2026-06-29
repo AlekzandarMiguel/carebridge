@@ -72,7 +72,7 @@ export default function HospitalCapacity() {
         <div>
             <h2 style={{ fontSize: '20px', marginBottom: '8px' }}>Hospital Capacity</h2>
             <p style={{ color: 'var(--gray-500)', marginBottom: '24px' }}>
-                Receiving staff can update capacity for their own hospital. Other roles can monitor capacity from their assigned views.
+                Acceptance Staff can update capacity for their own hospital. Other roles monitor capacity from their assigned views.
             </p>
 
             {success && <div className="alert alert-success">{success}</div>}

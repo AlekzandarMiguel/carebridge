@@ -10,6 +10,8 @@ const deliveryLabels = {
     delivered: 'Delivered',
 };
 
+const formatDateTime = (value) => value ? new Date(value).toLocaleString() : '-';
+
 export default function DispatcherBoard() {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -56,11 +58,16 @@ export default function DispatcherBoard() {
             await updateRouteEstimate(request.id, {
                 route_distance_km: draft.route_distance_km || request.route_distance_km || null,
                 estimated_travel_minutes: draft.estimated_travel_minutes || request.estimated_travel_minutes || null,
+                transport_team: draft.transport_team ?? request.transport_team ?? '',
+                ambulance_unit: draft.ambulance_unit ?? request.ambulance_unit ?? '',
+                transport_contact: draft.transport_contact ?? request.transport_contact ?? '',
+                estimated_arrival_at: draft.estimated_arrival_at ?? request.estimated_arrival_at ?? null,
+                delivery_last_location: draft.delivery_last_location ?? request.delivery_last_location ?? '',
             });
-            setMessage('Route estimate updated.');
+            setMessage('Delivery transport details updated.');
             loadBoard();
         } catch (err) {
-            setError(err.response?.data?.message || 'Unable to update route estimate.');
+            setError(err.response?.data?.message || 'Unable to update delivery details.');
         }
     };
 
@@ -73,8 +80,9 @@ export default function DispatcherBoard() {
                 event_type: draft.event_type || 'location_update',
                 location: draft.location || '',
                 notes: draft.notes || '',
+                occurred_at: draft.occurred_at || null,
             });
-            setEventDrafts({ ...eventDrafts, [request.id]: { event_type: 'location_update', location: '', notes: '' } });
+            setEventDrafts({ ...eventDrafts, [request.id]: { event_type: 'location_update', location: '', notes: '', occurred_at: '' } });
             setMessage('Delivery update added.');
             loadBoard();
         } catch (err) {
@@ -92,7 +100,9 @@ export default function DispatcherBoard() {
     const renderCard = (request, canEdit = false) => {
         const deliveryStatus = request.delivery_status || 'not_started';
         const routeDraft = routeDrafts[request.id] || {};
-        const eventDraft = eventDrafts[request.id] || { event_type: 'location_update', location: '', notes: '' };
+        const eventDraft = eventDrafts[request.id] || { event_type: 'location_update', location: '', notes: '', occurred_at: '' };
+        const departedEvent = (request.delivery_events || []).find((event) => event.event_type === 'departed');
+        const handoffEvent = (request.delivery_events || []).find((event) => event.event_type === 'handoff_completed');
 
         return (
             <article className={`dispatcher-card ${request.needs_attention ? 'needs-attention' : ''}`} key={request.id}>
@@ -112,9 +122,18 @@ export default function DispatcherBoard() {
                 </div>
 
                 <div className="dispatcher-detail-line">
-                    <span>{request.ambulance_unit || 'No ambulance unit yet'}</span>
-                    <span>{request.transport_contact || 'No transport contact yet'}</span>
-                    <span>{request.delivery_last_location || 'Waiting for location update'}</span>
+                    <span>Unit: {request.ambulance_unit || 'Unassigned'}</span>
+                    <span>Contact: {request.transport_contact || 'Unassigned'}</span>
+                    <span>Last: {request.delivery_last_location || 'Waiting for location update'}</span>
+                </div>
+
+                <div className="dispatcher-checklist">
+                    <span className={request.assigned_dispatcher_id ? 'done' : ''}>Assigned</span>
+                    <span className={request.ambulance_unit ? 'done' : ''}>Ambulance</span>
+                    <span className={departedEvent || request.delivery_status === 'en_route' ? 'done' : ''}>Pickup</span>
+                    <span className={request.estimated_arrival_at ? 'done' : ''}>ETA</span>
+                    <span className={request.delivery_status === 'arrived' || request.delivery_status === 'delivered' ? 'done' : ''}>Arrival</span>
+                    <span className={handoffEvent || request.delivery_status === 'delivered' ? 'done' : ''}>Handoff</span>
                 </div>
 
                 {request.needs_attention && (
@@ -126,6 +145,27 @@ export default function DispatcherBoard() {
                 {canEdit && (
                     <div className="dispatcher-actions">
                         <div className="route-estimate-grid">
+                            <input
+                                value={routeDraft.ambulance_unit ?? request.ambulance_unit ?? ''}
+                                onChange={(event) => setRouteDrafts({ ...routeDrafts, [request.id]: { ...routeDraft, ambulance_unit: event.target.value } })}
+                                placeholder="Ambulance / vehicle"
+                            />
+                            <input
+                                value={routeDraft.transport_team ?? request.transport_team ?? ''}
+                                onChange={(event) => setRouteDrafts({ ...routeDrafts, [request.id]: { ...routeDraft, transport_team: event.target.value } })}
+                                placeholder="Driver or team"
+                            />
+                            <input
+                                value={routeDraft.transport_contact ?? request.transport_contact ?? ''}
+                                onChange={(event) => setRouteDrafts({ ...routeDrafts, [request.id]: { ...routeDraft, transport_contact: event.target.value } })}
+                                placeholder="Driver/contact number"
+                            />
+                            <input
+                                type="datetime-local"
+                                value={routeDraft.estimated_arrival_at ?? ''}
+                                onChange={(event) => setRouteDrafts({ ...routeDrafts, [request.id]: { ...routeDraft, estimated_arrival_at: event.target.value } })}
+                                title={`Current ETA: ${formatDateTime(request.estimated_arrival_at)}`}
+                            />
                             <input
                                 type="number"
                                 min="0"
@@ -141,7 +181,12 @@ export default function DispatcherBoard() {
                                 onChange={(event) => setRouteDrafts({ ...routeDrafts, [request.id]: { ...routeDraft, estimated_travel_minutes: event.target.value } })}
                                 placeholder="ETA min"
                             />
-                            <button className="btn btn-primary btn-sm" type="button" onClick={() => saveRoute(request)}>Save Route</button>
+                            <input
+                                value={routeDraft.delivery_last_location ?? request.delivery_last_location ?? ''}
+                                onChange={(event) => setRouteDrafts({ ...routeDrafts, [request.id]: { ...routeDraft, delivery_last_location: event.target.value } })}
+                                placeholder="Current location"
+                            />
+                            <button className="btn btn-primary btn-sm" type="button" onClick={() => saveRoute(request)}>Save Delivery Details</button>
                         </div>
                         <div className="delivery-event-form">
                             <select
@@ -158,6 +203,11 @@ export default function DispatcherBoard() {
                                 value={eventDraft.location || ''}
                                 onChange={(event) => setEventDrafts({ ...eventDrafts, [request.id]: { ...eventDraft, location: event.target.value } })}
                                 placeholder="Current location"
+                            />
+                            <input
+                                type="datetime-local"
+                                value={eventDraft.occurred_at || ''}
+                                onChange={(event) => setEventDrafts({ ...eventDrafts, [request.id]: { ...eventDraft, occurred_at: event.target.value } })}
                             />
                             <input
                                 value={eventDraft.notes || ''}

@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { createAdminHospital, createAdminUser, getAdminData, getSystemSettings, refreshDemoData, updateAdminHospital, updateAdminUser, updateSystemSettings } from '../api/axios';
+import { roleLabel, roleProfiles } from '../utils/roles';
 
 const blankUser = { name: '', email: '', role: 'sending_staff', hospital_id: '', password: 'password123', account_status: 'approved' };
 const blankHospital = { name: '', address: '', latitude: '', longitude: '', contact_number: '', transfer_contact_name: '', transfer_contact_phone: '', emergency_contact_name: '', emergency_contact_phone: '', status: 'active' };
-const permissionRows = [
-    ['Intake Staff', 'Submit rejected patient cases, reroute declined cases, start delivery'],
-    ['Acceptance Staff', 'Review acceptance queue, accept/decline cases, reserve beds, update own capacity'],
-    ['Coordinator', 'Department command view, escalation, coordinator notes, analytics'],
-    ['Dispatcher', 'Assign active cases, maintain route estimates, add delivery timeline updates'],
-    ['Admin', 'Manage department users/hospitals, command view, audit logs, settings'],
-];
+const roleMatrix = ['sending_staff', 'receiving_staff', 'dispatcher', 'coordinator', 'admin']
+    .map((role) => [role, roleProfiles[role]]);
 
 export default function AdminManagement() {
     const [data, setData] = useState({ users: [], hospitals: [] });
@@ -241,15 +237,36 @@ export default function AdminManagement() {
             </div>
 
             <div className="admin-grid mt-24">
-                <div className="card">
-                    <div className="card-header">Permission Matrix</div>
-                    <div className="card-body compact-list">
-                        {permissionRows.map(([role, permissions]) => (
-                            <div key={role}>
-                                <strong>{role}</strong>
-                                <span>{permissions}</span>
-                            </div>
-                        ))}
+                <div className="card role-matrix-card">
+                    <div className="card-header">Role Matrix</div>
+                    <div className="card-body">
+                        <div className="role-matrix-list">
+                            {roleMatrix.map(([role, profile]) => (
+                                <article className={`role-matrix-row role-${role}`} key={role}>
+                                    <div>
+                                        <span className="role-matrix-kicker">{profile.home}</span>
+                                        <h3>{profile.label}</h3>
+                                        <p>{profile.purpose}</p>
+                                    </div>
+                                    <div>
+                                        <strong>Pages</strong>
+                                        <p>{profile.pages.join(', ')}</p>
+                                    </div>
+                                    <div>
+                                        <strong>Allowed Actions</strong>
+                                        <ul>
+                                            {profile.actions.slice(0, 4).map((action) => <li key={action}>{action}</li>)}
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <strong>Limits</strong>
+                                        <ul>
+                                            {profile.boundaries.map((boundary) => <li key={boundary}>{boundary}</li>)}
+                                        </ul>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -299,7 +316,7 @@ export default function AdminManagement() {
                                 {data.users.map((user) => (
                                     <tr key={user.id}>
                                         <td><strong>{user.name}</strong><br /><small>{user.email}</small></td>
-                                        <td><span className={`admin-role-chip role-${user.role}`}>{user.role.replace('_', ' ')}</span></td>
+                                        <td><span className={`admin-role-chip role-${user.role}`}>{roleLabel(user.role)}</span></td>
                                         <td><span className={`badge badge-${user.account_status || 'approved'}`}>{(user.account_status || 'approved').replace('_', ' ')}</span></td>
                                         <td>{user.hospital?.name || 'System-wide'}</td>
                                         <td><button className="btn btn-outline btn-sm" onClick={() => { setEditingUserId(user.id); setUserForm({ name: user.name, email: user.email, role: user.role, hospital_id: user.hospital_id || '', password: '', account_status: user.account_status || 'approved' }); }}>Edit</button></td>

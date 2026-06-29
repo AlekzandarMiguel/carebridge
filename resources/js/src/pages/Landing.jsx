@@ -35,11 +35,11 @@ const workflow = [
 
 const roles = [
     {
-        title: 'Sending Staff',
+        title: 'Intake Staff',
         text: 'Submit rejected patient cases and start delivery after capacity is reserved.',
     },
     {
-        title: 'Receiving Staff',
+        title: 'Acceptance Staff',
         text: 'Review acceptance requests, reserve capacity, and confirm patient arrival.',
     },
     {

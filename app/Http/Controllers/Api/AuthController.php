@@ -241,6 +241,8 @@ class AuthController extends Controller
             'sending_staff' => [
                 'label' => 'Intake Staff',
                 'home' => '/intake',
+                'responsibility' => 'Receives rejected patient cases and creates the placement case with rejection reason, urgency, required service, documents, and suggested destination.',
+                'pages' => ['Rejected Intake', 'Case Tracking', 'Placement Directory', 'Analytics', 'Settings'],
                 'permissions' => [
                     'Submit rejected patient cases',
                     'Use suggested accepting hospitals by case type',
@@ -249,10 +251,17 @@ class AuthController extends Controller
                     'Monitor patient delivery from departure',
                     'Cancel outbound cases from your hospital',
                 ],
+                'boundaries' => [
+                    'Cannot accept or reserve capacity for another hospital',
+                    'Cannot update hospital capacity',
+                    'Cannot manage users or system settings',
+                ],
             ],
             'receiving_staff' => [
                 'label' => 'Acceptance Staff',
                 'home' => '/incoming-requests',
+                'responsibility' => 'Reviews cases sent to their hospital, accepts or declines, reserves capacity, updates own capacity, marks arrival, and completes handoff.',
+                'pages' => ['Capacity Desk', 'Acceptance Queue', 'Case Tracking', 'Analytics', 'Settings'],
                 'permissions' => [
                     'Review rejected patient acceptance requests',
                     'Use triage filters for urgency and waiting time',
@@ -262,10 +271,17 @@ class AuthController extends Controller
                     'Mark patient arrival at your hospital',
                     'Complete incoming handoffs',
                 ],
+                'boundaries' => [
+                    'Cannot create rejected patient cases',
+                    'Cannot edit other hospitals capacity',
+                    'Cannot assign dispatchers',
+                ],
             ],
             'coordinator' => [
                 'label' => 'Coordinator',
                 'home' => '/coordinator-board',
+                'responsibility' => 'Watches all active cases, resolves delays, escalates SLA breaches, reassigns dispatchers, and oversees stuck cases without acting as hospital staff.',
+                'pages' => ['Command View', 'Wallboard', 'Placement Directory', 'Analytics', 'Audit Logs', 'Settings'],
                 'permissions' => [
                     'View all rejected patient placement activity',
                     'Monitor operational status without changing hospital actions',
@@ -274,29 +290,50 @@ class AuthController extends Controller
                     'Review analytics across hospitals',
                     'Flag delays and coordinate follow-ups outside hospital action buttons',
                 ],
+                'boundaries' => [
+                    'Does not accept or decline for hospitals',
+                    'Does not directly reserve capacity',
+                    'Can update delivery monitoring only with an audit reason',
+                ],
             ],
             'dispatcher' => [
                 'label' => 'Dispatcher',
                 'home' => '/dispatcher-board',
+                'responsibility' => 'Owns delivery movement after acceptance: ambulance assignment, ETA, route updates, location updates, delays, and arrival progress.',
+                'pages' => ['Dispatcher Board', 'Wallboard', 'Placement Directory', 'Analytics', 'Settings'],
                 'permissions' => [
-                    'View department command board',
+                    'View dispatcher board and wallboard',
                     'Assign active rejected patient cases',
+                    'Maintain ambulance, driver/contact, pickup, ETA, and route details',
                     'Update route distance and travel estimates',
                     'Add delivery timeline events',
                     'Monitor delayed placement and delivery cases',
                     'Review analytics for department handoffs',
                 ],
+                'boundaries' => [
+                    'Cannot accept, decline, or reserve capacity',
+                    'Cannot update hospital capacity',
+                    'Cannot manage users or system settings',
+                ],
             ],
             'admin' => [
                 'label' => 'Admin',
                 'home' => '/admin',
+                'responsibility' => 'Manages users, hospitals, roles, settings, audit logs, demo configuration, and overall system governance.',
+                'pages' => ['Admin', 'Command View', 'Wallboard', 'Placement Directory', 'Analytics', 'Audit Logs', 'Settings'],
                 'permissions' => [
                     'Manage users, hospitals, and role assignments',
                     'View command board and audit logs',
+                    'Review and explain the role matrix',
                     'Review system-wide rejected patient case visibility',
                     'Review patient delivery visibility',
                     'Review all analytics',
                     'Maintain operational configuration without hospital action buttons',
+                ],
+                'boundaries' => [
+                    'Should not perform routine hospital acceptance work',
+                    'Can override only when documented',
+                    'Does not replace department workflow ownership',
                 ],
             ],
         ];

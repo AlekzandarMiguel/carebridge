@@ -17,6 +17,7 @@ const CoordinatorBoard = lazy(() => import('./pages/CoordinatorBoard'));
 const DispatcherBoard = lazy(() => import('./pages/DispatcherBoard'));
 const HospitalDirectory = lazy(() => import('./pages/HospitalDirectory'));
 const AdminManagement = lazy(() => import('./pages/AdminManagement'));
+const RoleMatrix = lazy(() => import('./pages/RoleMatrix'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const Wallboard = lazy(() => import('./pages/Wallboard'));
 const SignUp = lazy(() => import('./pages/SignUp'));
@@ -172,6 +173,14 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={['admin']}>
                             <Layout theme={theme} toggleTheme={toggleTheme}><AdminManagement /></Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/role-matrix"
+                    element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                            <Layout theme={theme} toggleTheme={toggleTheme}><RoleMatrix /></Layout>
                         </ProtectedRoute>
                     }
                 />

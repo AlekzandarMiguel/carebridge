@@ -4257,3 +4257,277 @@ html[data-theme="dark"] .assignment-strip {
 .mt-24 { margin-top: 24px; }
 .flex-between { display: flex; justify-content: space-between; align-items: center; }
 .gap-16 { gap: 16px; }
+
+.section-eyebrow,
+.role-matrix-kicker {
+    display: inline-flex;
+    margin-bottom: 8px;
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.role-workbench {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.role-purpose-panel,
+.quick-action-panel,
+.role-matrix-detail,
+.role-matrix-row {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    box-shadow: var(--shadow);
+    border-radius: 8px;
+}
+
+.dark-mode .role-purpose-panel,
+.dark-mode .quick-action-panel,
+.dark-mode .role-matrix-detail,
+.dark-mode .role-matrix-row {
+    background: var(--gray-900);
+    border-color: var(--gray-700);
+}
+
+.role-purpose-panel {
+    padding: 22px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, .8fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.role-purpose-panel span,
+.quick-action-panel > span,
+.role-onboarding-panel > strong {
+    color: var(--gray-500);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.role-purpose-panel h3 {
+    margin: 4px 0 8px;
+    font-size: 22px;
+}
+
+.role-purpose-panel p,
+.role-matrix-detail p,
+.role-matrix-row p {
+    color: var(--gray-600);
+    line-height: 1.6;
+}
+
+.dark-mode .role-purpose-panel p,
+.dark-mode .role-matrix-detail p,
+.dark-mode .role-matrix-row p {
+    color: var(--gray-300);
+}
+
+.role-boundary-list,
+.settings-role-pages,
+.dispatcher-checklist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.role-boundary-list span,
+.settings-role-pages span,
+.dispatcher-checklist span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 7px 10px;
+    border: 1px solid var(--gray-200);
+    border-radius: 999px;
+    background: var(--gray-50);
+    color: var(--gray-600);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.dispatcher-checklist span.done {
+    color: #047857;
+    border-color: rgba(16, 185, 129, .35);
+    background: rgba(16, 185, 129, .12);
+}
+
+.dark-mode .role-boundary-list span,
+.dark-mode .settings-role-pages span,
+.dark-mode .dispatcher-checklist span {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+    color: var(--gray-200);
+}
+
+.quick-action-panel {
+    padding: 22px;
+}
+
+.quick-action-grid {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.quick-action-grid a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 46px;
+    padding: 0 14px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #2563eb, #0891b2);
+    color: white;
+    font-weight: 900;
+    box-shadow: 0 16px 30px rgba(37, 99, 235, .2);
+}
+
+.quick-action-grid a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 38px rgba(37, 99, 235, .28);
+}
+
+.role-onboarding-panel {
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.settings-role-pages {
+    margin: 16px 0;
+}
+
+.role-boundary-box {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px dashed var(--gray-300);
+    background: var(--gray-50);
+}
+
+.dark-mode .role-boundary-box {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+}
+
+.role-boundary-box strong {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.role-boundary-box p {
+    margin: 6px 0 0;
+    color: var(--gray-600);
+}
+
+.dark-mode .role-boundary-box p {
+    color: var(--gray-300);
+}
+
+.role-matrix-card {
+    grid-column: 1 / -1;
+}
+
+.role-matrix-list,
+.role-matrix-page {
+    display: grid;
+    gap: 14px;
+}
+
+.role-matrix-row {
+    display: grid;
+    grid-template-columns: minmax(240px, 1.2fr) minmax(180px, .8fr) minmax(220px, 1fr) minmax(220px, 1fr);
+    gap: 18px;
+    padding: 18px;
+    border-left: 4px solid var(--primary);
+}
+
+.role-matrix-row h3,
+.role-matrix-detail h3 {
+    margin: 0 0 8px;
+}
+
+.role-matrix-row strong,
+.role-matrix-detail strong {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--gray-700);
+}
+
+.dark-mode .role-matrix-row strong,
+.dark-mode .role-matrix-detail strong {
+    color: var(--gray-100);
+}
+
+.role-matrix-row ul,
+.role-matrix-detail ul {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--gray-600);
+    line-height: 1.55;
+}
+
+.dark-mode .role-matrix-row ul,
+.dark-mode .role-matrix-detail ul {
+    color: var(--gray-300);
+}
+
+.role-matrix-detail {
+    padding: 22px;
+    border-left: 5px solid var(--primary);
+}
+
+.role-matrix-detail-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 10px;
+}
+
+.role-matrix-detail-head span {
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.role-matrix-detail-grid {
+    display: grid;
+    grid-template-columns: minmax(220px, .9fr) minmax(240px, 1fr) minmax(240px, 1fr);
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.dispatcher-checklist {
+    margin-top: 12px;
+}
+
+.route-estimate-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1100px) {
+    .role-workbench,
+    .role-purpose-panel,
+    .role-matrix-row,
+    .role-matrix-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .route-estimate-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .role-matrix-detail-head {
+        display: grid;
+    }
+}

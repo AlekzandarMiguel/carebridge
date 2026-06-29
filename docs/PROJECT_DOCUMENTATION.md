@@ -62,15 +62,15 @@ Coordinators supervise placement pressure across hospitals. They do not replace 
 
 ### Dispatcher
 
-Dispatchers work inside the placement and delivery department. Their primary job is to assign active cases, maintain route distance and travel estimates, add delivery timeline updates, and keep delayed delivery movement visible.
+Dispatchers work inside the placement and delivery department. Their primary job is to own delivery movement after acceptance: ambulance assignment, driver/contact, pickup time through delivery events, ETA, route updates, location updates, delays, arrival progress, and delivery timeline visibility.
 
 ### Admin
 
-Admins manage system records. They can create and update users, hospitals, system settings, demo data, audit logs, analytics, and the command view.
+Admins manage system records. They can create and update users, hospitals, role assignments, system settings, demo data, audit logs, analytics, the command view, and the role matrix.
 
 ## 6. What Makes CareBridge Different
 
-CareBridge is built around a rejected-patient placement department, not a broad hospital transfer system.
+CareBridge is built around a rejected-patient placement department, not a broad general hospital workflow system.
 
 Traditional hospital systems often focus on internal patient records. CareBridge focuses on the moment when a hospital is full and a person needs another hospital that can accept them safely. The system helps staff decide where the patient can go, what capacity is available, what delivery status the case is in, and who performed each action.
 
@@ -93,10 +93,12 @@ Traditional hospital systems often focus on internal patient records. CareBridge
 - Acceptance Queue
 - Delivery Tracking
 - Placement and Delivery Detail
+- Dispatcher Board
 - Command View
 - Hospital Directory
 - Analytics
 - Admin Management
+- Role Matrix
 - Audit Logs
 - Settings
 
@@ -110,7 +112,7 @@ Traditional hospital systems often focus on internal patient records. CareBridge
 - Forgot password token generation and reset email support.
 - Reset password flow.
 - Profile settings update.
-- Role-specific settings and descriptions.
+- Role-specific settings, onboarding, permissions, pages, and boundaries.
 
 ### Hospital Capacity
 
@@ -128,8 +130,8 @@ Acceptance staff can update only their own hospital capacity.
 
 A rejected patient case contains:
 
-- Sending hospital.
-- Receiving hospital.
+- Rejected patient origin hospital.
+- Accepting hospital.
 - Patient reference code.
 - Case type.
 - Urgency level.
@@ -204,11 +206,24 @@ Dispatchers have a dedicated board for:
 - Cases assigned to the logged-in dispatcher.
 - Other active department cases.
 - ETA and SLA risk signals.
-- Ambulance unit and transport contact visibility.
-- Route distance and travel estimate updates.
+- Ambulance unit, driver/team, and transport contact visibility.
+- Pickup, ETA, arrival, and handoff checklist.
+- Route distance, travel estimate, current location, and ETA updates.
 - Delivery event updates.
 
 Coordinator and admin delivery overrides require a reason that is saved to the audit trail.
+
+### Role Matrix
+
+Admins have a dedicated Role Matrix page. It explains the purpose, allowed pages, allowed actions, and permission boundaries for:
+
+- Intake Staff.
+- Acceptance Staff.
+- Dispatcher.
+- Coordinator.
+- Admin.
+
+This prevents every role from feeling the same and makes it clear who owns intake, acceptance, delivery, oversight, and governance.
 
 ### Privacy Guard
 
@@ -320,7 +335,7 @@ Analytics include:
 - Completion rate.
 - Total request count.
 - Completed request count.
-- Recent transfer trends.
+- Recent placement trends.
 
 ### Notifications
 
@@ -366,16 +381,18 @@ The wallboard is a large operational view for coordinators, dispatchers, and adm
 | Reserve capacity | No | Yes | No | No | No |
 | Start patient delivery | Yes | No | No | No | No |
 | Mark patient arrived | No | Yes | No | No | No |
-| Complete transfer | No | Yes | No | No | No |
+| Complete handoff | No | Yes | No | No | No |
 | Cancel own outgoing request | Yes | No | No | No | No |
 | Assign dispatcher | No | No | Yes | Yes | Yes |
-| Update route estimate | Yes | Yes | Yes | Yes | Yes |
+| Update delivery route and transport details | Yes | Yes | Yes | Yes | Yes |
 | Add delivery timeline update | Yes | Yes | Yes | Yes | Yes |
 | Upload case attachment | Yes | Yes | Yes | Yes | Yes |
-| Archive or restore case | No | No | Yes | Yes | Yes |
-| Escalate transfer | No | No | Yes | Yes | Yes |
-| Add coordinator notes | No | No | Yes | Yes | Yes |
-| View command board | No | No | Yes | Yes | Yes |
+| Archive or restore case | No | No | Yes | No | Yes |
+| Escalate placement case | No | No | Yes | No | Yes |
+| Add coordinator notes | No | No | Yes | No | Yes |
+| View command board | No | No | Yes | No | Yes |
+| View dispatcher board | No | No | No | Yes | No |
+| View role matrix | No | No | No | No | Yes |
 | View analytics | No | No | Yes | Yes | Yes |
 | Manage users and hospitals | No | No | No | No | Yes |
 | View audit logs | No | No | No | No | Yes |
@@ -610,7 +627,7 @@ Important fields:
 | PUT | `/api/transfer-requests/{id}/reserve` | Reserve capacity. |
 | PUT | `/api/transfer-requests/{id}/transfer` | Start transfer. |
 | PUT | `/api/transfer-requests/{id}/arrive` | Mark patient arrived. |
-| PUT | `/api/transfer-requests/{id}/complete` | Complete transfer. |
+| PUT | `/api/transfer-requests/{id}/complete` | Complete handoff. |
 | PUT | `/api/transfer-requests/{id}/cancel` | Cancel request. |
 | PUT | `/api/transfer-requests/{id}/escalate` | Escalate active request. |
 | PUT | `/api/transfer-requests/{id}/coordinator-notes` | Update coordinator notes. |

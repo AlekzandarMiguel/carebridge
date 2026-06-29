@@ -15,13 +15,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $hospitalId = $user->hospital_id;
-        $baseQuery = TransferRequest::query()
-            ->when(!in_array($user->role, self::MONITOR_ROLES), function ($q) use ($hospitalId) {
-                $q->where(function ($scoped) use ($hospitalId) {
-                    $scoped->where('sending_hospital_id', $hospitalId)
-                        ->orWhere('receiving_hospital_id', $hospitalId);
-                });
-            });
+        $baseQuery = $this->dashboardScope(TransferRequest::query(), $user->role, $hospitalId);
 
         $totalRequests = (clone $baseQuery)->count();
         $pendingRequests = (clone $baseQuery)->where('status', 'pending')->count();
@@ -44,11 +38,8 @@ class DashboardController extends Controller
             ->count();
         $avgTravelMinutes = (clone $baseQuery)->whereNotNull('estimated_travel_minutes')->avg('estimated_travel_minutes') ?? 0;
 
-        $recentRequests = TransferRequest::with(['sendingHospital', 'receivingHospital', 'creator', 'assignedDispatcher'])
-            ->when(!in_array($user->role, self::MONITOR_ROLES), function ($q) use ($hospitalId) {
-                $q->where('sending_hospital_id', $hospitalId)
-                  ->orWhere('receiving_hospital_id', $hospitalId);
-            })
+        $recentQuery = TransferRequest::with(['sendingHospital', 'receivingHospital', 'creator', 'assignedDispatcher']);
+        $recentRequests = $this->dashboardScope($recentQuery, $user->role, $hospitalId)
             ->latest()
             ->take(5)
             ->get();
@@ -77,5 +68,14 @@ class DashboardController extends Controller
             ],
             'recent_requests' => $recentRequests,
         ]);
+    }
+
+    private function dashboardScope($query, string $role, ?int $hospitalId)
+    {
+        return match ($role) {
+            'sending_staff' => $query->where('sending_hospital_id', $hospitalId),
+            'receiving_staff' => $query->where('receiving_hospital_id', $hospitalId),
+            default => $query,
+        };
     }
 }

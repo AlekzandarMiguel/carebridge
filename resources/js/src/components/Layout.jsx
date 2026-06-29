@@ -17,6 +17,7 @@ const navItems = [
     { path: '/hospital-directory', label: 'Placement Directory', icon: 'PD', roles: ['sending_staff', 'coordinator', 'dispatcher', 'admin'] },
     { path: '/analytics', label: 'Analytics', icon: 'AN', roles: ['coordinator', 'dispatcher', 'admin'] },
     { path: '/admin', label: 'Admin', icon: 'AD', roles: ['admin'] },
+    { path: '/role-matrix', label: 'Role Matrix', icon: 'RM', roles: ['admin'] },
     { path: '/audit-logs', label: 'Audit Logs', icon: 'AL', roles: ['admin'] },
     { path: '/settings', label: 'Settings', icon: 'ST' },
 ];

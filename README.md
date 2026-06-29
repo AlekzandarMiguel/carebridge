@@ -23,7 +23,7 @@ Because of this, the hassle of manually searching for another hospital is reduce
 - Landing page that explains the system idea and workflow.
 - Login, signup, forgot password, and reset password pages.
 - Signup requests require admin approval before the account can sign in.
-- Role-based dashboards and navigation.
+- Role-based dashboards, navigation, onboarding, and admin role matrix.
 - Dark mode across public and authenticated pages.
 - Hospital capacity desk for available general, emergency, ICU, and ambulance capacity.
 - Rejected patient case creation for capacity-limited patients.
@@ -37,7 +37,7 @@ Because of this, the hassle of manually searching for another hospital is reduce
 - SLA and ETA warning states for cases that are waiting too long or running late.
 - Secure case attachments for referral notes, lab results, imaging, consent, transport forms, and supporting documents.
 - Built-in route map that plots the delivery path from origin to final accepting destination using hospital coordinates.
-- Dedicated dispatcher board for unassigned cases, assigned cases, ETA risk, ambulance information, and delivery updates.
+- Dedicated dispatcher board for unassigned cases, assigned cases, ETA risk, ambulance/driver/contact, pickup/arrival checklist, route details, and delivery updates.
 - Automatic priority scoring based on urgency, waiting time, status, assignment, case type, SLA state, and ETA risk.
 - Patient privacy guard that blocks obvious personal details in intake notes and asks staff to use reference codes.
 - Downloadable case summary report from the case detail page.
@@ -61,9 +61,17 @@ Because of this, the hassle of manually searching for another hospital is reduce
 | --- | --- |
 | Intake Staff | Submit rejected patient cases, monitor placement, reroute declined cases, and start delivery after reservation. |
 | Acceptance Staff | Update own hospital capacity, review acceptance queue, accept or decline, reserve beds, mark arrivals, and complete handoffs. |
-| Coordinator | Supervise network-wide placement, escalation, SLA pressure, coordinator notes, and analytics. |
-| Dispatcher | Assign active cases, maintain route estimates, and add delivery timeline updates. |
-| Admin | Manage department users, hospitals, settings, audit logs, demo data, analytics, and the command view. |
+| Dispatcher | Own delivery movement after acceptance: ambulance assignment, driver/contact, ETA, route updates, location updates, delays, arrival progress, and delivery timeline. |
+| Coordinator | Watch all active cases, resolve delays, escalate SLA breaches, reassign dispatchers, and oversee stuck cases without acting as hospital staff. |
+| Admin | Manage users, hospitals, roles, settings, audit logs, demo data, role matrix, analytics, and system configuration. |
+
+## Role Boundaries
+
+- Intake Staff cannot accept, decline, reserve, or update hospital capacity.
+- Acceptance Staff can update only their own hospital capacity and cannot create rejected patient cases.
+- Dispatchers cannot accept, decline, reserve, or update capacity; they own delivery movement only.
+- Coordinators do not perform hospital acceptance actions and delivery monitoring overrides require an audit reason.
+- Admins can manage configuration and governance, but routine hospital workflow should stay with the correct role.
 
 ## Core Workflow
 

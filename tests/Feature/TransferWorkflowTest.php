@@ -316,6 +316,10 @@ class TransferWorkflowTest extends TestCase
         $this->putJson("/api/transfer-requests/{$transfer->id}/route-estimate", [
             'route_distance_km' => 18.5,
             'estimated_travel_minutes' => 32,
+            'transport_team' => 'Bukidnon Dispatch Team 1',
+            'ambulance_unit' => 'AMB-BUK-01',
+            'transport_contact' => 'Dispatch radio 01',
+            'delivery_last_location' => 'Hospital loading bay',
         ])->assertOk();
 
         $this->postJson("/api/transfer-requests/{$transfer->id}/delivery-events", [
@@ -330,7 +334,22 @@ class TransferWorkflowTest extends TestCase
             'id' => $transfer->id,
             'assigned_dispatcher_id' => $dispatcher->id,
             'estimated_travel_minutes' => 32,
+            'transport_team' => 'Bukidnon Dispatch Team 1',
+            'ambulance_unit' => 'AMB-BUK-01',
+            'transport_contact' => 'Dispatch radio 01',
         ]);
+
+        $this->putJson("/api/transfer-requests/{$transfer->id}/escalate", [
+            'reason' => 'Dispatcher should not own governance escalation.',
+        ])->assertForbidden();
+
+        $this->putJson("/api/transfer-requests/{$transfer->id}/coordinator-notes", [
+            'coordinator_notes' => 'Dispatcher should not write coordinator notes.',
+        ])->assertForbidden();
+
+        $this->putJson("/api/transfer-requests/{$transfer->id}/archive", [
+            'archive_reason' => 'Dispatcher should not archive.',
+        ])->assertForbidden();
 
         $this->assertDatabaseHas('transfer_logs', [
             'transfer_request_id' => $transfer->id,
@@ -445,6 +464,7 @@ class TransferWorkflowTest extends TestCase
         [$sendingHospital, $receivingHospital, $otherHospital] = $this->createHospitals();
         $sender = $this->createUser($sendingHospital, 'sending_staff');
         $dispatcher = $this->createUser($otherHospital, 'dispatcher');
+        $coordinator = $this->createUser($otherHospital, 'coordinator');
 
         Sanctum::actingAs($sender);
         $createResponse = $this->postJson('/api/transfer-requests', [
@@ -463,6 +483,11 @@ class TransferWorkflowTest extends TestCase
             ->assertOk()
             ->assertJsonPath('metrics.active_cases', 1);
 
+        $this->putJson("/api/transfer-requests/{$transferId}/archive", [
+            'archive_reason' => 'Dispatcher should not archive.',
+        ])->assertForbidden();
+
+        Sanctum::actingAs($coordinator);
         $this->putJson("/api/transfer-requests/{$transferId}/archive", [
             'archive_reason' => 'Closed after review.',
         ])->assertOk();
