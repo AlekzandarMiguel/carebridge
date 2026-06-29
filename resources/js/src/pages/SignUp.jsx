@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { getAuthOptions, register } from '../api/axios';
 import ThemeToggle from '../components/ThemeToggle';
 
@@ -14,8 +14,8 @@ export default function SignUp({ theme, toggleTheme }) {
         password_confirmation: '',
     });
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
 
     useEffect(() => {
         getAuthOptions()
@@ -30,13 +30,20 @@ export default function SignUp({ theme, toggleTheme }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setSuccess('');
         setLoading(true);
 
         try {
             const res = await register(form);
-            localStorage.setItem('carebridge_token', res.data.token);
-            localStorage.setItem('carebridge_user', JSON.stringify(res.data.user));
-            navigate('/dashboard');
+            setSuccess(res.data.message || 'Account request submitted. An admin must approve it before sign in.');
+            setForm({
+                name: '',
+                email: '',
+                hospital_id: '',
+                role: 'sending_staff',
+                password: '',
+                password_confirmation: '',
+            });
         } catch (err) {
             const validation = err.response?.data?.errors;
             setError(validation ? Object.values(validation).flat().join(' ') : err.response?.data?.message || 'Unable to create account.');
@@ -57,6 +64,11 @@ export default function SignUp({ theme, toggleTheme }) {
                 <p>Join your hospital workspace</p>
 
                 {error && <div className="alert alert-error">{error}</div>}
+                {success && (
+                    <div className="alert alert-success">
+                        {success} <Link to="/login">Return to sign in</Link>
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">

@@ -50,10 +50,11 @@ export const getHospitalCapacity = (id) => api.get(`/hospitals/${id}/capacity`);
 export const updateHospitalCapacity = (id, data) => api.put(`/hospitals/${id}/capacity`, data);
 
 // Transfer Requests
-export const getTransferRequests = (page = 1) => api.get('/transfer-requests?page=' + page);
+export const getTransferRequests = (page = 1, filters = {}) => api.get('/transfer-requests', { params: { page, ...filters } });
 export const getTransferRecommendations = (caseType = 'general') => api.get('/transfer-recommendations?case_type=' + caseType);
 export const createTransferRequest = (data) => api.post('/transfer-requests', data);
 export const getTransferRequest = (id) => api.get(`/transfer-requests/${id}`);
+export const exportTransferRequests = (filters = {}) => api.get('/transfer-requests/export', { params: filters, responseType: 'blob' });
 
 // Incoming Requests
 export const getIncomingRequests = () => api.get('/incoming-requests');
@@ -71,7 +72,7 @@ export const escalateTransfer = (id, reason = 'Coordinator escalation requested.
 export const updateCoordinatorNotes = (id, coordinator_notes = '') => api.put(`/transfer-requests/${id}/coordinator-notes`, { coordinator_notes });
 
 // Transfer Tracking
-export const getTransferTracking = (page = 1) => api.get('/transfer-tracking?page=' + page);
+export const getTransferTracking = (page = 1, filters = {}) => api.get('/transfer-tracking', { params: { page, ...filters } });
 export const getTransferBoard = () => api.get('/transfer-board');
 
 // Notifications
@@ -90,5 +91,17 @@ export const getSystemSettings = () => api.get('/admin/system-settings');
 export const updateSystemSettings = (data) => api.put('/admin/system-settings', data);
 export const refreshDemoData = () => api.post('/admin/demo-refresh');
 export const getAuditLogs = (page = 1, filters = {}) => api.get('/audit-logs', { params: { page, ...filters } });
+export const exportAuditLogs = (filters = {}) => api.get('/audit-logs/export', { params: filters, responseType: 'blob' });
+
+export const downloadBlob = (blob, filename) => {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+};
 
 export default api;

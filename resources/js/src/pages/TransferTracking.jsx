@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { getTransferTracking, reserveTransfer, startTransfer, markPatientArrived, completeTransfer, cancelTransfer } from '../api/axios';
+import { Link, useSearchParams } from 'react-router-dom';
+import { getTransferTracking, reserveTransfer, startTransfer, markPatientArrived, completeTransfer, cancelTransfer, exportTransferRequests, downloadBlob } from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
 
 const deliveryLabels = {
@@ -17,26 +17,69 @@ export default function TransferTracking() {
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [filters, setFilters] = useState({
+        q: searchParams.get('q') || '',
+        status: searchParams.get('status') || '',
+        urgency_level: searchParams.get('urgency_level') || '',
+        case_type: searchParams.get('case_type') || '',
+        delivery_status: searchParams.get('delivery_status') || '',
+    });
     const user = JSON.parse(localStorage.getItem('carebridge_user') || '{}');
 
     useEffect(() => {
         fetchTracking();
-    }, [currentPage]);
+    }, [currentPage, filters]);
+
+    useEffect(() => {
+        setFilters({
+            q: searchParams.get('q') || '',
+            status: searchParams.get('status') || '',
+            urgency_level: searchParams.get('urgency_level') || '',
+            case_type: searchParams.get('case_type') || '',
+            delivery_status: searchParams.get('delivery_status') || '',
+        });
+        setCurrentPage(1);
+    }, [searchParams]);
 
     useEffect(() => {
         const interval = setInterval(fetchTracking, 10000);
         return () => clearInterval(interval);
-    }, [currentPage]);
+    }, [currentPage, filters]);
 
     const fetchTracking = async () => {
         try {
-            const res = await getTransferTracking(currentPage);
+            const res = await getTransferTracking(currentPage, filters);
             setData(res.data.transfer_requests);
         } catch (err) {
             console.error(err);
             setError('Unable to load transfer tracking.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const updateFilter = (key, value) => {
+        const nextFilters = { ...filters, [key]: value };
+        setCurrentPage(1);
+        setFilters(nextFilters);
+        setSearchParams(Object.fromEntries(Object.entries(nextFilters).filter(([, filterValue]) => filterValue)));
+    };
+
+    const clearFilters = () => {
+        const nextFilters = { q: '', status: '', urgency_level: '', case_type: '', delivery_status: '' };
+        setCurrentPage(1);
+        setFilters(nextFilters);
+        setSearchParams({});
+    };
+
+    const handleExport = async () => {
+        setError('');
+        try {
+            const res = await exportTransferRequests(filters);
+            downloadBlob(res.data, 'carebridge-transfer-report.csv');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Unable to export transfer report.');
         }
     };
 
@@ -49,10 +92,20 @@ export default function TransferTracking() {
             setSuccess(successMsg);
             fetchTracking();
         } catch (err) {
-            setError(err.response?.data?.message || 'Action failed.');
+            if (err.message !== 'Action cancelled.') {
+                setError(err.response?.data?.message || 'Action failed.');
+            }
         } finally {
             setActionLoading(null);
         }
+    };
+
+    const confirmAction = (message, actionFn) => (id) => {
+        if (!window.confirm(message)) {
+            return Promise.reject(new Error('Action cancelled.'));
+        }
+
+        return actionFn(id);
     };
 
     const formatDate = (dateStr) => {
@@ -92,6 +145,51 @@ export default function TransferTracking() {
 
             {success && <div className="alert alert-success">{success}</div>}
             {error && <div className="alert alert-error">{error}</div>}
+
+            <div className="directory-toolbar advanced-filter-bar">
+                <div className="form-grid tracking-filter-grid">
+                    <div className="form-group">
+                        <input value={filters.q} onChange={(e) => updateFilter('q', e.target.value)} placeholder="Search reference, hospital, reason..." />
+                    </div>
+                    <div className="form-group">
+                        <select value={filters.status} onChange={(e) => updateFilter('status', e.target.value)}>
+                            <option value="">All statuses</option>
+                            {['pending', 'accepted', 'reserved', 'in_transfer', 'completed', 'declined', 'cancelled'].map((status) => (
+                                <option value={status} key={status}>{status.replace('_', ' ')}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <select value={filters.delivery_status} onChange={(e) => updateFilter('delivery_status', e.target.value)}>
+                            <option value="">All delivery</option>
+                            <option value="not_started">Not started</option>
+                            <option value="en_route">En route</option>
+                            <option value="arrived">Arrived</option>
+                            <option value="delivered">Delivered</option>
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <select value={filters.urgency_level} onChange={(e) => updateFilter('urgency_level', e.target.value)}>
+                            <option value="">All urgency</option>
+                            <option value="normal">Normal</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <select value={filters.case_type} onChange={(e) => updateFilter('case_type', e.target.value)}>
+                            <option value="">All case types</option>
+                            <option value="general">General</option>
+                            <option value="emergency">Emergency</option>
+                            <option value="icu">ICU</option>
+                        </select>
+                    </div>
+                </div>
+                <div className="action-buttons">
+                    {['coordinator', 'admin'].includes(user.role) && <button className="btn btn-primary btn-sm" onClick={handleExport}>Export CSV</button>}
+                    <button className="btn btn-outline btn-sm" onClick={clearFilters}>Clear</button>
+                </div>
+            </div>
 
             <div className="card">
                 <div className="card-body">
@@ -152,7 +250,7 @@ export default function TransferTracking() {
                                                             <button
                                                                 className="btn btn-info btn-sm"
                                                                 disabled={actionLoading === req.id}
-                                                                onClick={() => handleAction(req.id, reserveTransfer, 'Slot reserved.')}
+                                                                onClick={() => handleAction(req.id, confirmAction('Reserve this bed for the patient?', reserveTransfer), 'Slot reserved.')}
                                                             >
                                                                 Reserve
                                                             </button>
@@ -161,7 +259,7 @@ export default function TransferTracking() {
                                                             <button
                                                                 className="btn btn-primary btn-sm"
                                                                 disabled={actionLoading === req.id}
-                                                                onClick={() => handleAction(req.id, startTransfer, 'Transfer started.')}
+                                                                onClick={() => handleAction(req.id, confirmAction('Start patient delivery now?', startTransfer), 'Transfer started.')}
                                                             >
                                                                 Start Transfer
                                                             </button>
@@ -192,7 +290,7 @@ export default function TransferTracking() {
                                                             <button
                                                                 className="btn btn-danger btn-sm"
                                                                 disabled={actionLoading === req.id}
-                                                                onClick={() => handleAction(req.id, () => cancelTransfer(req.id), 'Cancelled.')}
+                                                                onClick={() => handleAction(req.id, confirmAction('Cancel this request?', cancelTransfer), 'Cancelled.')}
                                                             >
                                                                 Cancel
                                                             </button>

@@ -26,7 +26,7 @@ export default function Analytics() {
     if (loading) return <div className="loading">Loading analytics...</div>;
     if (!data) return <div className="empty-state"><p>Unable to load analytics.</p></div>;
 
-    const { status_distribution, urgency_distribution, case_type_distribution, transfers_over_time, hospital_stats, summary } = data;
+    const { status_distribution, urgency_distribution, case_type_distribution, decline_reason_distribution, transfers_over_time, hospital_stats, summary } = data;
 
     const formatDate = (dateStr) => {
         return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -123,6 +123,23 @@ export default function Analytics() {
                                 <YAxis allowDecimals={false} />
                                 <Tooltip labelFormatter={formatDate} />
                                 <Bar dataKey="count" fill="#16a34a" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
+                </div>
+
+                <div className="analytics-card">
+                    <h3>Rejection Reasons</h3>
+                    {!decline_reason_distribution || decline_reason_distribution.length === 0 ? (
+                        <div className="empty-state"><p>No declined requests recorded yet.</p></div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={decline_reason_distribution}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="decline_reason_category" />
+                                <YAxis allowDecimals={false} />
+                                <Tooltip />
+                                <Bar dataKey="count" fill="#f43f5e" radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     )}

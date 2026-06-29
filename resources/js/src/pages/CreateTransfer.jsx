@@ -2,6 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getHospitals, getTransferRequest, getTransferRecommendations, createTransferRequest } from '../api/axios';
 
+const checklistLabels = {
+    referral_note: 'Referral or endorsement note',
+    lab_results: 'Relevant lab results',
+    imaging: 'Imaging or diagnostic summary',
+    consent: 'Transfer consent confirmed',
+    transport_form: 'Transport details prepared',
+};
+
+const emptyChecklist = Object.keys(checklistLabels).reduce((items, key) => ({ ...items, [key]: false }), {});
+
 export default function CreateTransfer() {
     const [hospitals, setHospitals] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -21,6 +31,8 @@ export default function CreateTransfer() {
         rejection_reason: '',
         placement_need: '',
         documents_ready: false,
+        document_checklist: emptyChecklist,
+        privacy_confirmed: false,
         transport_team: '',
         ambulance_unit: '',
         transport_contact: '',
@@ -49,6 +61,8 @@ export default function CreateTransfer() {
                     rejection_reason: transfer.decline_reason_category || 'Previous request declined',
                     placement_need: transfer.placement_need || transfer.case_type || '',
                     documents_ready: Boolean(transfer.documents_ready),
+                    document_checklist: transfer.document_checklist || emptyChecklist,
+                    privacy_confirmed: false,
                     transport_team: transfer.transport_team || '',
                     ambulance_unit: transfer.ambulance_unit || '',
                     transport_contact: transfer.transport_contact || '',
@@ -86,6 +100,15 @@ export default function CreateTransfer() {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
+    const handleChecklistChange = (key, checked) => {
+        const nextChecklist = { ...form.document_checklist, [key]: checked };
+        setForm({
+            ...form,
+            document_checklist: nextChecklist,
+            documents_ready: Object.values(nextChecklist).every(Boolean),
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -102,6 +125,8 @@ export default function CreateTransfer() {
                 rejection_reason: '',
                 placement_need: '',
                 documents_ready: false,
+                document_checklist: emptyChecklist,
+                privacy_confirmed: false,
                 transport_team: '',
                 ambulance_unit: '',
                 transport_contact: '',
@@ -224,14 +249,24 @@ export default function CreateTransfer() {
                             </div>
                         </div>
 
-                        <label className="check-row">
-                            <input
-                                type="checkbox"
-                                checked={form.documents_ready}
-                                onChange={(e) => setForm({ ...form, documents_ready: e.target.checked })}
-                            />
-                            Documents are ready for handoff
-                        </label>
+                        <div className="intake-panel">
+                            <div>
+                                <strong>Handoff readiness</strong>
+                                <span>{form.documents_ready ? 'All checklist items are complete.' : 'Complete the items available before sending.'}</span>
+                            </div>
+                            <div className="checklist-grid">
+                                {Object.entries(checklistLabels).map(([key, label]) => (
+                                    <label className="check-row compact" key={key}>
+                                        <input
+                                            type="checkbox"
+                                            checked={Boolean(form.document_checklist[key])}
+                                            onChange={(e) => handleChecklistChange(key, e.target.checked)}
+                                        />
+                                        {label}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
 
                         <div className="form-grid">
                             <div className="form-group">
@@ -271,6 +306,16 @@ export default function CreateTransfer() {
                                 />
                             </div>
                         </div>
+
+                        <label className="check-row privacy-confirm">
+                            <input
+                                type="checkbox"
+                                checked={form.privacy_confirmed}
+                                onChange={(e) => setForm({ ...form, privacy_confirmed: e.target.checked })}
+                                required
+                            />
+                            I confirm this request uses the patient reference code only and avoids unnecessary personal information.
+                        </label>
 
                         <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
                             <button type="submit" className="btn btn-primary" disabled={submitting}>

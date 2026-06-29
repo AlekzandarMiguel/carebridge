@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createAdminHospital, createAdminUser, getAdminData, getSystemSettings, refreshDemoData, updateAdminHospital, updateAdminUser, updateSystemSettings } from '../api/axios';
 
-const blankUser = { name: '', email: '', role: 'sending_staff', hospital_id: '', password: 'password123' };
+const blankUser = { name: '', email: '', role: 'sending_staff', hospital_id: '', password: 'password123', account_status: 'approved' };
 const blankHospital = { name: '', address: '', contact_number: '', transfer_contact_name: '', transfer_contact_phone: '', emergency_contact_name: '', emergency_contact_phone: '', status: 'active' };
 const permissionRows = [
     ['Sending Staff', 'Create requests, reroute declined patients, start outbound transfer'],
@@ -110,7 +110,7 @@ export default function AdminManagement() {
                 <div>
                     <span>System Control</span>
                     <h2>Admin Management</h2>
-                    <p>Manage hospital records, user roles, active status, and reset account passwords.</p>
+                    <p>Manage hospital records, user roles, account approval, active status, and reset account passwords.</p>
                 </div>
                 <div className="hero-metrics">
                     <div><strong>{data.users.length}</strong><small>Users</small></div>
@@ -154,6 +154,14 @@ export default function AdminManagement() {
                                     {data.hospitals.map((hospital) => (
                                         <option value={hospital.id} key={hospital.id}>{hospital.name}</option>
                                     ))}
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Account Status</label>
+                                <select value={userForm.account_status} onChange={(e) => setUserForm({ ...userForm, account_status: e.target.value })}>
+                                    <option value="pending">Pending approval</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="suspended">Suspended</option>
                                 </select>
                             </div>
                             <div className="form-group">
@@ -275,8 +283,9 @@ export default function AdminManagement() {
                                     <tr key={user.id}>
                                         <td><strong>{user.name}</strong><br /><small>{user.email}</small></td>
                                         <td><span className={`admin-role-chip role-${user.role}`}>{user.role.replace('_', ' ')}</span></td>
+                                        <td><span className={`badge badge-${user.account_status || 'approved'}`}>{(user.account_status || 'approved').replace('_', ' ')}</span></td>
                                         <td>{user.hospital?.name || 'System-wide'}</td>
-                                        <td><button className="btn btn-outline btn-sm" onClick={() => { setEditingUserId(user.id); setUserForm({ name: user.name, email: user.email, role: user.role, hospital_id: user.hospital_id || '', password: '' }); }}>Edit</button></td>
+                                        <td><button className="btn btn-outline btn-sm" onClick={() => { setEditingUserId(user.id); setUserForm({ name: user.name, email: user.email, role: user.role, hospital_id: user.hospital_id || '', password: '', account_status: user.account_status || 'approved' }); }}>Edit</button></td>
                                     </tr>
                                 ))}
                             </tbody>

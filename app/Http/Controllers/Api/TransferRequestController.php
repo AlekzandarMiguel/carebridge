@@ -17,20 +17,86 @@ class TransferRequestController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $hospitalId = $user->hospital_id;
+        $this->releaseExpiredReservations();
 
-        $requests = TransferRequest::with(['sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'escalator', 'logs.user'])
-            ->when(!in_array($user->role, self::MONITOR_ROLES), function ($q) use ($hospitalId) {
-                $q->where('sending_hospital_id', $hospitalId)
-                  ->orWhere('receiving_hospital_id', $hospitalId);
+        $user = $request->user();
+        $validated = $request->validate([
+            'q' => 'nullable|string|max:120',
+            'status' => 'nullable|string|max:40',
+            'urgency_level' => 'nullable|in:normal,urgent,critical',
+            'case_type' => 'nullable|in:general,emergency,icu',
+            'delivery_status' => 'nullable|in:not_started,en_route,arrived,delivered',
+        ]);
+
+        $requests = $this->visibleTransferQuery($request)
+            ->when($validated['q'] ?? null, function ($q, $search) {
+                $q->where(function ($scoped) use ($search) {
+                    $scoped->where('patient_reference_code', 'like', "%{$search}%")
+                        ->orWhere('placement_need', 'like', "%{$search}%")
+                        ->orWhere('rejection_reason', 'like', "%{$search}%")
+                        ->orWhereHas('sendingHospital', fn ($hospital) => $hospital->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('receivingHospital', fn ($hospital) => $hospital->where('name', 'like', "%{$search}%"));
+                });
             })
+            ->when($validated['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
+            ->when($validated['urgency_level'] ?? null, fn ($q, $urgency) => $q->where('urgency_level', $urgency))
+            ->when($validated['case_type'] ?? null, fn ($q, $caseType) => $q->where('case_type', $caseType))
+            ->when($validated['delivery_status'] ?? null, fn ($q, $deliveryStatus) => $q->where('delivery_status', $deliveryStatus))
             ->orderByRaw("CASE urgency_level WHEN 'critical' THEN 1 WHEN 'urgent' THEN 2 ELSE 3 END")
             ->latest()
-            ->paginate(15);
+            ->paginate(15)
+            ->appends($request->query());
 
         return response()->json([
             'transfer_requests' => $requests,
+        ]);
+    }
+
+    public function export(Request $request)
+    {
+        $this->releaseExpiredReservations();
+
+        if (!in_array($request->user()->role, self::MONITOR_ROLES)) {
+            return response()->json(['message' => 'Only coordinators and admins can export transfer reports.'], 403);
+        }
+
+        $rows = $this->visibleTransferQuery($request)
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->streamDownload(function () use ($rows) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, [
+                'Reference',
+                'Status',
+                'Delivery Status',
+                'Case Type',
+                'Urgency',
+                'Sending Hospital',
+                'Receiving Hospital',
+                'Created At',
+                'Reserved Until',
+                'Escalated',
+            ]);
+
+            foreach ($rows as $transfer) {
+                fputcsv($handle, [
+                    $transfer->patient_reference_code,
+                    $transfer->status,
+                    $transfer->delivery_status,
+                    $transfer->case_type,
+                    $transfer->urgency_level,
+                    $transfer->sendingHospital?->name,
+                    $transfer->receivingHospital?->name,
+                    optional($transfer->created_at)->toDateTimeString(),
+                    optional($transfer->reserved_until)->toDateTimeString(),
+                    $transfer->is_escalated ? 'yes' : 'no',
+                ]);
+            }
+
+            fclose($handle);
+        }, 'carebridge-transfer-report.csv', [
+            'Content-Type' => 'text/csv',
         ]);
     }
 
@@ -55,6 +121,9 @@ class TransferRequestController extends Controller
             'rejection_reason' => 'nullable|string|max:120',
             'placement_need' => 'nullable|string|max:120',
             'documents_ready' => 'boolean',
+            'document_checklist' => 'nullable|array',
+            'document_checklist.*' => 'boolean',
+            'privacy_confirmed' => 'accepted',
             'transport_team' => 'nullable|string|max:120',
             'ambulance_unit' => 'nullable|string|max:80',
             'transport_contact' => 'nullable|string|max:80',
@@ -67,6 +136,9 @@ class TransferRequestController extends Controller
 
         $transferRequest = TransferRequest::create([
             ...$validated,
+            'documents_ready' => $validated['documents_ready'] ?? (!empty($validated['document_checklist'] ?? []) && collect($validated['document_checklist'])->every(fn ($ready) => (bool) $ready)),
+            'document_checklist' => $validated['document_checklist'] ?? [],
+            'privacy_confirmed' => true,
             'sending_hospital_id' => $user->hospital_id,
             'status' => 'pending',
             'created_by' => $user->id,
@@ -127,6 +199,8 @@ class TransferRequestController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
+        $this->releaseExpiredReservations();
+
         $transferRequest = TransferRequest::with([
             'sendingHospital',
             'receivingHospital',
@@ -220,6 +294,8 @@ class TransferRequestController extends Controller
 
     public function reserve(Request $request, int $id): JsonResponse
     {
+        $this->releaseExpiredReservations();
+
         $transferRequest = TransferRequest::findOrFail($id);
 
         if (!$this->canActAsReceivingHospital($request, $transferRequest)) {
@@ -271,6 +347,8 @@ class TransferRequestController extends Controller
 
     public function startTransfer(Request $request, int $id): JsonResponse
     {
+        $this->releaseExpiredReservations();
+
         $transferRequest = TransferRequest::findOrFail($id);
 
         if (!$this->canActAsSendingHospital($request, $transferRequest)) {
@@ -482,6 +560,8 @@ class TransferRequestController extends Controller
 
     public function board(Request $request): JsonResponse
     {
+        $this->releaseExpiredReservations();
+
         $user = $request->user();
 
         if (!in_array($user->role, self::MONITOR_ROLES)) {
@@ -517,6 +597,67 @@ class TransferRequestController extends Controller
         return in_array($user->role, self::MONITOR_ROLES)
             || (int) $transferRequest->sending_hospital_id === (int) $user->hospital_id
             || (int) $transferRequest->receiving_hospital_id === (int) $user->hospital_id;
+    }
+
+    private function visibleTransferQuery(Request $request)
+    {
+        $user = $request->user();
+        $hospitalId = $user->hospital_id;
+
+        return TransferRequest::with(['sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'escalator', 'logs.user'])
+            ->when(!in_array($user->role, self::MONITOR_ROLES), function ($q) use ($hospitalId) {
+                $q->where(function ($scoped) use ($hospitalId) {
+                    $scoped->where('sending_hospital_id', $hospitalId)
+                        ->orWhere('receiving_hospital_id', $hospitalId);
+                });
+            });
+    }
+
+    private function releaseExpiredReservations(): void
+    {
+        TransferRequest::where('status', 'reserved')
+            ->whereNotNull('reserved_until')
+            ->where('reserved_until', '<', now())
+            ->chunkById(50, function ($transfers) {
+                foreach ($transfers as $transfer) {
+                    $this->releaseExpiredReservation($transfer);
+                }
+            });
+    }
+
+    private function releaseExpiredReservation(TransferRequest $transferRequest): void
+    {
+        if ($transferRequest->status !== 'reserved' || !$transferRequest->reserved_until || now()->lessThanOrEqualTo($transferRequest->reserved_until)) {
+            return;
+        }
+
+        DB::transaction(function () use ($transferRequest) {
+            $freshTransfer = TransferRequest::whereKey($transferRequest->id)->lockForUpdate()->first();
+
+            if (!$freshTransfer || $freshTransfer->status !== 'reserved' || now()->lessThanOrEqualTo($freshTransfer->reserved_until)) {
+                return;
+            }
+
+            $bedColumn = $this->bedColumnForCaseType($freshTransfer->case_type);
+            $capacity = HospitalCapacity::where('hospital_id', $freshTransfer->receiving_hospital_id)
+                ->latest()
+                ->lockForUpdate()
+                ->first();
+
+            if ($capacity) {
+                $capacity->update([
+                    $bedColumn => $capacity->{$bedColumn} + 1,
+                    'last_updated' => now(),
+                ]);
+            }
+
+            $freshTransfer->update([
+                'status' => 'accepted',
+                'reserved_until' => null,
+            ]);
+
+            $freshTransfer->logAction($freshTransfer->created_by, 'reservation_expired', 'Reservation expired and matching capacity was released.');
+        });
     }
 
     private function canActAsReceivingHospital(Request $request, TransferRequest $transferRequest): bool

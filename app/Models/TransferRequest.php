@@ -19,6 +19,8 @@ class TransferRequest extends Model
         'rejection_reason',
         'placement_need',
         'documents_ready',
+        'document_checklist',
+        'privacy_confirmed',
         'status',
         'delivery_status',
         'delivery_started_at',
@@ -51,6 +53,8 @@ class TransferRequest extends Model
         'is_escalated' => 'boolean',
         'escalated_at' => 'datetime',
         'documents_ready' => 'boolean',
+        'document_checklist' => 'array',
+        'privacy_confirmed' => 'boolean',
         'reserved_until' => 'datetime',
     ];
 

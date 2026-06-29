@@ -78,6 +78,18 @@ class AnalyticsController extends Controller
             ];
         }
 
+        $declineReasonChart = (clone $baseQuery)
+            ->where('status', 'declined')
+            ->whereNotNull('decline_reason_category')
+            ->select('decline_reason_category', DB::raw('count(*) as count'))
+            ->groupBy('decline_reason_category')
+            ->orderByDesc('count')
+            ->get()
+            ->map(fn ($row) => [
+                'decline_reason_category' => str_replace('_', ' ', $row->decline_reason_category),
+                'count' => $row->count,
+            ]);
+
         // Average coordination time (from created to completed, in minutes)
         $completedTransfers = (clone $baseQuery)
             ->where('status', 'completed')
@@ -111,6 +123,7 @@ class AnalyticsController extends Controller
             'transfers_over_time' => $transfersOverTime,
             'urgency_distribution' => $urgencyChart,
             'case_type_distribution' => $caseTypeChart,
+            'decline_reason_distribution' => $declineReasonChart,
             'hospital_stats' => $hospitalStats,
             'summary' => [
                 'total_requests' => $totalRequests,

@@ -38,18 +38,29 @@ export default function IncomingRequests() {
             setSuccess(successMsg);
             fetchRequests();
         } catch (err) {
-            setError(err.response?.data?.message || 'Action failed.');
+            if (err.message !== 'Action cancelled.') {
+                setError(err.response?.data?.message || 'Action failed.');
+            }
         } finally {
             setActionLoading(null);
         }
     };
 
     const handleDecline = (id) => {
+        if (!window.confirm('Decline this request and send it back for rerouting?')) {
+            return Promise.reject(new Error('Action cancelled.'));
+        }
         const reason = declineReasons[id] || 'no_general_bed';
         return declineTransfer(id, 'Declined by receiving hospital.', reason);
     };
 
-    const handleAccept = (id) => acceptTransferWithConditions(id, acceptConditions[id] || '');
+    const handleAccept = (id) => {
+        if (!window.confirm('Accept this request for your hospital?')) {
+            return Promise.reject(new Error('Action cancelled.'));
+        }
+
+        return acceptTransferWithConditions(id, acceptConditions[id] || '');
+    };
 
     const formatDate = (dateStr) => {
         return new Date(dateStr).toLocaleDateString('en-US', {

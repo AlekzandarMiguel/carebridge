@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { getAuditLogs } from '../api/axios';
+import { downloadBlob, exportAuditLogs, getAuditLogs } from '../api/axios';
 
 export default function AuditLogs() {
     const [logs, setLogs] = useState(null);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [filters, setFilters] = useState({ action: '', role: '', q: '', from: '', to: '' });
+    const [error, setError] = useState('');
 
     useEffect(() => {
         setLoading(true);
@@ -15,6 +16,16 @@ export default function AuditLogs() {
     }, [page, filters]);
 
     const formatDate = (value) => value ? new Date(value).toLocaleString() : '-';
+
+    const handleExport = async () => {
+        setError('');
+        try {
+            const res = await exportAuditLogs(filters);
+            downloadBlob(res.data, 'carebridge-audit-logs.csv');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Unable to export audit logs.');
+        }
+    };
 
     if (loading) return <div className="loading">Loading audit logs...</div>;
 
@@ -32,6 +43,8 @@ export default function AuditLogs() {
                     <div><strong>{logs?.current_page || 1}</strong><small>Page</small></div>
                 </div>
             </div>
+
+            {error && <div className="alert alert-error">{error}</div>}
 
             <div className="directory-toolbar">
                 <div className="form-grid audit-filter-grid">
@@ -56,7 +69,10 @@ export default function AuditLogs() {
                     <div className="form-group"><input type="date" value={filters.from} onChange={(e) => { setPage(1); setFilters({ ...filters, from: e.target.value }); }} /></div>
                     <div className="form-group"><input type="date" value={filters.to} onChange={(e) => { setPage(1); setFilters({ ...filters, to: e.target.value }); }} /></div>
                 </div>
-                <button className="btn btn-outline btn-sm" onClick={() => { setPage(1); setFilters({ action: '', role: '', q: '', from: '', to: '' }); }}>Clear</button>
+                <div className="action-buttons">
+                    <button className="btn btn-primary btn-sm" onClick={handleExport}>Export CSV</button>
+                    <button className="btn btn-outline btn-sm" onClick={() => { setPage(1); setFilters({ action: '', role: '', q: '', from: '', to: '' }); }}>Clear</button>
+                </div>
             </div>
 
             <div className="card">

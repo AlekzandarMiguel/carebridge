@@ -39,6 +39,7 @@ export default function Layout({ children, theme, toggleTheme }) {
     const currentRoleLabel = roleLabel(user.role);
     const [notifications, setNotifications] = useState([]);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [globalSearch, setGlobalSearch] = useState('');
 
     useEffect(() => {
         const loadNotifications = () => getNotifications()
@@ -58,6 +59,12 @@ export default function Layout({ children, theme, toggleTheme }) {
         localStorage.removeItem('carebridge_token');
         localStorage.removeItem('carebridge_user');
         navigate('/');
+    };
+
+    const handleGlobalSearch = (event) => {
+        event.preventDefault();
+        const value = globalSearch.trim();
+        navigate(value ? `/transfer-tracking?q=${encodeURIComponent(value)}` : '/transfer-tracking');
     };
 
     return (
@@ -97,6 +104,14 @@ export default function Layout({ children, theme, toggleTheme }) {
                         <div className="topbar-eyebrow">Care Network</div>
                         <div className="topbar-title">Hospital Capacity Coordination</div>
                     </div>
+                    <form className="topbar-search" onSubmit={handleGlobalSearch}>
+                        <input
+                            value={globalSearch}
+                            onChange={(event) => setGlobalSearch(event.target.value)}
+                            placeholder="Search transfers..."
+                            aria-label="Search transfers"
+                        />
+                    </form>
                     <div className="topbar-actions">
                         <ThemeToggle theme={theme} onToggle={toggleTheme} />
                         <div className="notification-menu">

@@ -93,7 +93,8 @@ Traditional hospital systems often focus on internal patient records. CareBridge
 
 - Token-based login with Laravel Sanctum.
 - Public registration for hospital staff roles.
-- Forgot password token generation.
+- Admin approval before newly registered accounts can sign in.
+- Forgot password token generation and reset email support.
 - Reset password flow.
 - Profile settings update.
 - Role-specific settings and descriptions.
@@ -123,6 +124,8 @@ A transfer request contains:
 - Rejection reason.
 - Placement need.
 - Document readiness.
+- Handoff document checklist.
+- Privacy confirmation.
 - Status.
 - Delivery status.
 - Transport details.
@@ -190,6 +193,7 @@ Admins can:
 
 - Create users.
 - Update users.
+- Approve, suspend, or keep accounts pending.
 - Create hospitals.
 - Update hospitals.
 - Manage hospital contact information.
@@ -219,6 +223,8 @@ Audit logs can be filtered by:
 - Search text
 - Date range
 
+Admins can export filtered audit logs as CSV.
+
 ### Analytics
 
 Analytics include:
@@ -226,6 +232,7 @@ Analytics include:
 - Status distribution.
 - Urgency distribution.
 - Case type distribution.
+- Rejection reason distribution.
 - Completion rate.
 - Total request count.
 - Completed request count.
@@ -319,6 +326,9 @@ Important fields:
 - `password`
 - `role`
 - `hospital_id`
+- `account_status`
+- `approved_at`
+- `approved_by`
 
 Roles:
 
@@ -355,6 +365,8 @@ Important fields:
 - `rejection_reason`
 - `placement_need`
 - `documents_ready`
+- `document_checklist`
+- `privacy_confirmed`
 - `status`
 - `delivery_status`
 - `delivery_started_at`
@@ -435,6 +447,7 @@ Important fields:
 | --- | --- | --- |
 | GET | `/api/transfer-requests` | List accessible transfers. |
 | GET | `/api/transfer-recommendations` | Get ranked receiving hospital suggestions. |
+| GET | `/api/transfer-requests/export` | Export filtered transfer report as CSV. |
 | POST | `/api/transfer-requests` | Create transfer request. |
 | GET | `/api/transfer-board` | Get command board data. |
 | GET | `/api/transfer-requests/{id}` | Show transfer details. |
@@ -471,6 +484,7 @@ Important fields:
 | PUT | `/api/admin/system-settings` | Update settings. |
 | POST | `/api/admin/demo-refresh` | Refresh demo data. |
 | GET | `/api/audit-logs` | View filtered audit logs. |
+| GET | `/api/audit-logs/export` | Export filtered audit logs as CSV. |
 
 ## 14. Frontend Structure
 
@@ -630,6 +644,9 @@ Current feature tests cover:
 - Ranked hospital recommendations.
 - Escalation.
 - Handoff notes.
+- Privacy confirmation and document checklist validation.
+- Automatic reservation expiry and capacity release.
+- Transfer and audit CSV exports.
 - Admin settings.
 - Audit filters.
 
@@ -638,6 +655,7 @@ Current feature tests cover:
 - Authentication uses Laravel Sanctum tokens.
 - `.env` is ignored and should never be committed.
 - Public registration is limited to non-privileged hospital staff roles.
+- Public registration creates pending accounts that require admin approval.
 - Admin and coordinator routes are checked on the backend.
 - Hospital capacity updates are restricted to receiving staff from the same hospital.
 - Transfer actions are checked against sending and receiving hospital ownership.
@@ -647,7 +665,7 @@ Current feature tests cover:
 - Notifications currently use polling rather than realtime broadcasting.
 - There are no browser automation tests yet.
 - There is no real SMS, email, or ambulance dispatch integration.
-- Password reset tokens are returned for local/demo flow rather than sent by email.
+- Production password reset should use a configured mail provider.
 - The system is a coordination tool, not a complete EHR.
 
 ## 21. Recommended Future Improvements
@@ -656,10 +674,8 @@ Current feature tests cover:
 - Add browser-level tests for major React workflows.
 - Add map-based hospital routing and distance estimates.
 - Add file attachment support for handoff documents.
-- Add report export for analytics and audit logs.
-- Add stricter production password reset email flow.
-- Add role approval for public signup requests.
-- Add deployment documentation for shared hosting, VPS, or cloud deployment.
+- Add analytics chart export.
+- Add optional SMS/dispatch notifications.
 
 ## 22. Repository
 

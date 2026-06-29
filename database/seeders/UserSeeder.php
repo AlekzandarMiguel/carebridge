@@ -41,6 +41,8 @@ class UserSeeder extends Seeder
                 [
                     ...$userData,
                     'password' => 'password123',
+                    'account_status' => 'approved',
+                    'approved_at' => now(),
                 ],
             );
         }

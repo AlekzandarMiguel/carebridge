@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -33,6 +34,15 @@ class AuthController extends Controller
         }
 
         $user = User::with('hospital')->where('email', $request->email)->first();
+
+        if ($user->account_status !== 'approved') {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => ['Your account is waiting for admin approval.'],
+            ]);
+        }
+
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
@@ -68,13 +78,14 @@ class AuthController extends Controller
             return response()->json(['message' => 'Selected hospital is not active.'], 422);
         }
 
-        $user = User::create($validated)->load('hospital');
-        $token = $user->createToken('auth-token')->plainTextToken;
+        $user = User::create([
+            ...$validated,
+            'account_status' => 'pending',
+        ])->load('hospital');
 
         return response()->json([
-            'message' => 'Account created successfully.',
+            'message' => 'Account request submitted. An admin must approve it before sign in.',
             'user' => $user,
-            'token' => $token,
         ], 201);
     }
 
@@ -102,10 +113,20 @@ class AuthController extends Controller
             ],
         );
 
-        return response()->json([
-            'message' => 'Reset token generated. Use it on the reset password screen.',
-            'reset_token' => $token,
-        ]);
+        $resetUrl = url('/reset-password?email='.urlencode($user->email).'&token='.$token);
+
+        Mail::raw(
+            "Use this CareBridge reset link to update your password:\n\n{$resetUrl}\n\nIf you did not request this, ignore this message.",
+            fn ($message) => $message->to($user->email)->subject('CareBridge password reset')
+        );
+
+        return response()->json(array_filter([
+            'message' => app()->isProduction()
+                ? 'If an account exists, reset instructions have been sent.'
+                : 'Reset token generated. Use it on the reset password screen.',
+            'reset_token' => app()->isProduction() ? null : $token,
+            'reset_url' => app()->isProduction() ? null : $resetUrl,
+        ]));
     }
 
     public function resetPassword(Request $request): JsonResponse

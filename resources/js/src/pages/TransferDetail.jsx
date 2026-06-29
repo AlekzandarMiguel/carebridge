@@ -12,6 +12,14 @@ const deliveryLabels = {
 
 const deliverySteps = ['not_started', 'en_route', 'arrived', 'delivered'];
 
+const checklistLabels = {
+    referral_note: 'Referral note',
+    lab_results: 'Lab results',
+    imaging: 'Imaging summary',
+    consent: 'Consent',
+    transport_form: 'Transport form',
+};
+
 export default function TransferDetail() {
     const { id } = useParams();
     const [transfer, setTransfer] = useState(null);
@@ -126,6 +134,7 @@ export default function TransferDetail() {
                         <div><span>Rejected Patient Reason</span><strong>{transfer.rejection_reason || '-'}</strong></div>
                         <div><span>Placement Need</span><strong>{transfer.placement_need || '-'}</strong></div>
                         <div><span>Documents Ready</span><strong>{transfer.documents_ready ? 'Yes' : 'No'}</strong></div>
+                        <div><span>Privacy Confirmed</span><strong>{transfer.privacy_confirmed ? 'Yes' : 'No'}</strong></div>
                         <div><span>Accept Conditions</span><strong>{transfer.accept_conditions || '-'}</strong></div>
                         <div><span>Notes</span><strong>{transfer.notes || '-'}</strong></div>
                     </div>
@@ -161,6 +170,22 @@ export default function TransferDetail() {
                             </div>
                         )}
                     </div>
+                </div>
+            </div>
+
+            <div className="card mt-24">
+                <div className="card-header">Document Checklist</div>
+                <div className="card-body checklist-summary">
+                    {Object.entries(checklistLabels).map(([key, label]) => {
+                        const ready = Boolean(transfer.document_checklist?.[key]);
+
+                        return (
+                            <div className={ready ? 'ready' : ''} key={key}>
+                                <span>{ready ? 'Ready' : 'Missing'}</span>
+                                <strong>{label}</strong>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 

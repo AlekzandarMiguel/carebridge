@@ -20,7 +20,7 @@ class AdminController extends Controller
         }
 
         return response()->json([
-            'users' => User::with('hospital')->orderBy('role')->orderBy('name')->get(),
+            'users' => User::with('hospital', 'approver')->orderBy('account_status')->orderBy('role')->orderBy('name')->get(),
             'hospitals' => Hospital::with('latestCapacity')->orderBy('name')->get(),
         ]);
     }
@@ -37,9 +37,16 @@ class AdminController extends Controller
             'role' => 'required|in:sending_staff,receiving_staff,coordinator,admin',
             'hospital_id' => 'nullable|exists:hospitals,id',
             'password' => 'required|string|min:8',
+            'account_status' => 'nullable|in:pending,approved,suspended',
         ]);
 
-        $user = User::create($validated);
+        $status = $validated['account_status'] ?? 'approved';
+        $user = User::create([
+            ...$validated,
+            'account_status' => $status,
+            'approved_at' => $status === 'approved' ? now() : null,
+            'approved_by' => $status === 'approved' ? $request->user()->id : null,
+        ]);
 
         return response()->json([
             'message' => 'User created.',
@@ -60,10 +67,22 @@ class AdminController extends Controller
             'role' => 'required|in:sending_staff,receiving_staff,coordinator,admin',
             'hospital_id' => 'nullable|exists:hospitals,id',
             'password' => 'nullable|string|min:8',
+            'account_status' => 'required|in:pending,approved,suspended',
         ]);
 
         if (empty($validated['password'])) {
             unset($validated['password']);
+        }
+
+        if ($validated['account_status'] === 'approved' && $user->account_status !== 'approved') {
+            $validated['approved_at'] = now();
+            $validated['approved_by'] = $request->user()->id;
+        }
+
+        if ($validated['account_status'] !== 'approved') {
+            $validated['approved_at'] = null;
+            $validated['approved_by'] = null;
+            $user->tokens()->delete();
         }
 
         $user->update($validated);
@@ -171,7 +190,7 @@ class AdminController extends Controller
 
         return response()->json([
             'message' => 'Demo hospitals, users, and capacities refreshed.',
-            'users' => User::with('hospital')->orderBy('role')->orderBy('name')->get(),
+            'users' => User::with('hospital', 'approver')->orderBy('account_status')->orderBy('role')->orderBy('name')->get(),
             'hospitals' => Hospital::with('latestCapacity')->orderBy('name')->get(),
         ]);
     }

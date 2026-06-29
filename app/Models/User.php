@@ -18,6 +18,9 @@ class User extends Authenticatable
         'password',
         'role',
         'hospital_id',
+        'account_status',
+        'approved_at',
+        'approved_by',
     ];
 
     protected $hidden = [
@@ -30,6 +33,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'approved_at' => 'datetime',
         ];
     }
 
@@ -51,5 +55,10 @@ class User extends Authenticatable
     public function transferLogs()
     {
         return $this->hasMany(TransferLog::class);
+    }
+
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

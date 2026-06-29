@@ -47,6 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Transfer Requests
     Route::get('/transfer-requests', [TransferRequestController::class, 'index']);
     Route::get('/transfer-recommendations', [TransferRequestController::class, 'recommendations']);
+    Route::get('/transfer-requests/export', [TransferRequestController::class, 'export']);
     Route::post('/transfer-requests', [TransferRequestController::class, 'store']);
     Route::get('/transfer-board', [TransferRequestController::class, 'board']);
     Route::get('/transfer-requests/{id}', [TransferRequestController::class, 'show']);
@@ -84,4 +85,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/admin/system-settings', [AdminController::class, 'updateSystemSettings']);
     Route::post('/admin/demo-refresh', [AdminController::class, 'refreshDemoData']);
     Route::get('/audit-logs', [AuditLogController::class, 'index']);
+    Route::get('/audit-logs/export', [AuditLogController::class, 'export']);
 });

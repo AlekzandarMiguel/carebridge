@@ -4,6 +4,7 @@ import { getHospitals } from '../api/axios';
 export default function HospitalDirectory() {
     const [hospitals, setHospitals] = useState([]);
     const [query, setQuery] = useState('');
+    const [filters, setFilters] = useState({ caseType: '', minBeds: '', ambulance: false });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -14,12 +15,24 @@ export default function HospitalDirectory() {
 
     const filtered = useMemo(() => {
         const value = query.toLowerCase();
-        return hospitals.filter((hospital) =>
-            hospital.name.toLowerCase().includes(value)
-            || hospital.address.toLowerCase().includes(value)
-            || hospital.contact_number.toLowerCase().includes(value)
-        );
-    }, [hospitals, query]);
+        return hospitals.filter((hospital) => {
+            const capacity = hospital.latest_capacity;
+            const totalBeds = capacity
+                ? capacity.general_beds_available + capacity.emergency_beds_available + capacity.icu_beds_available
+                : 0;
+            const matchesText = hospital.name.toLowerCase().includes(value)
+                || hospital.address.toLowerCase().includes(value)
+                || hospital.contact_number.toLowerCase().includes(value);
+            const matchesCase = !filters.caseType
+                || (filters.caseType === 'general' && (capacity?.general_beds_available || 0) > 0)
+                || (filters.caseType === 'emergency' && (capacity?.emergency_beds_available || 0) > 0)
+                || (filters.caseType === 'icu' && (capacity?.icu_beds_available || 0) > 0);
+            const matchesBeds = !filters.minBeds || totalBeds >= Number(filters.minBeds);
+            const matchesAmbulance = !filters.ambulance || (capacity?.ambulance_available || 0) > 0;
+
+            return matchesText && matchesCase && matchesBeds && matchesAmbulance;
+        });
+    }, [hospitals, query, filters]);
 
     if (loading) return <div className="loading">Loading hospital directory...</div>;
 
@@ -47,6 +60,29 @@ export default function HospitalDirectory() {
             <div className="directory-toolbar">
                 <div className="form-group directory-search">
                     <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search hospitals, address, contact..." />
+                </div>
+                <div className="directory-filter-controls">
+                    <select value={filters.caseType} onChange={(e) => setFilters({ ...filters, caseType: e.target.value })}>
+                        <option value="">Any capacity</option>
+                        <option value="general">General bed</option>
+                        <option value="emergency">Emergency bed</option>
+                        <option value="icu">ICU bed</option>
+                    </select>
+                    <input
+                        type="number"
+                        min="0"
+                        value={filters.minBeds}
+                        onChange={(e) => setFilters({ ...filters, minBeds: e.target.value })}
+                        placeholder="Min beds"
+                    />
+                    <label className="toggle-pill">
+                        <input
+                            type="checkbox"
+                            checked={filters.ambulance}
+                            onChange={(e) => setFilters({ ...filters, ambulance: e.target.checked })}
+                        />
+                        Ambulance
+                    </label>
                 </div>
                 <span>{filtered.length} matching hospitals</span>
             </div>

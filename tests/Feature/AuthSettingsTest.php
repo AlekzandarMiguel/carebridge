@@ -6,6 +6,7 @@ use App\Models\Hospital;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -29,12 +30,34 @@ class AuthSettingsTest extends TestCase
         $response->assertCreated()
             ->assertJsonPath('user.email', 'new.user@example.com')
             ->assertJsonPath('user.role', 'sending_staff')
-            ->assertJsonStructure(['token']);
+            ->assertJsonPath('user.account_status', 'pending')
+            ->assertJsonMissingPath('token');
 
         $this->assertDatabaseHas('users', [
             'email' => 'new.user@example.com',
             'role' => 'sending_staff',
+            'account_status' => 'pending',
         ]);
+    }
+
+    public function test_pending_registered_users_cannot_sign_in_until_approved(): void
+    {
+        $hospital = $this->createHospital();
+
+        $this->postJson('/api/auth/register', [
+            'name' => 'Pending User',
+            'email' => 'pending.user@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => 'receiving_staff',
+            'hospital_id' => $hospital->id,
+        ])->assertCreated();
+
+        $this->postJson('/api/auth/login', [
+            'email' => 'pending.user@example.com',
+            'password' => 'password123',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('email');
     }
 
     public function test_public_registration_cannot_create_privileged_roles(): void
@@ -55,6 +78,7 @@ class AuthSettingsTest extends TestCase
     {
         $hospital = $this->createHospital();
         $user = $this->createUser($hospital);
+        Mail::fake();
 
         $forgotResponse = $this->postJson('/api/auth/forgot-password', [
             'email' => $user->email,
