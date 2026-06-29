@@ -66,6 +66,14 @@ class TransferRequest extends Model
         'delivery_events' => 'array',
     ];
 
+    protected $appends = [
+        'waiting_minutes',
+        'sla_state',
+        'delivery_eta_state',
+        'needs_attention',
+        'route_map_url',
+    ];
+
     public function sendingHospital()
     {
         return $this->belongsTo(Hospital::class, 'sending_hospital_id');
@@ -101,6 +109,11 @@ class TransferRequest extends Model
         return $this->hasMany(TransferLog::class, 'transfer_request_id');
     }
 
+    public function attachments()
+    {
+        return $this->hasMany(TransferAttachment::class, 'transfer_request_id');
+    }
+
     public function logAction($userId, $action, $remarks = null)
     {
         return $this->logs()->create([
@@ -108,5 +121,66 @@ class TransferRequest extends Model
             'action' => $action,
             'remarks' => $remarks,
         ]);
+    }
+
+    public function getWaitingMinutesAttribute(): int
+    {
+        return max(0, (int) $this->created_at?->diffInMinutes(now()));
+    }
+
+    public function getSlaStateAttribute(): string
+    {
+        if (!in_array($this->status, ['pending', 'accepted'])) {
+            return 'clear';
+        }
+
+        $slaMinutes = (int) (SystemSetting::where('key', 'sla_pending_minutes')->value('value') ?? 20);
+        $waitingMinutes = $this->waiting_minutes;
+
+        if ($waitingMinutes >= $slaMinutes) {
+            return 'breached';
+        }
+
+        return $waitingMinutes >= max(1, (int) floor($slaMinutes * 0.75)) ? 'warning' : 'clear';
+    }
+
+    public function getDeliveryEtaStateAttribute(): string
+    {
+        if (!$this->estimated_arrival_at || !in_array($this->delivery_status, ['en_route', 'arrived'])) {
+            return 'clear';
+        }
+
+        if ($this->delivery_status === 'arrived' || $this->delivery_status === 'delivered') {
+            return 'clear';
+        }
+
+        return now()->greaterThan($this->estimated_arrival_at) ? 'late' : 'on_track';
+    }
+
+    public function getNeedsAttentionAttribute(): bool
+    {
+        return $this->is_escalated
+            || in_array($this->sla_state, ['warning', 'breached'])
+            || $this->delivery_eta_state === 'late';
+    }
+
+    public function getRouteMapUrlAttribute(): ?string
+    {
+        if (!$this->relationLoaded('sendingHospital') || !$this->relationLoaded('receivingHospital')) {
+            return null;
+        }
+
+        $origin = $this->sendingHospital?->address ?: $this->sendingHospital?->name;
+        $destination = $this->receivingHospital?->address ?: $this->receivingHospital?->name;
+
+        if (!$origin || !$destination) {
+            return null;
+        }
+
+        return 'https://www.google.com/maps/dir/?api=1&origin='
+            .rawurlencode($origin)
+            .'&destination='
+            .rawurlencode($destination)
+            .'&travelmode=driving';
     }
 }

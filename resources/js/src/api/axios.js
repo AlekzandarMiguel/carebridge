@@ -73,6 +73,8 @@ export const updateCoordinatorNotes = (id, coordinator_notes = '') => api.put(`/
 export const assignDispatcher = (id, assigned_dispatcher_id) => api.put(`/transfer-requests/${id}/assign-dispatcher`, { assigned_dispatcher_id });
 export const updateRouteEstimate = (id, data = {}) => api.put(`/transfer-requests/${id}/route-estimate`, data);
 export const addDeliveryEvent = (id, data = {}) => api.post(`/transfer-requests/${id}/delivery-events`, data);
+export const uploadTransferAttachment = (id, data) => api.post(`/transfer-requests/${id}/attachments`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const deleteTransferAttachment = (id, attachmentId) => api.delete(`/transfer-requests/${id}/attachments/${attachmentId}`);
 
 // Transfer Tracking
 export const getTransferTracking = (page = 1, filters = {}) => api.get('/transfer-tracking', { params: { page, ...filters } });
@@ -80,6 +82,8 @@ export const getTransferBoard = () => api.get('/transfer-board');
 
 // Notifications
 export const getNotifications = () => api.get('/notifications');
+export const markNotificationRead = (id) => api.post(`/notifications/${id}/read`);
+export const markAllNotificationsRead = () => api.post('/notifications/read-all');
 
 // Analytics
 export const getAnalytics = () => api.get('/analytics');

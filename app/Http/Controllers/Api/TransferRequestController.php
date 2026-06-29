@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Hospital;
 use App\Models\HospitalCapacity;
 use App\Models\SystemSetting;
+use App\Models\TransferAttachment;
 use App\Models\TransferRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class TransferRequestController extends Controller
@@ -218,6 +220,7 @@ class TransferRequestController extends Controller
             'acceptor',
             'assignedDispatcher',
             'escalator',
+            'attachments.uploader',
             'logs.user',
         ])->findOrFail($id);
 
@@ -612,7 +615,7 @@ class TransferRequestController extends Controller
     {
         $transferRequest = TransferRequest::findOrFail($id);
 
-        if (!$this->canAccessTransfer($request, $transferRequest)) {
+        if (!$this->canUpdateDeliveryMonitoring($request, $transferRequest)) {
             return response()->json(['message' => 'You are not allowed to update this route estimate.'], 403);
         }
 
@@ -634,7 +637,7 @@ class TransferRequestController extends Controller
     {
         $transferRequest = TransferRequest::findOrFail($id);
 
-        if (!$this->canAccessTransfer($request, $transferRequest)) {
+        if (!$this->canUpdateDeliveryMonitoring($request, $transferRequest)) {
             return response()->json(['message' => 'You are not allowed to update this delivery timeline.'], 403);
         }
 
@@ -682,6 +685,67 @@ class TransferRequestController extends Controller
         ]);
     }
 
+    public function uploadAttachment(Request $request, int $id): JsonResponse
+    {
+        $transferRequest = TransferRequest::findOrFail($id);
+
+        if (!$this->canAccessTransfer($request, $transferRequest)) {
+            return response()->json(['message' => 'You are not allowed to upload documents for this case.'], 403);
+        }
+
+        $validated = $request->validate([
+            'document_type' => 'required|in:referral_note,lab_results,imaging,consent,transport_form,supporting_document',
+            'file' => 'required|file|max:5120|mimes:pdf,jpg,jpeg,png,doc,docx',
+        ]);
+
+        $file = $validated['file'];
+        $path = $file->store("transfer-attachments/{$transferRequest->id}", 'public');
+
+        $attachment = TransferAttachment::create([
+            'transfer_request_id' => $transferRequest->id,
+            'uploaded_by' => $request->user()->id,
+            'document_type' => $validated['document_type'],
+            'original_name' => $file->getClientOriginalName(),
+            'path' => $path,
+            'mime_type' => $file->getClientMimeType(),
+            'size_bytes' => $file->getSize() ?: 0,
+        ]);
+
+        $transferRequest->logAction($request->user()->id, 'attachment_uploaded', "Uploaded {$attachment->original_name}.");
+
+        return response()->json([
+            'message' => 'Attachment uploaded.',
+            'attachment' => $attachment->load('uploader'),
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher', 'escalator', 'attachments.uploader', 'logs.user'),
+        ], 201);
+    }
+
+    public function deleteAttachment(Request $request, int $id, int $attachmentId): JsonResponse
+    {
+        $transferRequest = TransferRequest::findOrFail($id);
+
+        if (!$this->canAccessTransfer($request, $transferRequest)) {
+            return response()->json(['message' => 'You are not allowed to remove documents for this case.'], 403);
+        }
+
+        $attachment = $transferRequest->attachments()->findOrFail($attachmentId);
+        $user = $request->user();
+
+        if ($user->role !== 'admin' && (int) $attachment->uploaded_by !== (int) $user->id) {
+            return response()->json(['message' => 'Only the uploader or an admin can remove this attachment.'], 403);
+        }
+
+        Storage::disk('public')->delete($attachment->path);
+        $originalName = $attachment->original_name;
+        $attachment->delete();
+        $transferRequest->logAction($user->id, 'attachment_removed', "Removed {$originalName}.");
+
+        return response()->json([
+            'message' => 'Attachment removed.',
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher', 'escalator', 'attachments.uploader', 'logs.user'),
+        ]);
+    }
+
     public function board(Request $request): JsonResponse
     {
         $this->releaseExpiredReservations();
@@ -725,6 +789,23 @@ class TransferRequestController extends Controller
 
         return in_array($user->role, self::MONITOR_ROLES)
             || (int) $transferRequest->sending_hospital_id === (int) $user->hospital_id
+            || (int) $transferRequest->receiving_hospital_id === (int) $user->hospital_id;
+    }
+
+    private function canUpdateDeliveryMonitoring(Request $request, TransferRequest $transferRequest): bool
+    {
+        $user = $request->user();
+
+        if (in_array($user->role, ['coordinator', 'admin'])) {
+            return true;
+        }
+
+        if ($user->role === 'dispatcher') {
+            return !$transferRequest->assigned_dispatcher_id
+                || (int) $transferRequest->assigned_dispatcher_id === (int) $user->id;
+        }
+
+        return (int) $transferRequest->sending_hospital_id === (int) $user->hospital_id
             || (int) $transferRequest->receiving_hospital_id === (int) $user->hospital_id;
     }
 

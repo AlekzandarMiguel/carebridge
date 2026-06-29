@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { getNotifications, logout } from '../api/axios';
+import { getNotifications, logout, markAllNotificationsRead, markNotificationRead } from '../api/axios';
 import { getUser, roleCanAccess, roleLabel } from '../utils/roles';
 import ThemeToggle from './ThemeToggle';
 
@@ -41,13 +41,20 @@ export default function Layout({ children, theme, toggleTheme }) {
     const roleClass = `role-${user.role || 'unknown'}`;
     const currentRoleLabel = roleLabel(user.role);
     const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
     const [globalSearch, setGlobalSearch] = useState('');
 
     useEffect(() => {
         const loadNotifications = () => getNotifications()
-            .then((res) => setNotifications(res.data.notifications || []))
-            .catch(() => setNotifications([]));
+            .then((res) => {
+                setNotifications(res.data.notifications || []);
+                setUnreadCount(res.data.unread_count || 0);
+            })
+            .catch(() => {
+                setNotifications([]);
+                setUnreadCount(0);
+            });
         loadNotifications();
         const interval = setInterval(loadNotifications, 15000);
         return () => clearInterval(interval);
@@ -62,6 +69,26 @@ export default function Layout({ children, theme, toggleTheme }) {
         localStorage.removeItem('carebridge_token');
         localStorage.removeItem('carebridge_user');
         navigate('/');
+    };
+
+    const handleMarkRead = async (id) => {
+        try {
+            await markNotificationRead(id);
+            setNotifications((items) => items.map((item) => item.id === id ? { ...item, is_read: true } : item));
+            setUnreadCount((count) => Math.max(0, count - 1));
+        } catch (e) {
+            // Keep the alert visible if the server rejects the update.
+        }
+    };
+
+    const handleMarkAllRead = async () => {
+        try {
+            await markAllNotificationsRead();
+            setNotifications((items) => items.map((item) => ({ ...item, is_read: true })));
+            setUnreadCount(0);
+        } catch (e) {
+            // Keep current read state if the request fails.
+        }
     };
 
     const handleGlobalSearch = (event) => {
@@ -120,18 +147,24 @@ export default function Layout({ children, theme, toggleTheme }) {
                         <div className="notification-menu">
                             <button type="button" className="theme-toggle" onClick={() => setShowNotifications(!showNotifications)}>
                                 <span>Alerts</span>
+                                {unreadCount > 0 && <em className="alert-count">{unreadCount}</em>}
                             </button>
                             {showNotifications && (
                                 <div className="notification-popover">
-                                    <strong>Recent Activity</strong>
+                                    <div className="notification-popover-head">
+                                        <strong>Recent Activity</strong>
+                                        {unreadCount > 0 && <button type="button" onClick={handleMarkAllRead}>Mark all read</button>}
+                                    </div>
                                     {notifications.length === 0 ? (
                                         <p>No recent alerts.</p>
                                     ) : notifications.slice(0, 6).map((item) => (
-                                        <div key={item.id}>
+                                        <div key={item.id} className={`notification-item priority-${item.priority || 'normal'} ${item.is_read ? 'is-read' : ''}`}>
                                             <span className={`badge badge-${item.action || 'pending'} notification-status`}>
                                                 {notificationLabels[item.action] || item.action?.replace('_', ' ') || 'Update'}
+                                                <small>{item.priority_label || 'Normal'}</small>
                                             </span>
                                             <small>{item.transfer_request?.patient_reference_code} - {item.remarks}</small>
+                                            {!item.is_read && <button type="button" onClick={() => handleMarkRead(item.id)}>Mark read</button>}
                                         </div>
                                     ))}
                                 </div>

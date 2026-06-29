@@ -3266,6 +3266,24 @@ html[data-theme="dark"] .badge {
     z-index: 180;
 }
 
+.alert-count {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    min-width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--danger);
+    color: white;
+    font-style: normal;
+    font-size: 10px;
+    font-weight: 950;
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--danger) 28%, transparent);
+}
+
 .notification-popover {
     position: absolute;
     right: 0;
@@ -3283,12 +3301,51 @@ html[data-theme="dark"] .badge {
     box-shadow: var(--shadow-md);
 }
 
-.notification-popover div {
+.notification-popover-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.notification-popover-head button,
+.notification-item button {
+    border: 0;
+    background: transparent;
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.notification-popover .notification-item {
     display: grid;
     gap: 2px;
     padding: 9px;
     border-radius: 8px;
     background: var(--surface-soft);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--priority-color, var(--primary));
+}
+
+.notification-item.is-read {
+    opacity: 0.68;
+}
+
+.priority-critical {
+    --priority-color: var(--danger);
+}
+
+.priority-high {
+    --priority-color: var(--warning);
+}
+
+.priority-success {
+    --priority-color: var(--success);
+}
+
+.priority-normal {
+    --priority-color: var(--primary);
 }
 
 .notification-popover span {
@@ -3302,6 +3359,13 @@ html[data-theme="dark"] .badge {
     width: fit-content;
     color: var(--badge-text);
     text-transform: none;
+}
+
+.notification-status small {
+    margin-left: 6px;
+    color: inherit;
+    opacity: 0.72;
+    font-size: 10px;
 }
 
 html[data-theme="dark"] .notification-popover .notification-status {
@@ -3347,6 +3411,81 @@ html[data-theme="dark"] .delivery-progress div.active {
 .notification-popover small {
     color: var(--gray-500);
     font-weight: 700;
+}
+
+.route-loading {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+}
+
+.sla-banner,
+.sla-chip {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--sla-color, var(--warning)) 38%, var(--border));
+    background: color-mix(in srgb, var(--sla-color, var(--warning)) 14%, var(--surface));
+    color: var(--sla-color, var(--warning));
+    font-size: 11px;
+    font-weight: 950;
+}
+
+.sla-banner {
+    padding: 7px 10px;
+}
+
+.sla-chip {
+    padding: 5px 9px;
+    margin-bottom: 4px;
+}
+
+.sla-breached,
+.sla-late {
+    --sla-color: var(--danger);
+}
+
+.sla-warning {
+    --sla-color: var(--warning);
+}
+
+.attachment-workspace,
+.attachment-upload,
+.attachment-list {
+    display: grid;
+    gap: 14px;
+}
+
+.attachment-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--primary) 7%, transparent), transparent),
+        var(--surface-soft);
+}
+
+.attachment-item strong,
+.attachment-item span {
+    display: block;
+}
+
+.attachment-item strong {
+    color: var(--gray-900);
+    font-size: 13px;
+}
+
+.attachment-item span {
+    color: var(--gray-500);
+    font-size: 12px;
+    font-weight: 750;
+    text-transform: capitalize;
 }
 
 .assignment-strip {

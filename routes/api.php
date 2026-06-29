@@ -68,6 +68,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/transfer-requests/{id}/assign-dispatcher', [TransferRequestController::class, 'assignDispatcher']);
     Route::put('/transfer-requests/{id}/route-estimate', [TransferRequestController::class, 'updateRouteEstimate']);
     Route::post('/transfer-requests/{id}/delivery-events', [TransferRequestController::class, 'addDeliveryEvent']);
+    Route::post('/transfer-requests/{id}/attachments', [TransferRequestController::class, 'uploadAttachment']);
+    Route::delete('/transfer-requests/{id}/attachments/{attachmentId}', [TransferRequestController::class, 'deleteAttachment']);
 
     // Transfer Tracking
     Route::get('/transfer-tracking', [TransferRequestController::class, 'index']);
@@ -77,6 +79,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
 
     // Admin Management
     Route::get('/admin', [AdminController::class, 'index']);

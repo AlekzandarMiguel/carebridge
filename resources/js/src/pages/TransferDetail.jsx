@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getTransferRequest, markPatientArrived, completeTransfer, updateCoordinatorNotes, updateRouteEstimate, addDeliveryEvent } from '../api/axios';
+import { getTransferRequest, markPatientArrived, completeTransfer, updateCoordinatorNotes, updateRouteEstimate, addDeliveryEvent, uploadTransferAttachment, deleteTransferAttachment } from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
 
 const deliveryLabels = {
@@ -30,6 +30,8 @@ export default function TransferDetail() {
     const [handoffNotes, setHandoffNotes] = useState('');
     const [routeForm, setRouteForm] = useState({ route_distance_km: '', estimated_travel_minutes: '' });
     const [eventForm, setEventForm] = useState({ event_type: 'location_update', location: '', notes: '' });
+    const [attachmentForm, setAttachmentForm] = useState({ document_type: 'supporting_document', file: null });
+    const [attachmentLoading, setAttachmentLoading] = useState(false);
     const user = JSON.parse(localStorage.getItem('carebridge_user') || '{}');
 
     const loadTransfer = async () => {
@@ -111,6 +113,48 @@ export default function TransferDetail() {
         }
     };
 
+    const submitAttachment = async (event) => {
+        event.preventDefault();
+        if (!attachmentForm.file) {
+            setError('Choose a document before uploading.');
+            return;
+        }
+
+        setAttachmentLoading(true);
+        setMessage('');
+        setError('');
+
+        try {
+            const payload = new FormData();
+            payload.append('document_type', attachmentForm.document_type);
+            payload.append('file', attachmentForm.file);
+            await uploadTransferAttachment(transfer.id, payload);
+            setAttachmentForm({ document_type: 'supporting_document', file: null });
+            event.target.reset();
+            setMessage('Attachment uploaded.');
+            loadTransfer();
+        } catch (err) {
+            setError(err.response?.data?.message || 'Unable to upload attachment.');
+        } finally {
+            setAttachmentLoading(false);
+        }
+    };
+
+    const removeAttachment = async (attachmentId) => {
+        if (!window.confirm('Remove this attachment?')) return;
+
+        setMessage('');
+        setError('');
+
+        try {
+            await deleteTransferAttachment(transfer.id, attachmentId);
+            setMessage('Attachment removed.');
+            loadTransfer();
+        } catch (err) {
+            setError(err.response?.data?.message || 'Unable to remove attachment.');
+        }
+    };
+
     if (loading) return <div className="loading">Loading rejected patient case detail...</div>;
     if (!transfer) return <div className="empty-state"><p>{error || 'Case not found.'}</p></div>;
 
@@ -188,6 +232,7 @@ export default function TransferDetail() {
                         <div><span>Route Distance</span><strong>{transfer.route_distance_km ? `${transfer.route_distance_km} km` : '-'}</strong></div>
                         <div><span>Travel Estimate</span><strong>{transfer.estimated_travel_minutes ? `${transfer.estimated_travel_minutes} min` : '-'}</strong></div>
                         <div><span>Assigned Dispatcher</span><strong>{transfer.assigned_dispatcher?.name || 'Unassigned'}</strong></div>
+                        <div><span>Map Route</span><strong>{transfer.route_map_url ? <a href={transfer.route_map_url} target="_blank" rel="noreferrer">Open route map</a> : '-'}</strong></div>
                         <div><span>Delivery Notes</span><strong>{transfer.delivery_notes || '-'}</strong></div>
                         <div><span>Handoff Notes</span><strong>{transfer.handoff_notes || '-'}</strong></div>
                         {transfer.status === 'in_transfer' && canReceive && (
@@ -288,6 +333,57 @@ export default function TransferDetail() {
                             </div>
                         );
                     })}
+                </div>
+            </div>
+
+            <div className="card mt-24">
+                <div className="card-header">Case Attachments</div>
+                <div className="card-body attachment-workspace">
+                    <form className="attachment-upload" onSubmit={submitAttachment}>
+                        <div className="form-grid">
+                            <div className="form-group">
+                                <label>Document Type</label>
+                                <select value={attachmentForm.document_type} onChange={(e) => setAttachmentForm({ ...attachmentForm, document_type: e.target.value })}>
+                                    <option value="referral_note">Referral note</option>
+                                    <option value="lab_results">Lab results</option>
+                                    <option value="imaging">Imaging</option>
+                                    <option value="consent">Consent</option>
+                                    <option value="transport_form">Transport form</option>
+                                    <option value="supporting_document">Supporting document</option>
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>File</label>
+                                <input
+                                    type="file"
+                                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                    onChange={(e) => setAttachmentForm({ ...attachmentForm, file: e.target.files?.[0] || null })}
+                                />
+                            </div>
+                        </div>
+                        <button className="btn btn-primary btn-sm" type="submit" disabled={attachmentLoading}>
+                            {attachmentLoading ? 'Uploading...' : 'Upload Document'}
+                        </button>
+                    </form>
+
+                    <div className="attachment-list">
+                        {(transfer.attachments || []).length === 0 ? (
+                            <div className="board-empty">No documents uploaded yet.</div>
+                        ) : transfer.attachments.map((attachment) => (
+                            <div key={attachment.id} className="attachment-item">
+                                <div>
+                                    <strong>{attachment.original_name}</strong>
+                                    <span>{attachment.document_type?.replace('_', ' ')} - {Math.max(1, Math.round((attachment.size_bytes || 0) / 1024))} KB - {attachment.uploader?.name || 'Unknown uploader'}</span>
+                                </div>
+                                <div className="action-buttons">
+                                    <a className="btn btn-outline btn-sm" href={attachment.download_url} target="_blank" rel="noreferrer">Open</a>
+                                    {(user.role === 'admin' || attachment.uploaded_by === user.id) && (
+                                        <button className="btn btn-danger btn-sm" type="button" onClick={() => removeAttachment(attachment.id)}>Remove</button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 

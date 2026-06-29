@@ -1,25 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
-import Landing from './pages/Landing';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import HospitalCapacity from './pages/HospitalCapacity';
-import CreateTransfer from './pages/CreateTransfer';
-import IncomingRequests from './pages/IncomingRequests';
-import TransferTracking from './pages/TransferTracking';
-import Analytics from './pages/Analytics';
-import TransferDetail from './pages/TransferDetail';
-import CoordinatorBoard from './pages/CoordinatorBoard';
-import HospitalDirectory from './pages/HospitalDirectory';
-import AdminManagement from './pages/AdminManagement';
-import AuditLogs from './pages/AuditLogs';
-import SignUp from './pages/SignUp';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import Settings from './pages/Settings';
 import { getUser, homeForRole } from './utils/roles';
+
+const Landing = lazy(() => import('./pages/Landing'));
+const Login = lazy(() => import('./pages/Login'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const HospitalCapacity = lazy(() => import('./pages/HospitalCapacity'));
+const CreateTransfer = lazy(() => import('./pages/CreateTransfer'));
+const IncomingRequests = lazy(() => import('./pages/IncomingRequests'));
+const TransferTracking = lazy(() => import('./pages/TransferTracking'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const TransferDetail = lazy(() => import('./pages/TransferDetail'));
+const CoordinatorBoard = lazy(() => import('./pages/CoordinatorBoard'));
+const HospitalDirectory = lazy(() => import('./pages/HospitalDirectory'));
+const AdminManagement = lazy(() => import('./pages/AdminManagement'));
+const AuditLogs = lazy(() => import('./pages/AuditLogs'));
+const SignUp = lazy(() => import('./pages/SignUp'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Settings = lazy(() => import('./pages/Settings'));
 
 function App() {
     const token = localStorage.getItem('carebridge_token');
@@ -38,11 +39,12 @@ function App() {
 
     return (
         <BrowserRouter>
-            <Routes>
-                <Route
-                    path="/"
-                    element={token ? <Navigate to={signedInHome} replace /> : <Landing theme={theme} toggleTheme={toggleTheme} />}
-                />
+            <Suspense fallback={<div className="loading route-loading">Loading CareBridge...</div>}>
+                <Routes>
+                    <Route
+                        path="/"
+                        element={token ? <Navigate to={signedInHome} replace /> : <Landing theme={theme} toggleTheme={toggleTheme} />}
+                    />
                 <Route
                     path="/login"
                     element={token ? <Navigate to={signedInHome} replace /> : <Login theme={theme} toggleTheme={toggleTheme} />}
@@ -155,8 +157,9 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+            </Suspense>
         </BrowserRouter>
     );
 }

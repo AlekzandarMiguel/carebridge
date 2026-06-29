@@ -7,6 +7,7 @@ use App\Models\HospitalCapacity;
 use App\Models\TransferRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -331,6 +332,83 @@ class TransferWorkflowTest extends TestCase
             'transfer_request_id' => $transfer->id,
             'action' => 'delivery_update',
         ]);
+    }
+
+    public function test_staff_can_upload_case_attachments_and_see_sla_state(): void
+    {
+        config(['filesystems.disks.public.root' => sys_get_temp_dir().DIRECTORY_SEPARATOR.'carebridge-test-public']);
+        [$sendingHospital, $receivingHospital] = $this->createHospitals();
+        $sender = $this->createUser($sendingHospital, 'sending_staff');
+
+        $transfer = TransferRequest::create([
+            'sending_hospital_id' => $sendingHospital->id,
+            'receiving_hospital_id' => $receivingHospital->id,
+            'patient_reference_code' => 'PT-2026-0012',
+            'case_type' => 'general',
+            'urgency_level' => 'critical',
+            'status' => 'pending',
+            'created_by' => $sender->id,
+            'privacy_confirmed' => true,
+        ]);
+        $transfer->forceFill([
+            'created_at' => now()->subMinutes(30),
+            'updated_at' => now()->subMinutes(30),
+        ])->save();
+
+        Sanctum::actingAs($sender);
+
+        $upload = $this->post("/api/transfer-requests/{$transfer->id}/attachments", [
+            'document_type' => 'referral_note',
+            'file' => UploadedFile::fake()->create('referral.pdf', 64, 'application/pdf'),
+        ]);
+
+        $upload->assertCreated()
+            ->assertJsonPath('attachment.document_type', 'referral_note');
+
+        $this->assertDatabaseHas('transfer_attachments', [
+            'transfer_request_id' => $transfer->id,
+            'document_type' => 'referral_note',
+        ]);
+
+        $this->getJson("/api/transfer-requests/{$transfer->id}")
+            ->assertOk()
+            ->assertJsonPath('transfer_request.sla_state', 'breached')
+            ->assertJsonPath('transfer_request.needs_attention', true)
+            ->assertJsonCount(1, 'transfer_request.attachments');
+    }
+
+    public function test_notifications_have_priority_and_can_be_marked_read(): void
+    {
+        [$sendingHospital, $receivingHospital, $otherHospital] = $this->createHospitals();
+        $sender = $this->createUser($sendingHospital, 'sending_staff');
+        $dispatcher = $this->createUser($otherHospital, 'dispatcher');
+
+        $transfer = TransferRequest::create([
+            'sending_hospital_id' => $sendingHospital->id,
+            'receiving_hospital_id' => $receivingHospital->id,
+            'patient_reference_code' => 'PT-2026-0013',
+            'case_type' => 'icu',
+            'urgency_level' => 'critical',
+            'status' => 'pending',
+            'created_by' => $sender->id,
+            'privacy_confirmed' => true,
+        ]);
+        $log = $transfer->logAction($sender->id, 'escalated', 'Needs immediate placement.');
+
+        Sanctum::actingAs($dispatcher);
+
+        $this->getJson('/api/notifications')
+            ->assertOk()
+            ->assertJsonPath('unread_count', 1)
+            ->assertJsonPath('notifications.0.priority', 'critical');
+
+        $this->postJson("/api/notifications/{$log->id}/read")
+            ->assertOk();
+
+        $this->getJson('/api/notifications')
+            ->assertOk()
+            ->assertJsonPath('unread_count', 0)
+            ->assertJsonPath('notifications.0.is_read', true);
     }
 
     public function test_intake_conditions_reservation_timer_and_handoff_notes_are_saved(): void

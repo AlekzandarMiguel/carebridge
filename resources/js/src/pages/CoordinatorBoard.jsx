@@ -195,11 +195,16 @@ export default function CoordinatorBoard() {
                                     {req.is_escalated && (
                                         <span className="escalation-banner">Escalated: {req.escalation_reason || 'Needs attention'}</span>
                                     )}
+                                    {req.needs_attention && (
+                                        <span className={`sla-banner sla-${req.sla_state || req.delivery_eta_state}`}>
+                                            {req.sla_state === 'breached' ? 'SLA breached' : req.sla_state === 'warning' ? 'Approaching SLA' : req.delivery_eta_state === 'late' ? 'ETA late' : 'Needs attention'}
+                                        </span>
+                                    )}
                                     <p>{req.sending_hospital?.name} to {req.receiving_hospital?.name || '-'}</p>
                                     <div className="board-card-meta">
                                         <span className={`urgency-${req.urgency_level}`}>{req.urgency_level}</span>
                                         <small>{req.case_type}</small>
-                                        <small>{waitingMinutes(req.created_at)} min waiting</small>
+                                        <small>{req.waiting_minutes ?? waitingMinutes(req.created_at)} min waiting</small>
                                     </div>
                                     <div className="board-location">{req.delivery_last_location || 'No delivery movement yet'}</div>
                                     <div className="assignment-strip">

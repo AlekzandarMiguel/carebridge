@@ -227,6 +227,11 @@ export default function TransferTracking() {
                                                 <td><StatusBadge status={req.status} /></td>
                                                 <td>
                                                     <div className="delivery-monitor">
+                                                        {req.needs_attention && (
+                                                            <span className={`sla-chip sla-${req.sla_state || req.delivery_eta_state}`}>
+                                                                {req.sla_state === 'breached' ? 'SLA breached' : req.sla_state === 'warning' ? 'SLA warning' : req.delivery_eta_state === 'late' ? 'ETA late' : 'Attention'}
+                                                            </span>
+                                                        )}
                                                         <div className="delivery-monitor-head">
                                                             <span className={`delivery-dot delivery-${deliveryStatus(req)}`}></span>
                                                             <strong>{deliveryLabels[deliveryStatus(req)]}</strong>

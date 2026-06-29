@@ -19,6 +19,8 @@ CareBridge addresses this by giving hospitals a shared department workflow for:
 - Maintaining route distance and travel estimates.
 - Monitoring patient delivery until handoff.
 - Recording delivery timeline events.
+- Uploading handoff and supporting documents.
+- Prioritizing notifications by urgency, SLA, and ETA state.
 - Recording actions for review and accountability.
 
 ## 3. Project Goals
@@ -31,6 +33,8 @@ CareBridge addresses this by giving hospitals a shared department workflow for:
 - Reduce manual confusion around bed reservation and status updates.
 - Provide coordinators and admins with network-wide visibility.
 - Keep a clear audit trail for operational review.
+- Preserve supporting documents alongside the case workflow.
+- Surface SLA and ETA warnings before delays become invisible.
 
 ## 4. Use Case Scenario
 
@@ -118,7 +122,7 @@ Capacity is tracked per hospital with:
 - Ambulances available.
 - Last updated timestamp.
 
-Receiving staff can update only their own hospital capacity.
+Acceptance staff can update only their own hospital capacity.
 
 ### Rejected Patient Cases
 
@@ -147,10 +151,14 @@ A rejected patient case contains:
 - Route distance.
 - Estimated travel minutes.
 - Delivery event timeline.
+- Attachments.
+- SLA state.
+- ETA state.
+- Map route URL.
 
 ### Accepting Hospital Recommendations
 
-Sending staff can view suggested accepting hospitals. Recommendations are ranked based on matching capacity for the selected case type:
+Intake staff can view suggested accepting hospitals. Recommendations are ranked based on matching capacity for the selected case type:
 
 - General case uses general beds.
 - Emergency case uses emergency beds.
@@ -158,7 +166,7 @@ Sending staff can view suggested accepting hospitals. Recommendations are ranked
 
 ### Acceptance Queue Triage
 
-Receiving staff can see rejected patient cases sent to their hospital. Cases are sorted by urgency and waiting time. They can:
+Acceptance staff can see rejected patient cases sent to their hospital. Cases are sorted by urgency and waiting time. They can:
 
 - Accept with conditions.
 - Decline with a reason.
@@ -182,6 +190,9 @@ The delivery workflow tracks:
 - Estimated travel minutes.
 - Assigned dispatcher.
 - Delivery events, including departed, location update, delayed, receiving area arrival, and handoff completed.
+- SLA state for pending or accepted cases.
+- ETA state for active delivery movement.
+- Route map link based on hospital addresses.
 
 ### Department Command View
 
@@ -207,6 +218,20 @@ It also shows:
 - Dispatcher assignment controls.
 - Assigned monitor per case.
 - Route and delivery movement context.
+- SLA and ETA warning badges.
+
+### Case Attachments
+
+Case attachments let authorized users upload supporting documents such as:
+
+- Referral notes.
+- Lab results.
+- Imaging files.
+- Consent forms.
+- Transport forms.
+- Supporting documents.
+
+Attachments are stored on the configured Laravel public disk and linked to the rejected patient case. The uploader or an admin can remove an attachment.
 
 ### Admin Management
 
@@ -239,6 +264,8 @@ Audit logs record operational actions such as:
 - Assigned
 - Route updated
 - Delivery update
+- Attachment uploaded
+- Attachment removed
 
 Audit logs can be filtered by:
 
@@ -262,6 +289,18 @@ Analytics include:
 - Completed request count.
 - Recent transfer trends.
 
+### Notifications
+
+Notifications are generated from transfer log activity. They include:
+
+- Priority labels.
+- Read or unread state.
+- Unread count.
+- Mark one notification as read.
+- Mark all recent notifications as read.
+
+Priority is based on escalation, critical urgency, SLA warnings, SLA breaches, ETA lateness, and completion state.
+
 ### Dark Mode
 
 Dark mode is available across:
@@ -272,6 +311,10 @@ Dark mode is available across:
 - Forms, cards, tables, badges, filters, and menus.
 
 The selected theme is stored in local storage.
+
+### Performance
+
+React pages are loaded with route-based code splitting. This reduces the initial application bundle and loads heavier pages only when the user visits them.
 
 ## 9. Roles and Permissions
 
@@ -291,6 +334,7 @@ The selected theme is stored in local storage.
 | Assign dispatcher | No | No | Yes | Yes | Yes |
 | Update route estimate | Yes | Yes | Yes | Yes | Yes |
 | Add delivery timeline update | Yes | Yes | Yes | Yes | Yes |
+| Upload case attachment | Yes | Yes | Yes | Yes | Yes |
 | Escalate transfer | No | No | Yes | Yes | Yes |
 | Add coordinator notes | No | No | Yes | Yes | Yes |
 | View command board | No | No | Yes | Yes | Yes |
@@ -422,6 +466,25 @@ Important fields:
 - `route_distance_km`
 - `estimated_travel_minutes`
 - `delivery_events`
+- `waiting_minutes`
+- `sla_state`
+- `delivery_eta_state`
+- `needs_attention`
+- `route_map_url`
+
+### transfer_attachments
+
+Stores uploaded case documents.
+
+Important fields:
+
+- `transfer_request_id`
+- `uploaded_by`
+- `document_type`
+- `original_name`
+- `path`
+- `mime_type`
+- `size_bytes`
 
 ### transfer_logs
 
@@ -434,6 +497,16 @@ Important fields:
 - `action`
 - `remarks`
 - `created_at`
+
+### notification_reads
+
+Stores per-user notification read state.
+
+Important fields:
+
+- `user_id`
+- `transfer_log_id`
+- `read_at`
 
 ### system_settings
 
@@ -503,6 +576,8 @@ Important fields:
 | PUT | `/api/transfer-requests/{id}/assign-dispatcher` | Assign a department monitor to a case. |
 | PUT | `/api/transfer-requests/{id}/route-estimate` | Update route distance and travel estimate. |
 | POST | `/api/transfer-requests/{id}/delivery-events` | Add a delivery timeline event. |
+| POST | `/api/transfer-requests/{id}/attachments` | Upload a case attachment. |
+| DELETE | `/api/transfer-requests/{id}/attachments/{attachmentId}` | Remove a case attachment. |
 
 ### Analytics, Notifications, and Admin
 
@@ -511,6 +586,8 @@ Important fields:
 | GET | `/api/dashboard` | Dashboard metrics. |
 | GET | `/api/analytics` | Analytics data. |
 | GET | `/api/notifications` | Recent activity alerts. |
+| POST | `/api/notifications/{id}/read` | Mark notification as read. |
+| POST | `/api/notifications/read-all` | Mark recent notifications as read. |
 | GET | `/api/admin` | Admin users and hospitals. |
 | POST | `/api/admin/users` | Create user. |
 | PUT | `/api/admin/users/{id}` | Update user. |
@@ -592,7 +669,9 @@ Important models:
 - `Hospital`
 - `HospitalCapacity`
 - `TransferRequest`
+- `TransferAttachment`
 - `TransferLog`
+- `NotificationRead`
 - `SystemSetting`
 
 ## 16. Local Installation
@@ -669,6 +748,12 @@ Run frontend build:
 npm run build
 ```
 
+For attachments, also run:
+
+```bash
+php artisan storage:link
+```
+
 Current feature tests cover:
 
 - Authentication settings.
@@ -689,6 +774,9 @@ Current feature tests cover:
 - Transfer and audit CSV exports.
 - Admin settings.
 - Audit filters.
+- Attachment upload.
+- Notification priority and read state.
+- SLA state on case responses.
 
 ## 19. Security Notes
 
@@ -699,12 +787,14 @@ Current feature tests cover:
 - Admin, coordinator, and dispatcher routes are checked on the backend.
 - Hospital capacity updates are restricted to acceptance staff from the same hospital.
 - Transfer actions are checked against sending and receiving hospital ownership.
+- Dispatcher route and delivery updates are limited to unassigned or self-assigned cases, unless the user is coordinator or admin.
+- Attachments are validated by type and size.
 
 ## 20. Known Limitations
 
-- Notifications currently use polling rather than realtime broadcasting.
+- Notifications currently use polling rather than realtime broadcasting, with a deployment path documented for Laravel broadcasting.
 - There are no browser automation tests yet.
-- There is no real SMS, email, or ambulance dispatch integration.
+- There is no real SMS, email, ambulance dispatch, or external route-distance API integration.
 - Production password reset should use a configured mail provider.
 - The system is a coordination tool, not a complete EHR.
 
@@ -712,8 +802,7 @@ Current feature tests cover:
 
 - Add realtime notifications with Laravel broadcasting.
 - Add browser-level tests for major React workflows.
-- Add map-based hospital routing and distance estimates.
-- Add file attachment support for handoff documents.
+- Add external map-based distance estimates.
 - Add analytics chart export.
 - Add optional SMS/dispatch notifications.
 
