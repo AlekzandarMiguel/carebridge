@@ -110,7 +110,7 @@ function App() {
                 <Route
                     path="/coordinator-board"
                     element={
-                        <ProtectedRoute allowedRoles={['coordinator', 'admin']}>
+                        <ProtectedRoute allowedRoles={['coordinator', 'dispatcher', 'admin']}>
                             <Layout theme={theme} toggleTheme={toggleTheme}><CoordinatorBoard /></Layout>
                         </ProtectedRoute>
                     }
@@ -118,7 +118,7 @@ function App() {
                 <Route
                     path="/hospital-directory"
                     element={
-                        <ProtectedRoute allowedRoles={['sending_staff', 'coordinator', 'admin']}>
+                        <ProtectedRoute allowedRoles={['sending_staff', 'coordinator', 'dispatcher', 'admin']}>
                             <Layout theme={theme} toggleTheme={toggleTheme}><HospitalDirectory /></Layout>
                         </ProtectedRoute>
                     }
@@ -126,7 +126,7 @@ function App() {
                 <Route
                     path="/analytics"
                     element={
-                        <ProtectedRoute allowedRoles={['coordinator', 'admin']}>
+                        <ProtectedRoute allowedRoles={['coordinator', 'dispatcher', 'admin']}>
                             <Layout theme={theme} toggleTheme={toggleTheme}><Analytics /></Layout>
                         </ProtectedRoute>
                     }

@@ -10,9 +10,9 @@ const navItems = [
     { path: '/create-transfer', label: 'New Rejected Case', icon: '+', roles: ['sending_staff'] },
     { path: '/incoming-requests', label: 'Acceptance Queue', icon: 'IN', roles: ['receiving_staff'] },
     { path: '/transfer-tracking', label: 'Delivery Tracking', icon: 'DT' },
-    { path: '/coordinator-board', label: 'Command View', icon: 'CV', roles: ['coordinator', 'admin'] },
-    { path: '/hospital-directory', label: 'Directory', icon: 'HD', roles: ['sending_staff', 'coordinator', 'admin'] },
-    { path: '/analytics', label: 'Analytics', icon: 'AN', roles: ['coordinator', 'admin'] },
+    { path: '/coordinator-board', label: 'Command View', icon: 'CV', roles: ['coordinator', 'dispatcher', 'admin'] },
+    { path: '/hospital-directory', label: 'Directory', icon: 'HD', roles: ['sending_staff', 'coordinator', 'dispatcher', 'admin'] },
+    { path: '/analytics', label: 'Analytics', icon: 'AN', roles: ['coordinator', 'dispatcher', 'admin'] },
     { path: '/admin', label: 'Admin', icon: 'AD', roles: ['admin'] },
     { path: '/audit-logs', label: 'Audit Logs', icon: 'AL', roles: ['admin'] },
     { path: '/settings', label: 'Settings', icon: 'ST' },
@@ -30,6 +30,9 @@ const notificationLabels = {
     coordinator_note: 'Coordinator Note',
     completed: 'Completed',
     cancelled: 'Cancelled',
+    assigned: 'Assigned',
+    route_updated: 'Route Updated',
+    delivery_update: 'Delivery Update',
 };
 
 export default function Layout({ children, theme, toggleTheme }) {

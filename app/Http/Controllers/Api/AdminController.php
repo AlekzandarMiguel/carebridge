@@ -34,7 +34,7 @@ class AdminController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
-            'role' => 'required|in:sending_staff,receiving_staff,coordinator,admin',
+            'role' => 'required|in:sending_staff,receiving_staff,coordinator,dispatcher,admin',
             'hospital_id' => 'nullable|exists:hospitals,id',
             'password' => 'required|string|min:8',
             'account_status' => 'nullable|in:pending,approved,suspended',
@@ -64,7 +64,7 @@ class AdminController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,'.$user->id,
-            'role' => 'required|in:sending_staff,receiving_staff,coordinator,admin',
+            'role' => 'required|in:sending_staff,receiving_staff,coordinator,dispatcher,admin',
             'hospital_id' => 'nullable|exists:hospitals,id',
             'password' => 'nullable|string|min:8',
             'account_status' => 'required|in:pending,approved,suspended',
@@ -146,8 +146,8 @@ class AdminController extends Controller
 
     public function systemSettings(Request $request): JsonResponse
     {
-        if (!in_array($request->user()->role, ['coordinator', 'admin'])) {
-            return response()->json(['message' => 'Only coordinators and admins can view system settings.'], 403);
+        if (!in_array($request->user()->role, ['coordinator', 'dispatcher', 'admin'])) {
+            return response()->json(['message' => 'Only department monitors can view system settings.'], 403);
         }
 
         return response()->json([

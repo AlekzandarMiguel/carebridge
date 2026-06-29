@@ -7,13 +7,15 @@ use App\Models\Hospital;
 use App\Models\HospitalCapacity;
 use App\Models\SystemSetting;
 use App\Models\TransferRequest;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class TransferRequestController extends Controller
 {
-    private const MONITOR_ROLES = ['coordinator', 'admin'];
+    private const MONITOR_ROLES = ['coordinator', 'dispatcher', 'admin'];
 
     public function index(Request $request): JsonResponse
     {
@@ -57,7 +59,7 @@ class TransferRequestController extends Controller
         $this->releaseExpiredReservations();
 
         if (!in_array($request->user()->role, self::MONITOR_ROLES)) {
-            return response()->json(['message' => 'Only coordinators and admins can export transfer reports.'], 403);
+            return response()->json(['message' => 'Only department monitors can export placement reports.'], 403);
         }
 
         $rows = $this->visibleTransferQuery($request)
@@ -74,8 +76,11 @@ class TransferRequestController extends Controller
                 'Urgency',
                 'Sending Hospital',
                 'Receiving Hospital',
+                'Dispatcher',
                 'Created At',
                 'Reserved Until',
+                'Distance KM',
+                'ETA Minutes',
                 'Escalated',
             ]);
 
@@ -88,8 +93,11 @@ class TransferRequestController extends Controller
                     $transfer->urgency_level,
                     $transfer->sendingHospital?->name,
                     $transfer->receivingHospital?->name,
+                    $transfer->assignedDispatcher?->name,
                     optional($transfer->created_at)->toDateTimeString(),
                     optional($transfer->reserved_until)->toDateTimeString(),
+                    $transfer->route_distance_km,
+                    $transfer->estimated_travel_minutes,
                     $transfer->is_escalated ? 'yes' : 'no',
                 ]);
             }
@@ -128,6 +136,8 @@ class TransferRequestController extends Controller
             'ambulance_unit' => 'nullable|string|max:80',
             'transport_contact' => 'nullable|string|max:80',
             'estimated_arrival_at' => 'nullable|date',
+            'route_distance_km' => 'nullable|numeric|min:0|max:9999',
+            'estimated_travel_minutes' => 'nullable|integer|min:0|max:10080',
         ]);
 
         if ((int) $validated['receiving_hospital_id'] === (int) $user->hospital_id) {
@@ -148,7 +158,7 @@ class TransferRequestController extends Controller
 
         return response()->json([
             'message' => 'Transfer request created successfully.',
-            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator'),
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'assignedDispatcher'),
         ], 201);
     }
 
@@ -206,6 +216,7 @@ class TransferRequestController extends Controller
             'receivingHospital',
             'creator',
             'acceptor',
+            'assignedDispatcher',
             'escalator',
             'logs.user',
         ])->findOrFail($id);
@@ -247,7 +258,7 @@ class TransferRequestController extends Controller
 
         return response()->json([
             'message' => 'Transfer request accepted.',
-            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor'),
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher'),
         ]);
     }
 
@@ -288,7 +299,7 @@ class TransferRequestController extends Controller
 
         return response()->json([
             'message' => 'Transfer request declined.',
-            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor'),
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher'),
         ]);
     }
 
@@ -341,7 +352,7 @@ class TransferRequestController extends Controller
 
         return response()->json([
             'message' => 'Slot reserved successfully.',
-            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor'),
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher'),
         ]);
     }
 
@@ -370,6 +381,8 @@ class TransferRequestController extends Controller
             'ambulance_unit' => 'nullable|string|max:80',
             'transport_contact' => 'nullable|string|max:80',
             'estimated_arrival_at' => 'nullable|date',
+            'route_distance_km' => 'nullable|numeric|min:0|max:9999',
+            'estimated_travel_minutes' => 'nullable|integer|min:0|max:10080',
         ]);
 
         $user = $request->user();
@@ -383,13 +396,15 @@ class TransferRequestController extends Controller
             'ambulance_unit' => $validated['ambulance_unit'] ?? $transferRequest->ambulance_unit,
             'transport_contact' => $validated['transport_contact'] ?? $transferRequest->transport_contact,
             'estimated_arrival_at' => $validated['estimated_arrival_at'] ?? $transferRequest->estimated_arrival_at,
+            'route_distance_km' => $validated['route_distance_km'] ?? $transferRequest->route_distance_km,
+            'estimated_travel_minutes' => $validated['estimated_travel_minutes'] ?? $transferRequest->estimated_travel_minutes,
         ]);
 
         $transferRequest->logAction($user->id, 'in_transfer', 'Patient transfer in progress.');
 
         return response()->json([
             'message' => 'Transfer started.',
-            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor'),
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher'),
         ]);
     }
 
@@ -428,7 +443,7 @@ class TransferRequestController extends Controller
 
         return response()->json([
             'message' => 'Patient arrival recorded.',
-            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor'),
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher'),
         ]);
     }
 
@@ -464,7 +479,7 @@ class TransferRequestController extends Controller
 
         return response()->json([
             'message' => 'Transfer completed.',
-            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor'),
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher'),
         ]);
     }
 
@@ -495,7 +510,7 @@ class TransferRequestController extends Controller
 
         return response()->json([
             'message' => 'Transfer cancelled.',
-            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor'),
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher'),
         ]);
     }
 
@@ -529,7 +544,7 @@ class TransferRequestController extends Controller
 
         return response()->json([
             'message' => 'Transfer request escalated.',
-            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'escalator'),
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher', 'escalator'),
         ]);
     }
 
@@ -538,7 +553,7 @@ class TransferRequestController extends Controller
         $user = $request->user();
 
         if (!in_array($user->role, self::MONITOR_ROLES)) {
-            return response()->json(['message' => 'Only coordinators and admins can add coordinator notes.'], 403);
+            return response()->json(['message' => 'Only department monitors can add coordination notes.'], 403);
         }
 
         $transferRequest = TransferRequest::findOrFail($id);
@@ -554,7 +569,116 @@ class TransferRequestController extends Controller
 
         return response()->json([
             'message' => 'Coordinator notes updated.',
-            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'escalator'),
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher', 'escalator'),
+        ]);
+    }
+
+    public function assignDispatcher(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!in_array($user->role, self::MONITOR_ROLES)) {
+            return response()->json(['message' => 'Only department monitors can assign delivery dispatchers.'], 403);
+        }
+
+        $transferRequest = TransferRequest::findOrFail($id);
+        $validated = $request->validate([
+            'assigned_dispatcher_id' => 'required|exists:users,id',
+        ]);
+
+        $dispatcher = User::whereKey($validated['assigned_dispatcher_id'])
+            ->where('account_status', 'approved')
+            ->whereIn('role', self::MONITOR_ROLES)
+            ->first();
+
+        if (!$dispatcher) {
+            return response()->json(['message' => 'Selected user must be an approved department monitor.'], 422);
+        }
+
+        $transferRequest->update([
+            'assigned_dispatcher_id' => $dispatcher->id,
+            'assigned_at' => now(),
+        ]);
+
+        $transferRequest->logAction($user->id, 'assigned', "Assigned to {$dispatcher->name} for placement and delivery monitoring.");
+
+        return response()->json([
+            'message' => 'Dispatcher assigned.',
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher', 'escalator'),
+        ]);
+    }
+
+    public function updateRouteEstimate(Request $request, int $id): JsonResponse
+    {
+        $transferRequest = TransferRequest::findOrFail($id);
+
+        if (!$this->canAccessTransfer($request, $transferRequest)) {
+            return response()->json(['message' => 'You are not allowed to update this route estimate.'], 403);
+        }
+
+        $validated = $request->validate([
+            'route_distance_km' => 'nullable|numeric|min:0|max:9999',
+            'estimated_travel_minutes' => 'nullable|integer|min:0|max:10080',
+        ]);
+
+        $transferRequest->update($validated);
+        $transferRequest->logAction($request->user()->id, 'route_updated', 'Route distance and travel estimate updated.');
+
+        return response()->json([
+            'message' => 'Route estimate updated.',
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher', 'escalator'),
+        ]);
+    }
+
+    public function addDeliveryEvent(Request $request, int $id): JsonResponse
+    {
+        $transferRequest = TransferRequest::findOrFail($id);
+
+        if (!$this->canAccessTransfer($request, $transferRequest)) {
+            return response()->json(['message' => 'You are not allowed to update this delivery timeline.'], 403);
+        }
+
+        $validated = $request->validate([
+            'event_type' => 'required|in:departed,location_update,delayed,arrived_gate,handoff_completed',
+            'location' => 'nullable|string|max:120',
+            'notes' => 'nullable|string|max:500',
+            'occurred_at' => 'nullable|date',
+        ]);
+
+        $user = $request->user();
+        $eventLabels = [
+            'departed' => 'Departed',
+            'location_update' => 'Location update',
+            'delayed' => 'Delayed',
+            'arrived_gate' => 'Arrived at receiving area',
+            'handoff_completed' => 'Handoff completed',
+        ];
+        $events = $transferRequest->delivery_events ?? [];
+        $events[] = [
+            'id' => (string) Str::uuid(),
+            'event_type' => $validated['event_type'],
+            'label' => $eventLabels[$validated['event_type']],
+            'location' => $validated['location'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+            'occurred_at' => $validated['occurred_at'] ?? now()->toISOString(),
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+        ];
+
+        $updates = ['delivery_events' => $events];
+        if (!empty($validated['location'])) {
+            $updates['delivery_last_location'] = $validated['location'];
+        }
+        if (!empty($validated['notes'])) {
+            $updates['delivery_notes'] = $validated['notes'];
+        }
+
+        $transferRequest->update($updates);
+        $transferRequest->logAction($user->id, 'delivery_update', $eventLabels[$validated['event_type']].' added to delivery timeline.');
+
+        return response()->json([
+            'message' => 'Delivery update added.',
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher', 'escalator', 'logs.user'),
         ]);
     }
 
@@ -565,12 +689,12 @@ class TransferRequestController extends Controller
         $user = $request->user();
 
         if (!in_array($user->role, self::MONITOR_ROLES)) {
-            return response()->json(['message' => 'Only coordinators and admins can view the command board.'], 403);
+            return response()->json(['message' => 'Only department monitors can view the command board.'], 403);
         }
 
         $hospitalId = $user->hospital_id;
         $statuses = ['pending', 'accepted', 'reserved', 'in_transfer', 'completed', 'declined'];
-        $requests = TransferRequest::with(['sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'escalator'])
+        $requests = TransferRequest::with(['sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher', 'escalator'])
             ->whereIn('status', $statuses)
             ->when(!in_array($user->role, self::MONITOR_ROLES), function ($q) use ($hospitalId) {
                 $q->where(function ($scoped) use ($hospitalId) {
@@ -587,6 +711,11 @@ class TransferRequestController extends Controller
             'board' => collect($statuses)->mapWithKeys(fn ($status) => [
                 $status => $requests->get($status, collect())->values(),
             ]),
+            'dispatchers' => User::whereIn('role', self::MONITOR_ROLES)
+                ->where('account_status', 'approved')
+                ->orderBy('role')
+                ->orderBy('name')
+                ->get(['id', 'name', 'role']),
         ]);
     }
 
@@ -604,7 +733,7 @@ class TransferRequestController extends Controller
         $user = $request->user();
         $hospitalId = $user->hospital_id;
 
-        return TransferRequest::with(['sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'escalator', 'logs.user'])
+        return TransferRequest::with(['sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher', 'escalator', 'logs.user'])
             ->when(!in_array($user->role, self::MONITOR_ROLES), function ($q) use ($hospitalId) {
                 $q->where(function ($scoped) use ($hospitalId) {
                     $scoped->where('sending_hospital_id', $hospitalId)

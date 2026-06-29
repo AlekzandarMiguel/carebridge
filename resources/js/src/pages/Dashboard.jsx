@@ -18,12 +18,17 @@ const roleDashboard = {
     coordinator: {
         title: 'Department Dispatcher Dashboard',
         subtitle: 'Monitor rejected patient placement and delivery pressure without changing hospital actions.',
-        cards: ['total_requests', 'pending_requests', 'in_transfer', 'en_route_patients', 'arrived_patients', 'completed_requests', 'declined_requests'],
+        cards: ['total_requests', 'waiting_patients', 'delayed_cases', 'unassigned_cases', 'assigned_cases', 'in_transfer', 'completed_requests'],
+    },
+    dispatcher: {
+        title: 'Delivery Dispatcher Dashboard',
+        subtitle: 'Assign active cases, watch route estimates, and keep rejected patient delivery updates moving.',
+        cards: ['waiting_patients', 'unassigned_cases', 'assigned_cases', 'in_transfer', 'en_route_patients', 'delayed_cases', 'avg_travel_minutes'],
     },
     admin: {
         title: 'Department Admin Dashboard',
         subtitle: 'Review department-wide activity while managing configuration separately.',
-        cards: ['total_requests', 'pending_requests', 'accepted_requests', 'completed_requests', 'declined_requests'],
+        cards: ['total_requests', 'waiting_patients', 'assigned_cases', 'completed_requests', 'declined_requests'],
     },
 };
 
@@ -36,6 +41,11 @@ const statCards = {
     arrived_patients: { icon: 'IN', label: 'Patients Arrived', color: 'yellow' },
     completed_requests: { icon: 'DONE', label: 'Completed', color: 'green' },
     declined_requests: { icon: 'NO', label: 'Declined', color: 'red' },
+    waiting_patients: { icon: 'WAIT', label: 'Waiting Patients', color: 'yellow' },
+    delayed_cases: { icon: 'SLA', label: 'Delayed Cases', color: 'red' },
+    assigned_cases: { icon: 'ASG', label: 'Assigned Cases', color: 'green' },
+    unassigned_cases: { icon: 'OPEN', label: 'Unassigned Cases', color: 'blue' },
+    avg_travel_minutes: { icon: 'ETA', label: 'Avg Travel Min', color: 'cyan' },
 };
 
 export default function Dashboard() {

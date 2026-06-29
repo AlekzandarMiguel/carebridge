@@ -150,6 +150,7 @@ class TransferWorkflowTest extends TestCase
         $sender = $this->createUser($sendingHospital, 'sending_staff');
         $receiver = $this->createUser($receivingHospital, 'receiving_staff');
         $coordinator = $this->createUser($otherHospital, 'coordinator');
+        $dispatcher = $this->createUser($otherHospital, 'dispatcher');
         $admin = $this->createUser($otherHospital, 'admin');
 
         Sanctum::actingAs($receiver);
@@ -198,6 +199,7 @@ class TransferWorkflowTest extends TestCase
         $sender = $this->createUser($sendingHospital, 'sending_staff');
         $receiver = $this->createUser($receivingHospital, 'receiving_staff');
         $coordinator = $this->createUser($otherHospital, 'coordinator');
+        $dispatcher = $this->createUser($otherHospital, 'dispatcher');
         $admin = $this->createUser($otherHospital, 'admin');
 
         Sanctum::actingAs($sender);
@@ -213,6 +215,11 @@ class TransferWorkflowTest extends TestCase
         Sanctum::actingAs($coordinator);
         $this->getJson('/api/transfer-board')->assertOk();
         $this->getJson('/api/analytics')->assertOk();
+
+        Sanctum::actingAs($dispatcher);
+        $this->getJson('/api/transfer-board')->assertOk();
+        $this->getJson('/api/analytics')->assertOk();
+        $this->getJson('/api/audit-logs')->assertForbidden();
 
         Sanctum::actingAs($admin);
         $this->getJson('/api/transfer-board')->assertOk();
@@ -274,6 +281,55 @@ class TransferWorkflowTest extends TestCase
         $this->assertDatabaseHas('transfer_logs', [
             'transfer_request_id' => $transfer->id,
             'action' => 'escalated',
+        ]);
+    }
+
+    public function test_dispatcher_can_be_assigned_and_add_delivery_updates(): void
+    {
+        [$sendingHospital, $receivingHospital, $otherHospital] = $this->createHospitals();
+        $sender = $this->createUser($sendingHospital, 'sending_staff');
+        $dispatcher = $this->createUser($otherHospital, 'dispatcher');
+
+        $transfer = TransferRequest::create([
+            'sending_hospital_id' => $sendingHospital->id,
+            'receiving_hospital_id' => $receivingHospital->id,
+            'patient_reference_code' => 'PT-2026-0011',
+            'case_type' => 'general',
+            'urgency_level' => 'urgent',
+            'status' => 'reserved',
+            'created_by' => $sender->id,
+            'privacy_confirmed' => true,
+        ]);
+
+        Sanctum::actingAs($dispatcher);
+        $this->putJson("/api/transfer-requests/{$transfer->id}/assign-dispatcher", [
+            'assigned_dispatcher_id' => $dispatcher->id,
+        ])
+            ->assertOk()
+            ->assertJsonPath('transfer_request.assigned_dispatcher_id', $dispatcher->id);
+
+        $this->putJson("/api/transfer-requests/{$transfer->id}/route-estimate", [
+            'route_distance_km' => 18.5,
+            'estimated_travel_minutes' => 32,
+        ])->assertOk();
+
+        $this->postJson("/api/transfer-requests/{$transfer->id}/delivery-events", [
+            'event_type' => 'location_update',
+            'location' => 'Main highway checkpoint',
+            'notes' => 'Delivery team moving normally.',
+        ])
+            ->assertOk()
+            ->assertJsonPath('transfer_request.delivery_last_location', 'Main highway checkpoint');
+
+        $this->assertDatabaseHas('transfer_requests', [
+            'id' => $transfer->id,
+            'assigned_dispatcher_id' => $dispatcher->id,
+            'estimated_travel_minutes' => 32,
+        ]);
+
+        $this->assertDatabaseHas('transfer_logs', [
+            'transfer_request_id' => $transfer->id,
+            'action' => 'delivery_update',
         ]);
     }
 

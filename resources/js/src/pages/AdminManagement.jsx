@@ -4,9 +4,10 @@ import { createAdminHospital, createAdminUser, getAdminData, getSystemSettings, 
 const blankUser = { name: '', email: '', role: 'sending_staff', hospital_id: '', password: 'password123', account_status: 'approved' };
 const blankHospital = { name: '', address: '', contact_number: '', transfer_contact_name: '', transfer_contact_phone: '', emergency_contact_name: '', emergency_contact_phone: '', status: 'active' };
 const permissionRows = [
-    ['Sending Staff', 'Submit rejected patient cases, reroute declined cases, start delivery'],
-    ['Receiving Staff', 'Review acceptance queue, accept/decline cases, reserve beds, update own capacity'],
+    ['Intake Staff', 'Submit rejected patient cases, reroute declined cases, start delivery'],
+    ['Acceptance Staff', 'Review acceptance queue, accept/decline cases, reserve beds, update own capacity'],
     ['Coordinator', 'Department command view, escalation, coordinator notes, analytics'],
+    ['Dispatcher', 'Assign active cases, maintain route estimates, add delivery timeline updates'],
     ['Admin', 'Manage department users/hospitals, command view, audit logs, settings'],
 ];
 
@@ -141,9 +142,10 @@ export default function AdminManagement() {
                             <div className="form-group">
                                 <label>Role</label>
                                 <select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}>
-                                    <option value="sending_staff">Sending Staff</option>
-                                    <option value="receiving_staff">Receiving Staff</option>
+                                    <option value="sending_staff">Intake Staff</option>
+                                    <option value="receiving_staff">Acceptance Staff</option>
                                     <option value="coordinator">Coordinator</option>
+                                    <option value="dispatcher">Dispatcher</option>
                                     <option value="admin">Admin</option>
                                 </select>
                             </div>

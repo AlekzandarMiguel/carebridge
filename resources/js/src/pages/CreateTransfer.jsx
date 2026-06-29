@@ -37,6 +37,8 @@ export default function CreateTransfer() {
         ambulance_unit: '',
         transport_contact: '',
         estimated_arrival_at: '',
+        route_distance_km: '',
+        estimated_travel_minutes: '',
     });
 
     const user = JSON.parse(localStorage.getItem('carebridge_user') || '{}');
@@ -67,6 +69,8 @@ export default function CreateTransfer() {
                     ambulance_unit: transfer.ambulance_unit || '',
                     transport_contact: transfer.transport_contact || '',
                     estimated_arrival_at: '',
+                    route_distance_km: transfer.route_distance_km || '',
+                    estimated_travel_minutes: transfer.estimated_travel_minutes || '',
                 }));
             })
             .catch(() => {});
@@ -131,6 +135,8 @@ export default function CreateTransfer() {
                 ambulance_unit: '',
                 transport_contact: '',
                 estimated_arrival_at: '',
+                route_distance_km: '',
+                estimated_travel_minutes: '',
             });
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to create rejected patient case.');
@@ -303,6 +309,29 @@ export default function CreateTransfer() {
                                     name="estimated_arrival_at"
                                     value={form.estimated_arrival_at}
                                     onChange={handleChange}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Route Distance KM</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.1"
+                                    name="route_distance_km"
+                                    value={form.route_distance_km}
+                                    onChange={handleChange}
+                                    placeholder="e.g., 12.5"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Estimated Travel Minutes</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    name="estimated_travel_minutes"
+                                    value={form.estimated_travel_minutes}
+                                    onChange={handleChange}
+                                    placeholder="e.g., 28"
                                 />
                             </div>
                         </div>

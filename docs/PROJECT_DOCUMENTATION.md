@@ -15,7 +15,10 @@ CareBridge addresses this by giving hospitals a shared department workflow for:
 - Finding available capacity.
 - Creating rejected patient placement cases.
 - Accepting, declining, or reserving capacity.
+- Assigning a dispatcher to active cases.
+- Maintaining route distance and travel estimates.
 - Monitoring patient delivery until handoff.
+- Recording delivery timeline events.
 - Recording actions for review and accountability.
 
 ## 3. Project Goals
@@ -23,6 +26,7 @@ CareBridge addresses this by giving hospitals a shared department workflow for:
 - Help hospitals coordinate patients who may be rejected due to full capacity.
 - Provide a dedicated placement and delivery department workflow for rejected patients.
 - Give staff clear role-based workspaces.
+- Separate hospital acceptance decisions from department dispatch monitoring.
 - Track the full request lifecycle from creation to completion.
 - Reduce manual confusion around bed reservation and status updates.
 - Provide coordinators and admins with network-wide visibility.
@@ -40,17 +44,21 @@ Because of this, the hassle of manually searching for another hospital is reduce
 
 ## 5. Target Users
 
-### Sending Staff
+### Intake Staff
 
-Sending staff work from the hospital that needs help placing a rejected patient. Their primary job is to submit rejected patient cases, choose an accepting hospital, provide patient reference details, and start delivery once capacity is reserved.
+Intake staff work from the hospital that needs help placing a rejected patient. Their primary job is to submit rejected patient cases, choose an accepting hospital, provide patient reference details, reroute declined cases, and start delivery once capacity is reserved.
 
-### Receiving Staff
+### Acceptance Staff
 
-Receiving staff work from the hospital that may accept a patient. Their primary job is to update their own hospital capacity, triage acceptance requests, accept or decline cases, reserve capacity, mark arrivals, and complete handoffs.
+Acceptance staff work from the hospital that may accept a patient. Their primary job is to update their own hospital capacity, triage acceptance requests, accept or decline cases, reserve capacity, mark arrivals, and complete handoffs.
 
 ### Coordinator
 
-Coordinators act like the department dispatchers across hospitals. They do not replace hospital staff decisions, but they can watch network pressure, use the command view, escalate active cases, add coordinator notes, and review analytics.
+Coordinators supervise placement pressure across hospitals. They do not replace hospital staff decisions, but they can watch network pressure, use the command view, escalate active cases, add coordinator notes, and review analytics.
+
+### Dispatcher
+
+Dispatchers work inside the placement and delivery department. Their primary job is to assign active cases, maintain route distance and travel estimates, add delivery timeline updates, and keep delayed delivery movement visible.
 
 ### Admin
 
@@ -134,6 +142,11 @@ A rejected patient case contains:
 - Reservation expiry.
 - Handoff notes.
 - Coordinator notes.
+- Assigned dispatcher.
+- Assigned timestamp.
+- Route distance.
+- Estimated travel minutes.
+- Delivery event timeline.
 
 ### Accepting Hospital Recommendations
 
@@ -165,6 +178,10 @@ The delivery workflow tracks:
 - Ambulance or unit identifier.
 - Transport contact.
 - Estimated arrival time.
+- Route distance.
+- Estimated travel minutes.
+- Assigned dispatcher.
+- Delivery events, including departed, location update, delayed, receiving area arrival, and handoff completed.
 
 ### Department Command View
 
@@ -187,6 +204,9 @@ It also shows:
 - Network pressure.
 - Hospitals under pressure.
 - Reroute suggestions.
+- Dispatcher assignment controls.
+- Assigned monitor per case.
+- Route and delivery movement context.
 
 ### Admin Management
 
@@ -216,6 +236,9 @@ Audit logs record operational actions such as:
 - Cancelled
 - Escalated
 - Coordinator note
+- Assigned
+- Route updated
+- Delivery update
 
 Audit logs can be filtered by:
 
@@ -252,26 +275,29 @@ The selected theme is stored in local storage.
 
 ## 9. Roles and Permissions
 
-| Capability | Sending Staff | Receiving Staff | Coordinator | Admin |
-| --- | --- | --- | --- | --- |
-| Submit rejected patient case | Yes | No | No | No |
-| View own hospital-related cases | Yes | Yes | Yes | Yes |
-| View all cases | No | No | Yes | Yes |
-| Update own hospital capacity | No | Yes | No | No |
-| Accept incoming request | No | Yes | No | No |
-| Decline incoming request | No | Yes | No | No |
-| Reserve capacity | No | Yes | No | No |
-| Start patient delivery | Yes | No | No | No |
-| Mark patient arrived | No | Yes | No | No |
-| Complete transfer | No | Yes | No | No |
-| Cancel own outgoing request | Yes | No | No | No |
-| Escalate transfer | No | No | Yes | Yes |
-| Add coordinator notes | No | No | Yes | Yes |
-| View command board | No | No | Yes | Yes |
-| View analytics | No | No | Yes | Yes |
-| Manage users and hospitals | No | No | No | Yes |
-| View audit logs | No | No | No | Yes |
-| Update system settings | No | No | No | Yes |
+| Capability | Intake Staff | Acceptance Staff | Coordinator | Dispatcher | Admin |
+| --- | --- | --- | --- | --- | --- |
+| Submit rejected patient case | Yes | No | No | No | No |
+| View own hospital-related cases | Yes | Yes | Yes | Yes | Yes |
+| View all cases | No | No | Yes | Yes | Yes |
+| Update own hospital capacity | No | Yes | No | No | No |
+| Accept incoming request | No | Yes | No | No | No |
+| Decline incoming request | No | Yes | No | No | No |
+| Reserve capacity | No | Yes | No | No | No |
+| Start patient delivery | Yes | No | No | No | No |
+| Mark patient arrived | No | Yes | No | No | No |
+| Complete transfer | No | Yes | No | No | No |
+| Cancel own outgoing request | Yes | No | No | No | No |
+| Assign dispatcher | No | No | Yes | Yes | Yes |
+| Update route estimate | Yes | Yes | Yes | Yes | Yes |
+| Add delivery timeline update | Yes | Yes | Yes | Yes | Yes |
+| Escalate transfer | No | No | Yes | Yes | Yes |
+| Add coordinator notes | No | No | Yes | Yes | Yes |
+| View command board | No | No | Yes | Yes | Yes |
+| View analytics | No | No | Yes | Yes | Yes |
+| Manage users and hospitals | No | No | No | No | Yes |
+| View audit logs | No | No | No | No | Yes |
+| Update system settings | No | No | No | No | Yes |
 
 ## 10. Transfer Status Lifecycle
 
@@ -336,6 +362,7 @@ Roles:
 - `sending_staff`
 - `receiving_staff`
 - `coordinator`
+- `dispatcher`
 - `admin`
 
 ### hospital_capacities
@@ -386,10 +413,15 @@ Important fields:
 - `escalation_reason`
 - `created_by`
 - `accepted_by`
+- `assigned_dispatcher_id`
+- `assigned_at`
 - `accept_conditions`
 - `reserved_until`
 - `handoff_notes`
 - `coordinator_notes`
+- `route_distance_km`
+- `estimated_travel_minutes`
+- `delivery_events`
 
 ### transfer_logs
 
@@ -452,7 +484,7 @@ Important fields:
 | POST | `/api/transfer-requests` | Create rejected patient case. |
 | GET | `/api/transfer-board` | Get command board data. |
 | GET | `/api/transfer-requests/{id}` | Show placement and delivery details. |
-| GET | `/api/incoming-requests` | List acceptance queue cases for receiving staff. |
+| GET | `/api/incoming-requests` | List acceptance queue cases for acceptance staff. |
 | GET | `/api/transfer-tracking` | List delivery tracking data. |
 
 ### Transfer Actions
@@ -468,6 +500,9 @@ Important fields:
 | PUT | `/api/transfer-requests/{id}/cancel` | Cancel request. |
 | PUT | `/api/transfer-requests/{id}/escalate` | Escalate active request. |
 | PUT | `/api/transfer-requests/{id}/coordinator-notes` | Update coordinator notes. |
+| PUT | `/api/transfer-requests/{id}/assign-dispatcher` | Assign a department monitor to a case. |
+| PUT | `/api/transfer-requests/{id}/route-estimate` | Update route distance and travel estimate. |
+| POST | `/api/transfer-requests/{id}/delivery-events` | Add a delivery timeline event. |
 
 ### Analytics, Notifications, and Admin
 
@@ -612,9 +647,10 @@ password123
 
 Demo access includes:
 
-- Sending staff account
-- Receiving staff account
+- Intake staff account
+- Acceptance staff account
 - Coordinator account
+- Dispatcher account
 - Admin account
 
 The exact seeded names and emails are defined in `database/seeders/UserSeeder.php`.
@@ -644,6 +680,9 @@ Current feature tests cover:
 - Role-specific page restrictions.
 - Ranked hospital recommendations.
 - Escalation.
+- Dispatcher assignment.
+- Route estimate updates.
+- Delivery timeline updates.
 - Handoff notes.
 - Privacy confirmation and document checklist validation.
 - Automatic reservation expiry and capacity release.
@@ -657,8 +696,8 @@ Current feature tests cover:
 - `.env` is ignored and should never be committed.
 - Public registration is limited to non-privileged hospital staff roles.
 - Public registration creates pending accounts that require admin approval.
-- Admin and coordinator routes are checked on the backend.
-- Hospital capacity updates are restricted to receiving staff from the same hospital.
+- Admin, coordinator, and dispatcher routes are checked on the backend.
+- Hospital capacity updates are restricted to acceptance staff from the same hospital.
 - Transfer actions are checked against sending and receiving hospital ownership.
 
 ## 20. Known Limitations

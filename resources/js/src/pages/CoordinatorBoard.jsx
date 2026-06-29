@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getHospitals, getSystemSettings, getTransferBoard, escalateTransfer } from '../api/axios';
+import { getHospitals, getSystemSettings, getTransferBoard, escalateTransfer, assignDispatcher } from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
 
 const columns = [
@@ -20,15 +20,43 @@ export default function CoordinatorBoard() {
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [escalatingId, setEscalatingId] = useState(null);
+    const [assigningId, setAssigningId] = useState(null);
+    const [assignmentDrafts, setAssignmentDrafts] = useState({});
     const [hospitals, setHospitals] = useState([]);
+    const [dispatchers, setDispatchers] = useState([]);
     const [settings, setSettings] = useState({ sla_pending_minutes: 20 });
 
     const loadBoard = async () => {
         try {
             const res = await getTransferBoard();
             setBoard(res.data.board);
+            setDispatchers(res.data.dispatchers || []);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAssign = async (event, request) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const dispatcherId = assignmentDrafts[request.id] || request.assigned_dispatcher_id;
+        if (!dispatcherId) {
+            setError('Choose a dispatcher before assigning.');
+            return;
+        }
+
+        setAssigningId(request.id);
+        setMessage('');
+        setError('');
+
+        try {
+            await assignDispatcher(request.id, dispatcherId);
+            setMessage(`${request.patient_reference_code} assigned for monitoring.`);
+            loadBoard();
+        } catch (err) {
+            setError(err.response?.data?.message || 'Unable to assign dispatcher.');
+        } finally {
+            setAssigningId(null);
         }
     };
 
@@ -174,6 +202,35 @@ export default function CoordinatorBoard() {
                                         <small>{waitingMinutes(req.created_at)} min waiting</small>
                                     </div>
                                     <div className="board-location">{req.delivery_last_location || 'No delivery movement yet'}</div>
+                                    <div className="assignment-strip">
+                                        <small>Dispatcher</small>
+                                        <strong>{req.assigned_dispatcher?.name || 'Unassigned'}</strong>
+                                    </div>
+                                    {['pending', 'accepted', 'reserved', 'in_transfer'].includes(req.status) && (
+                                        <div className="assignment-control" onClick={(event) => event.preventDefault()}>
+                                            <select
+                                                value={assignmentDrafts[req.id] ?? req.assigned_dispatcher_id ?? ''}
+                                                onChange={(event) => setAssignmentDrafts({ ...assignmentDrafts, [req.id]: event.target.value })}
+                                                onClick={(event) => {
+                                                    event.preventDefault();
+                                                    event.stopPropagation();
+                                                }}
+                                            >
+                                                <option value="">Assign monitor</option>
+                                                {dispatchers.map((dispatcher) => (
+                                                    <option value={dispatcher.id} key={dispatcher.id}>{dispatcher.name} ({dispatcher.role.replace('_', ' ')})</option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline btn-sm"
+                                                disabled={assigningId === req.id}
+                                                onClick={(event) => handleAssign(event, req)}
+                                            >
+                                                Assign
+                                            </button>
+                                        </div>
+                                    )}
                                     {['pending', 'accepted', 'reserved', 'in_transfer'].includes(req.status) && !req.is_escalated && (
                                         <button
                                             type="button"

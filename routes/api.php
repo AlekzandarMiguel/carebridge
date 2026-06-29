@@ -65,6 +65,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/transfer-requests/{id}/cancel', [TransferRequestController::class, 'cancel']);
     Route::put('/transfer-requests/{id}/escalate', [TransferRequestController::class, 'escalate']);
     Route::put('/transfer-requests/{id}/coordinator-notes', [TransferRequestController::class, 'updateCoordinatorNotes']);
+    Route::put('/transfer-requests/{id}/assign-dispatcher', [TransferRequestController::class, 'assignDispatcher']);
+    Route::put('/transfer-requests/{id}/route-estimate', [TransferRequestController::class, 'updateRouteEstimate']);
+    Route::post('/transfer-requests/{id}/delivery-events', [TransferRequestController::class, 'addDeliveryEvent']);
 
     // Transfer Tracking
     Route::get('/transfer-tracking', [TransferRequestController::class, 'index']);

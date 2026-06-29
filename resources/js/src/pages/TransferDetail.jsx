@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getTransferRequest, markPatientArrived, completeTransfer, updateCoordinatorNotes } from '../api/axios';
+import { getTransferRequest, markPatientArrived, completeTransfer, updateCoordinatorNotes, updateRouteEstimate, addDeliveryEvent } from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
 
 const deliveryLabels = {
@@ -28,6 +28,8 @@ export default function TransferDetail() {
     const [error, setError] = useState('');
     const [coordinatorNotes, setCoordinatorNotes] = useState('');
     const [handoffNotes, setHandoffNotes] = useState('');
+    const [routeForm, setRouteForm] = useState({ route_distance_km: '', estimated_travel_minutes: '' });
+    const [eventForm, setEventForm] = useState({ event_type: 'location_update', location: '', notes: '' });
     const user = JSON.parse(localStorage.getItem('carebridge_user') || '{}');
 
     const loadTransfer = async () => {
@@ -36,6 +38,10 @@ export default function TransferDetail() {
             setTransfer(res.data.transfer_request);
             setCoordinatorNotes(res.data.transfer_request.coordinator_notes || '');
             setHandoffNotes(res.data.transfer_request.handoff_notes || '');
+            setRouteForm({
+                route_distance_km: res.data.transfer_request.route_distance_km || '',
+                estimated_travel_minutes: res.data.transfer_request.estimated_travel_minutes || '',
+            });
         } catch (err) {
             setError(err.response?.data?.message || 'Unable to load rejected patient case detail.');
         } finally {
@@ -49,7 +55,8 @@ export default function TransferDetail() {
 
     const formatDate = (value) => value ? new Date(value).toLocaleString() : '-';
     const canReceive = transfer && user.role === 'receiving_staff' && transfer.receiving_hospital_id === user.hospital_id;
-    const canMonitor = ['coordinator', 'admin'].includes(user.role);
+    const canMonitor = ['coordinator', 'dispatcher', 'admin'].includes(user.role);
+    const canUpdateDelivery = transfer && (canMonitor || canReceive || (user.role === 'sending_staff' && transfer.sending_hospital_id === user.hospital_id));
 
     const runAction = async (action, success) => {
         setMessage('');
@@ -72,6 +79,35 @@ export default function TransferDetail() {
             loadTransfer();
         } catch (err) {
             setError(err.response?.data?.message || 'Unable to save coordinator notes.');
+        }
+    };
+
+    const saveRouteEstimate = async () => {
+        setMessage('');
+        setError('');
+        try {
+            await updateRouteEstimate(transfer.id, {
+                route_distance_km: routeForm.route_distance_km || null,
+                estimated_travel_minutes: routeForm.estimated_travel_minutes || null,
+            });
+            setMessage('Route estimate saved.');
+            loadTransfer();
+        } catch (err) {
+            setError(err.response?.data?.message || 'Unable to save route estimate.');
+        }
+    };
+
+    const submitDeliveryEvent = async (event) => {
+        event.preventDefault();
+        setMessage('');
+        setError('');
+        try {
+            await addDeliveryEvent(transfer.id, eventForm);
+            setEventForm({ event_type: 'location_update', location: '', notes: '' });
+            setMessage('Delivery timeline updated.');
+            loadTransfer();
+        } catch (err) {
+            setError(err.response?.data?.message || 'Unable to add delivery update.');
         }
     };
 
@@ -149,6 +185,9 @@ export default function TransferDetail() {
                         <div><span>Ambulance / Unit</span><strong>{transfer.ambulance_unit || '-'}</strong></div>
                         <div><span>Transport Contact</span><strong>{transfer.transport_contact || '-'}</strong></div>
                         <div><span>Estimated Arrival</span><strong>{formatDate(transfer.estimated_arrival_at)}</strong></div>
+                        <div><span>Route Distance</span><strong>{transfer.route_distance_km ? `${transfer.route_distance_km} km` : '-'}</strong></div>
+                        <div><span>Travel Estimate</span><strong>{transfer.estimated_travel_minutes ? `${transfer.estimated_travel_minutes} min` : '-'}</strong></div>
+                        <div><span>Assigned Dispatcher</span><strong>{transfer.assigned_dispatcher?.name || 'Unassigned'}</strong></div>
                         <div><span>Delivery Notes</span><strong>{transfer.delivery_notes || '-'}</strong></div>
                         <div><span>Handoff Notes</span><strong>{transfer.handoff_notes || '-'}</strong></div>
                         {transfer.status === 'in_transfer' && canReceive && (
@@ -172,6 +211,69 @@ export default function TransferDetail() {
                     </div>
                 </div>
             </div>
+
+            {canUpdateDelivery && (
+                <div className="detail-grid mt-24">
+                    <div className="card">
+                        <div className="card-header">Route Estimate</div>
+                        <div className="card-body">
+                            <div className="route-estimate-grid">
+                                <div className="form-group">
+                                    <label>Distance KM</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.1"
+                                        value={routeForm.route_distance_km}
+                                        onChange={(e) => setRouteForm({ ...routeForm, route_distance_km: e.target.value })}
+                                        placeholder="e.g., 12.5"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Estimated Travel Minutes</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={routeForm.estimated_travel_minutes}
+                                        onChange={(e) => setRouteForm({ ...routeForm, estimated_travel_minutes: e.target.value })}
+                                        placeholder="e.g., 28"
+                                    />
+                                </div>
+                            </div>
+                            <button className="btn btn-primary btn-sm" type="button" onClick={saveRouteEstimate}>Save Route</button>
+                        </div>
+                    </div>
+
+                    <div className="card">
+                        <div className="card-header">Add Delivery Update</div>
+                        <div className="card-body">
+                            <form className="delivery-event-form" onSubmit={submitDeliveryEvent}>
+                                <div className="form-grid">
+                                    <div className="form-group">
+                                        <label>Event</label>
+                                        <select value={eventForm.event_type} onChange={(e) => setEventForm({ ...eventForm, event_type: e.target.value })}>
+                                            <option value="departed">Departed</option>
+                                            <option value="location_update">Location update</option>
+                                            <option value="delayed">Delayed</option>
+                                            <option value="arrived_gate">Arrived at receiving area</option>
+                                            <option value="handoff_completed">Handoff completed</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Location</label>
+                                        <input value={eventForm.location} onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })} placeholder="Current location or checkpoint" />
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label>Notes</label>
+                                    <textarea value={eventForm.notes} onChange={(e) => setEventForm({ ...eventForm, notes: e.target.value })} placeholder="Short delivery update..." />
+                                </div>
+                                <button className="btn btn-primary btn-sm" type="submit">Add Update</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="card mt-24">
                 <div className="card-header">Document Checklist</div>
@@ -213,6 +315,14 @@ export default function TransferDetail() {
                                 <span></span>
                                 <strong>{label}</strong>
                                 <small>{formatDate(date)}</small>
+                            </div>
+                        ))}
+                        {(transfer.delivery_events || []).map((event) => (
+                            <div key={event.id} className="active delivery-event-item">
+                                <span></span>
+                                <strong>{event.label || event.event_type?.replace('_', ' ')}</strong>
+                                <small>{formatDate(event.occurred_at)} {event.location ? `- ${event.location}` : ''}</small>
+                                {event.notes && <em>{event.notes}</em>}
                             </div>
                         ))}
                     </div>

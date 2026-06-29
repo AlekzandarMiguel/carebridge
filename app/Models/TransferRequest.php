@@ -39,10 +39,15 @@ class TransferRequest extends Model
         'escalation_reason',
         'created_by',
         'accepted_by',
+        'assigned_dispatcher_id',
+        'assigned_at',
         'accept_conditions',
         'reserved_until',
         'handoff_notes',
         'coordinator_notes',
+        'route_distance_km',
+        'estimated_travel_minutes',
+        'delivery_events',
     ];
 
     protected $casts = [
@@ -56,6 +61,9 @@ class TransferRequest extends Model
         'document_checklist' => 'array',
         'privacy_confirmed' => 'boolean',
         'reserved_until' => 'datetime',
+        'assigned_at' => 'datetime',
+        'route_distance_km' => 'decimal:2',
+        'delivery_events' => 'array',
     ];
 
     public function sendingHospital()
@@ -81,6 +89,11 @@ class TransferRequest extends Model
     public function escalator()
     {
         return $this->belongsTo(User::class, 'escalated_by');
+    }
+
+    public function assignedDispatcher()
+    {
+        return $this->belongsTo(User::class, 'assigned_dispatcher_id');
     }
 
     public function logs()

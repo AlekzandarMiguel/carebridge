@@ -14,8 +14,8 @@ class AnalyticsController extends Controller
     {
         $user = $request->user();
 
-        if (!in_array($user->role, ['coordinator', 'admin'])) {
-            return response()->json(['message' => 'Only coordinators and admins can view analytics.'], 403);
+        if (!in_array($user->role, ['coordinator', 'dispatcher', 'admin'])) {
+            return response()->json(['message' => 'Only department monitors can view analytics.'], 403);
         }
 
         $baseQuery = TransferRequest::query();
@@ -112,6 +112,15 @@ class AnalyticsController extends Controller
                 'total' => $t->total,
             ]);
 
+        $assignmentStats = [
+            'assigned' => (clone $baseQuery)->whereNotNull('assigned_dispatcher_id')->count(),
+            'unassigned_active' => (clone $baseQuery)
+                ->whereIn('status', ['pending', 'accepted', 'reserved', 'in_transfer'])
+                ->whereNull('assigned_dispatcher_id')
+                ->count(),
+            'avg_travel_minutes' => round((clone $baseQuery)->whereNotNull('estimated_travel_minutes')->avg('estimated_travel_minutes') ?? 0),
+        ];
+
         $totalRequests = array_sum(array_values($statusCounts));
         $completedCount = $statusCounts['completed'] ?? 0;
         $successRate = $totalRequests > 0
@@ -125,6 +134,7 @@ class AnalyticsController extends Controller
             'case_type_distribution' => $caseTypeChart,
             'decline_reason_distribution' => $declineReasonChart,
             'hospital_stats' => $hospitalStats,
+            'assignment_stats' => $assignmentStats,
             'summary' => [
                 'total_requests' => $totalRequests,
                 'completed_requests' => $completedCount,

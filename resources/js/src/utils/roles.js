@@ -2,13 +2,15 @@ export const roleHome = {
     sending_staff: '/create-transfer',
     receiving_staff: '/incoming-requests',
     coordinator: '/coordinator-board',
+    dispatcher: '/coordinator-board',
     admin: '/admin',
 };
 
 export const roleLabels = {
-    sending_staff: 'Sending Staff',
-    receiving_staff: 'Receiving Staff',
+    sending_staff: 'Intake Staff',
+    receiving_staff: 'Acceptance Staff',
     coordinator: 'Coordinator',
+    dispatcher: 'Dispatcher',
     admin: 'Admin',
 };
 

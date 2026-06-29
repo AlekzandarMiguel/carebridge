@@ -116,7 +116,7 @@ class AuthSettingsTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('user.name', 'Updated User')
-            ->assertJsonPath('role_settings.label', 'Sending Staff');
+            ->assertJsonPath('role_settings.label', 'Intake Staff');
 
         $user->refresh();
 

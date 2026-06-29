@@ -478,6 +478,12 @@ textarea {
     --role-soft-text: #ddd6fe;
 }
 
+.role-dispatcher {
+    --role-color: #0ea5e9;
+    --role-text: #0284c7;
+    --role-soft-text: #bae6fd;
+}
+
 .page-content {
     padding: 34px;
     min-width: 0;
@@ -3341,6 +3347,90 @@ html[data-theme="dark"] .delivery-progress div.active {
 .notification-popover small {
     color: var(--gray-500);
     font-weight: 700;
+}
+
+.assignment-strip {
+    display: grid;
+    gap: 2px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--info) 12%, transparent), transparent),
+        var(--surface);
+    border: 1px solid color-mix(in srgb, var(--info) 28%, var(--border));
+}
+
+.assignment-strip small {
+    color: var(--info);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 10px;
+    font-weight: 950;
+}
+
+.assignment-strip strong {
+    color: var(--gray-900);
+    font-size: 12px;
+}
+
+.assignment-control {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+}
+
+.assignment-control select {
+    min-width: 0;
+    min-height: 34px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--field-bg);
+    color: var(--field-text);
+    font-size: 12px;
+    font-weight: 850;
+}
+
+.route-estimate-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.delivery-event-form {
+    display: grid;
+    gap: 12px;
+}
+
+.delivery-event-item {
+    position: relative;
+}
+
+.delivery-event-item em {
+    grid-column: 2;
+    color: var(--gray-600);
+    font-style: normal;
+    font-size: 12px;
+    font-weight: 750;
+}
+
+html[data-theme="dark"] .feature-hero,
+html[data-theme="dark"] .summary-card,
+html[data-theme="dark"] .insight-panel {
+    background:
+        radial-gradient(circle at 0% 0%, rgba(96, 165, 250, 0.12), transparent 18rem),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.98));
+    border-color: rgba(148, 163, 184, 0.24);
+    color: var(--gray-800);
+}
+
+html[data-theme="dark"] .assignment-control select,
+html[data-theme="dark"] .assignment-strip {
+    color-scheme: dark;
+    background:
+        linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(11, 18, 34, 0.98));
+    border-color: rgba(148, 163, 184, 0.26);
 }
 
 @media print {

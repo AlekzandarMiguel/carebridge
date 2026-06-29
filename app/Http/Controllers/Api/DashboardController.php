@@ -9,12 +9,14 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    private const MONITOR_ROLES = ['coordinator', 'dispatcher', 'admin'];
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $hospitalId = $user->hospital_id;
         $baseQuery = TransferRequest::query()
-            ->when(!in_array($user->role, ['coordinator', 'admin']), function ($q) use ($hospitalId) {
+            ->when(!in_array($user->role, self::MONITOR_ROLES), function ($q) use ($hospitalId) {
                 $q->where(function ($scoped) use ($hospitalId) {
                     $scoped->where('sending_hospital_id', $hospitalId)
                         ->orWhere('receiving_hospital_id', $hospitalId);
@@ -30,9 +32,20 @@ class DashboardController extends Controller
         $enRoutePatients = (clone $baseQuery)->where('delivery_status', 'en_route')->count();
         $arrivedPatients = (clone $baseQuery)->where('delivery_status', 'arrived')->count();
         $deliveredPatients = (clone $baseQuery)->where('delivery_status', 'delivered')->count();
+        $waitingPatients = (clone $baseQuery)->whereIn('status', ['pending', 'accepted', 'reserved'])->count();
+        $delayedCases = (clone $baseQuery)
+            ->whereIn('status', ['pending', 'accepted'])
+            ->where('created_at', '<=', now()->subMinutes(20))
+            ->count();
+        $assignedCases = (clone $baseQuery)->whereNotNull('assigned_dispatcher_id')->count();
+        $unassignedCases = (clone $baseQuery)
+            ->whereIn('status', ['pending', 'accepted', 'reserved', 'in_transfer'])
+            ->whereNull('assigned_dispatcher_id')
+            ->count();
+        $avgTravelMinutes = (clone $baseQuery)->whereNotNull('estimated_travel_minutes')->avg('estimated_travel_minutes') ?? 0;
 
-        $recentRequests = TransferRequest::with(['sendingHospital', 'receivingHospital', 'creator'])
-            ->when(!in_array($user->role, ['coordinator', 'admin']), function ($q) use ($hospitalId) {
+        $recentRequests = TransferRequest::with(['sendingHospital', 'receivingHospital', 'creator', 'assignedDispatcher'])
+            ->when(!in_array($user->role, self::MONITOR_ROLES), function ($q) use ($hospitalId) {
                 $q->where('sending_hospital_id', $hospitalId)
                   ->orWhere('receiving_hospital_id', $hospitalId);
             })
@@ -55,6 +68,11 @@ class DashboardController extends Controller
                 'en_route_patients' => $enRoutePatients,
                 'arrived_patients' => $arrivedPatients,
                 'delivered_patients' => $deliveredPatients,
+                'waiting_patients' => $waitingPatients,
+                'delayed_cases' => $delayedCases,
+                'assigned_cases' => $assignedCases,
+                'unassigned_cases' => $unassignedCases,
+                'avg_travel_minutes' => round($avgTravelMinutes),
                 'success_rate' => $successRate,
             ],
             'recent_requests' => $recentRequests,

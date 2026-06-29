@@ -4,9 +4,10 @@ import { login } from '../api/axios';
 import ThemeToggle from '../components/ThemeToggle';
 
 const demoAccounts = [
-    ['Sending Staff', 'sarah@citygeneral.com'],
-    ['Receiving Staff', 'mark@stmary.com'],
+    ['Intake Staff', 'sarah@citygeneral.com'],
+    ['Acceptance Staff', 'mark@stmary.com'],
     ['Coordinator', 'maria@carebridge.com'],
+    ['Dispatcher', 'dispatcher@carebridge.com'],
     ['Admin', 'admin@carebridge.com'],
 ];
 

@@ -186,7 +186,7 @@ export default function TransferTracking() {
                     </div>
                 </div>
                 <div className="action-buttons">
-                    {['coordinator', 'admin'].includes(user.role) && <button className="btn btn-primary btn-sm" onClick={handleExport}>Export CSV</button>}
+                    {['coordinator', 'dispatcher', 'admin'].includes(user.role) && <button className="btn btn-primary btn-sm" onClick={handleExport}>Export CSV</button>}
                     <button className="btn btn-outline btn-sm" onClick={clearFilters}>Clear</button>
                 </div>
             </div>
@@ -240,6 +240,10 @@ export default function TransferTracking() {
                                                         </small>
                                                         {req.reserved_until && (
                                                             <small>Reserve expires: {minutesUntil(req.reserved_until)} min</small>
+                                                        )}
+                                                        <small>Dispatcher: {req.assigned_dispatcher?.name || 'Unassigned'}</small>
+                                                        {(req.route_distance_km || req.estimated_travel_minutes) && (
+                                                            <small>{req.route_distance_km || '-'} km / {req.estimated_travel_minutes || '-'} min</small>
                                                         )}
                                                     </div>
                                                 </td>

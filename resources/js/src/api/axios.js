@@ -70,6 +70,9 @@ export const completeTransfer = (id, data = {}) => api.put(`/transfer-requests/$
 export const cancelTransfer = (id) => api.put(`/transfer-requests/${id}/cancel`);
 export const escalateTransfer = (id, reason = 'Coordinator escalation requested.') => api.put(`/transfer-requests/${id}/escalate`, { reason });
 export const updateCoordinatorNotes = (id, coordinator_notes = '') => api.put(`/transfer-requests/${id}/coordinator-notes`, { coordinator_notes });
+export const assignDispatcher = (id, assigned_dispatcher_id) => api.put(`/transfer-requests/${id}/assign-dispatcher`, { assigned_dispatcher_id });
+export const updateRouteEstimate = (id, data = {}) => api.put(`/transfer-requests/${id}/route-estimate`, data);
+export const addDeliveryEvent = (id, data = {}) => api.post(`/transfer-requests/${id}/delivery-events`, data);
 
 // Transfer Tracking
 export const getTransferTracking = (page = 1, filters = {}) => api.get('/transfer-tracking', { params: { page, ...filters } });

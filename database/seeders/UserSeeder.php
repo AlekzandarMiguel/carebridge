@@ -32,6 +32,7 @@ class UserSeeder extends Seeder
 
             // Coordinators
             ['name' => 'Coordinator Maria Santos', 'email' => 'maria@carebridge.com', 'role' => 'coordinator', 'hospital_id' => 1],
+            ['name' => 'Dispatcher Nina Cruz', 'email' => 'dispatcher@carebridge.com', 'role' => 'dispatcher', 'hospital_id' => 1],
             ['name' => 'Admin John Doe', 'email' => 'admin@carebridge.com', 'role' => 'admin', 'hospital_id' => 1],
         ];
 

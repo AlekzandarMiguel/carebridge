@@ -2,7 +2,7 @@
 
 CareBridge is a rejected patient placement and delivery coordination system. It is designed like a focused department for situations where a patient is rejected or delayed because a hospital is full, and staff need a clear way to find another hospital that can accept them.
 
-The system helps sending hospitals submit rejected patient cases, accepting hospitals review and reserve capacity, coordinators monitor the placement department, and admins manage users, hospitals, settings, and audit logs.
+The system helps intake staff submit rejected patient cases, acceptance staff review and reserve capacity, coordinators supervise the placement department, dispatchers monitor delivery movement, and admins manage users, hospitals, settings, and audit logs.
 
 ## Project Purpose
 
@@ -29,10 +29,12 @@ Because of this, the hassle of manually searching for another hospital is reduce
 - Rejected patient case creation for capacity-limited patients.
 - Privacy confirmation and handoff document checklist during request creation.
 - Suggested receiving hospitals based on matching available bed type.
-- Incoming request triage for receiving staff.
+- Incoming request triage for acceptance staff.
 - Accept, decline, reserve, start transfer, mark arrived, complete, cancel, and escalate actions.
-- Patient delivery monitoring with transport team, ambulance unit, contact, ETA, location, and delivery notes.
-- Coordinator command view for active network requests.
+- Patient delivery monitoring with transport team, ambulance unit, contact, ETA, route distance, travel estimate, location, and delivery notes.
+- Dispatcher assignment for active placement and delivery cases.
+- Delivery event timeline for departed, location update, delayed, receiving area arrival, and handoff updates.
+- Command view for active network requests, dispatcher assignment, escalation, SLA monitoring, and network pressure.
 - Admin management for users, account approval, hospitals, system settings, and demo data refresh.
 - Audit logs with filters, CSV export, action, role, search term, and date range.
 - Delivery tracking filters, global search, and CSV export for monitor roles.
@@ -44,22 +46,25 @@ Because of this, the hassle of manually searching for another hospital is reduce
 
 | Role | Main Purpose |
 | --- | --- |
-| Sending Staff | Submit rejected patient cases, monitor placement, reroute declined cases, and start delivery after reservation. |
-| Receiving Staff | Update own hospital capacity, review acceptance queue, accept or decline, reserve beds, mark arrivals, and complete handoffs. |
-| Coordinator | Act as the department dispatcher, monitor network-wide placement and delivery, escalate cases, add coordinator notes, and view analytics. |
+| Intake Staff | Submit rejected patient cases, monitor placement, reroute declined cases, and start delivery after reservation. |
+| Acceptance Staff | Update own hospital capacity, review acceptance queue, accept or decline, reserve beds, mark arrivals, and complete handoffs. |
+| Coordinator | Supervise network-wide placement, escalation, SLA pressure, coordinator notes, and analytics. |
+| Dispatcher | Assign active cases, maintain route estimates, and add delivery timeline updates. |
 | Admin | Manage department users, hospitals, settings, audit logs, demo data, analytics, and the command view. |
 
 ## Core Workflow
 
-1. A sending staff user submits a rejected patient case because their hospital is full or cannot accept the patient.
+1. An intake staff user submits a rejected patient case because their hospital is full or cannot accept the patient.
 2. CareBridge suggests hospitals with matching available capacity.
 3. The accepting hospital reviews the case.
-4. Receiving staff accepts with optional conditions or declines with a reason.
+4. Acceptance staff accepts with optional conditions or declines with a reason.
 5. Accepted requests can reserve matching bed capacity.
 6. If the reservation expires before departure, the capacity is released automatically.
-7. Sending staff starts patient delivery and records transport information.
-8. Receiving staff marks patient arrival and completes the handoff.
-9. Coordinators and admins can monitor, escalate, export, and audit the workflow.
+7. A coordinator or dispatcher assigns the case for delivery monitoring.
+8. Intake staff starts patient delivery and records transport information.
+9. Dispatchers update route estimates and delivery timeline events until handoff.
+10. Acceptance staff marks patient arrival and completes the handoff.
+11. Coordinators, dispatchers, and admins can monitor, escalate, export, and audit the workflow.
 
 ## Tech Stack
 
@@ -113,9 +118,10 @@ password123
 
 Demo access includes:
 
-- Sending staff account
-- Receiving staff account
+- Intake staff account
+- Acceptance staff account
 - Coordinator account
+- Dispatcher account
 - Admin account
 
 The exact seeded emails are defined in `database/seeders/UserSeeder.php`.

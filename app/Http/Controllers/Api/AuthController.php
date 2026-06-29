@@ -58,8 +58,8 @@ class AuthController extends Controller
                 ->orderBy('name')
                 ->get(['id', 'name']),
             'roles' => [
-                ['value' => 'sending_staff', 'label' => 'Sending Staff'],
-                ['value' => 'receiving_staff', 'label' => 'Receiving Staff'],
+                ['value' => 'sending_staff', 'label' => 'Intake Staff'],
+                ['value' => 'receiving_staff', 'label' => 'Acceptance Staff'],
             ],
         ]);
     }
@@ -236,7 +236,7 @@ class AuthController extends Controller
     {
         $settings = [
             'sending_staff' => [
-                'label' => 'Sending Staff',
+                'label' => 'Intake Staff',
                 'home' => '/create-transfer',
                 'permissions' => [
                     'Submit rejected patient cases',
@@ -248,7 +248,7 @@ class AuthController extends Controller
                 ],
             ],
             'receiving_staff' => [
-                'label' => 'Receiving Staff',
+                'label' => 'Acceptance Staff',
                 'home' => '/incoming-requests',
                 'permissions' => [
                     'Review rejected patient acceptance requests',
@@ -270,6 +270,18 @@ class AuthController extends Controller
                     'Monitor patient delivery across hospitals',
                     'Review analytics across hospitals',
                     'Flag delays and coordinate follow-ups outside hospital action buttons',
+                ],
+            ],
+            'dispatcher' => [
+                'label' => 'Dispatcher',
+                'home' => '/coordinator-board',
+                'permissions' => [
+                    'View department command board',
+                    'Assign active rejected patient cases',
+                    'Update route distance and travel estimates',
+                    'Add delivery timeline events',
+                    'Monitor delayed placement and delivery cases',
+                    'Review analytics for department handoffs',
                 ],
             ],
             'admin' => [
