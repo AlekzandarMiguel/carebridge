@@ -90,14 +90,14 @@ export default function CoordinatorBoard() {
         <div>
             <div className="feature-hero">
                 <div>
-                    <span>Live Coordination</span>
-                    <h2>Coordinator Command View</h2>
-                    <p>Active capacity requests grouped by operational state and sorted by urgency.</p>
+                    <span>Department Dispatch</span>
+                    <h2>Rejected Patient Command View</h2>
+                    <p>Active placement and delivery cases grouped by operational state and sorted by urgency.</p>
                 </div>
                 <div className="hero-metrics">
                     <div><strong>{activeCount}</strong><small>Active</small></div>
                     <div><strong>{criticalCount}</strong><small>Critical</small></div>
-                    <div><strong>{movementCount}</strong><small>Moving</small></div>
+                    <div><strong>{movementCount}</strong><small>In delivery</small></div>
                 </div>
             </div>
 
@@ -108,17 +108,17 @@ export default function CoordinatorBoard() {
                 <div className="insight-panel">
                     <span>Escalation Dashboard</span>
                     <strong>{escalatedRequests.length}</strong>
-                    <p>Active items already flagged for follow-up.</p>
+                    <p>Rejected patient cases already flagged for follow-up.</p>
                 </div>
                 <div className="insight-panel">
                     <span>SLA Timers</span>
                     <strong>{delayedRequests.length}</strong>
-                    <p>Pending or accepted requests waiting {slaMinutes}+ minutes.</p>
+                    <p>Pending or accepted cases waiting {slaMinutes}+ minutes.</p>
                 </div>
                 <div className="insight-panel">
                     <span>Network Pressure</span>
                     <strong>{pressureHospitals[0]?.totalBeds ?? 0}</strong>
-                    <p>Lowest available bed count in active hospitals.</p>
+                    <p>Lowest available bed count for placement decisions.</p>
                 </div>
             </div>
 
@@ -135,7 +135,7 @@ export default function CoordinatorBoard() {
                     </div>
                 </div>
                 <div className="card">
-                    <div className="card-header">Reroute Suggestions</div>
+                    <div className="card-header">Placement Suggestions</div>
                     <div className="card-body compact-list">
                         {rerouteHospitals.map((hospital) => (
                             <div key={hospital.id}>
@@ -153,7 +153,7 @@ export default function CoordinatorBoard() {
                         <div className={`board-column-header board-lane-${index}`}>
                             <div>
                                 <strong>{label}</strong>
-                                <small>{status === 'in_transfer' ? 'Delivery movement' : 'Operational queue'}</small>
+                                <small>{status === 'in_transfer' ? 'Delivery movement' : 'Department queue'}</small>
                             </div>
                             <span>{board[status]?.length || 0}</span>
                         </div>
@@ -187,7 +187,7 @@ export default function CoordinatorBoard() {
                                 </Link>
                             ))}
                             {(board[status] || []).length === 0 && (
-                                <div className="board-empty">No requests in this lane.</div>
+                                <div className="board-empty">No cases in this lane.</div>
                             )}
                         </div>
                     </section>

@@ -133,7 +133,7 @@ export default function CreateTransfer() {
                 estimated_arrival_at: '',
             });
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to create transfer request.');
+            setError(err.response?.data?.message || 'Failed to create rejected patient case.');
         } finally {
             setSubmitting(false);
         }
@@ -145,14 +145,14 @@ export default function CreateTransfer() {
         return (
             <div>
                 <div className="alert alert-success">
-                    Transfer request created successfully.
+                    Rejected patient case created successfully.
                 </div>
                 <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
                     <button className="btn btn-primary" onClick={() => setSuccess(false)}>
-                        Create Another
+                        Create Another Case
                     </button>
                     <button className="btn btn-outline" onClick={() => navigate('/transfer-tracking')}>
-                        View Transfers
+                        View Delivery Tracking
                     </button>
                 </div>
             </div>
@@ -161,9 +161,9 @@ export default function CreateTransfer() {
 
     return (
         <div>
-            <h2 style={{ fontSize: '20px', marginBottom: '8px' }}>Create Transfer Request</h2>
+            <h2 style={{ fontSize: '20px', marginBottom: '8px' }}>Create Rejected Patient Case</h2>
             <p style={{ color: 'var(--gray-500)', marginBottom: '24px' }}>
-                From: <strong>{user.hospital?.name}</strong> - Select a receiving hospital for a capacity request.
+                From: <strong>{user.hospital?.name}</strong> - Send this rejected patient case to the placement department queue.
             </p>
 
             {error && <div className="alert alert-error">{error}</div>}
@@ -173,9 +173,9 @@ export default function CreateTransfer() {
                 <div className="card-body" style={{ maxWidth: '600px' }}>
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
-                            <label>Receiving Hospital *</label>
+                            <label>Accepting Hospital *</label>
                             <select name="receiving_hospital_id" value={form.receiving_hospital_id} onChange={handleChange} required>
-                                <option value="">Select Hospital</option>
+                                <option value="">Select accepting hospital</option>
                                 {hospitals.map((h) => (
                                     <option key={h.id} value={h.id}>
                                         {h.name}
@@ -228,7 +228,7 @@ export default function CreateTransfer() {
 
                         <div className="form-grid">
                             <div className="form-group">
-                                <label>Rejected Patient Reason</label>
+                            <label>Why the patient was rejected</label>
                                 <select name="rejection_reason" value={form.rejection_reason} onChange={handleChange}>
                                     <option value="">Select reason</option>
                                     <option value="No available bed">No available bed</option>
@@ -319,7 +319,7 @@ export default function CreateTransfer() {
 
                         <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
                             <button type="submit" className="btn btn-primary" disabled={submitting}>
-                                {submitting ? 'Creating...' : 'Send Transfer Request'}
+                                {submitting ? 'Creating...' : 'Send to Placement Department'}
                             </button>
                             <button type="button" className="btn btn-outline" onClick={() => navigate('/dashboard')}>
                                 Cancel
@@ -330,7 +330,7 @@ export default function CreateTransfer() {
                 </div>
 
                 <div className="card">
-                    <div className="card-header">Suggested Receiving Hospitals</div>
+                    <div className="card-header">Suggested Accepting Hospitals</div>
                     <div className="card-body recommendation-list">
                         {recommendations.length === 0 ? (
                             <div className="empty-state"><p>No recommendations available.</p></div>

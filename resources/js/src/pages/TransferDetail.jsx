@@ -37,7 +37,7 @@ export default function TransferDetail() {
             setCoordinatorNotes(res.data.transfer_request.coordinator_notes || '');
             setHandoffNotes(res.data.transfer_request.handoff_notes || '');
         } catch (err) {
-            setError(err.response?.data?.message || 'Unable to load transfer detail.');
+            setError(err.response?.data?.message || 'Unable to load rejected patient case detail.');
         } finally {
             setLoading(false);
         }
@@ -75,8 +75,8 @@ export default function TransferDetail() {
         }
     };
 
-    if (loading) return <div className="loading">Loading transfer detail...</div>;
-    if (!transfer) return <div className="empty-state"><p>{error || 'Transfer not found.'}</p></div>;
+    if (loading) return <div className="loading">Loading rejected patient case detail...</div>;
+    if (!transfer) return <div className="empty-state"><p>{error || 'Case not found.'}</p></div>;
 
     const deliveryStatus = transfer.delivery_status || 'not_started';
     const currentStep = deliverySteps.indexOf(deliveryStatus);
@@ -91,9 +91,9 @@ export default function TransferDetail() {
         <div>
             <div className="feature-hero transfer-hero">
                 <div>
-                    <span>Transfer Summary</span>
-                    <h2>Transfer Detail</h2>
-                    <p>Patient handoff, delivery timeline, transport information, and audit history.</p>
+                    <span>Rejected Case Summary</span>
+                    <h2>Placement and Delivery Detail</h2>
+                    <p>Rejected patient placement, delivery timeline, transport information, and audit history.</p>
                 </div>
                 <div className="hero-metrics">
                     <div><strong>{transfer.patient_reference_code}</strong><small>Reference</small></div>
@@ -128,7 +128,7 @@ export default function TransferDetail() {
                     </div>
                     <div className="card-body detail-list detail-list-panel">
                         <div><span>Sending Hospital</span><strong>{transfer.sending_hospital?.name}</strong></div>
-                        <div><span>Receiving Hospital</span><strong>{transfer.receiving_hospital?.name || '-'}</strong></div>
+                        <div><span>Accepting Hospital</span><strong>{transfer.receiving_hospital?.name || '-'}</strong></div>
                         <div><span>Case Type</span><strong>{transfer.case_type}</strong></div>
                         <div><span>Urgency</span><strong>{transfer.urgency_level}</strong></div>
                         <div><span>Rejected Patient Reason</span><strong>{transfer.rejection_reason || '-'}</strong></div>

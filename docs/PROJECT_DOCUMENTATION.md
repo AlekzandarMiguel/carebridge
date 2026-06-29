@@ -2,25 +2,26 @@
 
 ## 1. Project Overview
 
-CareBridge is a web-based hospital capacity coordination system. It supports hospitals that need to coordinate patient placement when a patient may be rejected, delayed, or redirected because the current hospital has no available capacity.
+CareBridge is a web-based rejected patient placement and delivery coordination system. It works like a focused department for hospitals that need to coordinate patient placement when a patient may be rejected, delayed, or redirected because the current hospital has no available capacity.
 
-The system is not meant to replace a full electronic health record system. It is a focused coordination layer for capacity-based transfer decisions between hospitals.
+The system is not meant to replace a full electronic health record system. It is a focused department-style coordination layer for capacity-based placement and delivery decisions between hospitals.
 
 ## 2. Problem Statement
 
 Hospitals can become full in general wards, emergency departments, ICU units, or ambulance availability. When this happens, a patient may be rejected or delayed without a shared view of which partner hospital can accept them.
 
-CareBridge addresses this by giving hospitals a shared workflow for:
+CareBridge addresses this by giving hospitals a shared department workflow for:
 
 - Finding available capacity.
-- Creating capacity-based transfer requests.
+- Creating rejected patient placement cases.
 - Accepting, declining, or reserving capacity.
-- Monitoring patient delivery.
+- Monitoring patient delivery until handoff.
 - Recording actions for review and accountability.
 
 ## 3. Project Goals
 
 - Help hospitals coordinate patients who may be rejected due to full capacity.
+- Provide a dedicated placement and delivery department workflow for rejected patients.
 - Give staff clear role-based workspaces.
 - Track the full request lifecycle from creation to completion.
 - Reduce manual confusion around bed reservation and status updates.
@@ -33,7 +34,7 @@ A patient arrives at a hospital needing urgent care, but the hospital is already
 
 Without CareBridge, the patient or staff may need to look for another hospital manually. This can mean calling different hospitals one by one, waiting for confirmation, repeating the patient's situation, and hoping the available bed information is still accurate. This creates stress, delay, and uncertainty.
 
-With CareBridge, staff can create a request in the system. CareBridge shows which hospital can accept the patient based on available capacity, such as emergency beds, ICU beds, or general beds. The receiving hospital can accept, decline, or reserve the needed capacity directly in the system.
+With CareBridge, staff can send the case to the placement department workspace. CareBridge shows which hospital can accept the patient based on available capacity, such as emergency beds, ICU beds, or general beds. The accepting hospital can accept, decline, or reserve the needed capacity directly in the system.
 
 Because of this, the hassle of manually searching for another hospital is reduced. The patient does not have to keep looking for an available hospital, and staff can quickly coordinate with a hospital that has space.
 
@@ -41,15 +42,15 @@ Because of this, the hassle of manually searching for another hospital is reduce
 
 ### Sending Staff
 
-Sending staff work from the hospital that needs help placing a patient. Their primary job is to create transfer requests, choose a receiving hospital, provide patient reference details, and start the transfer once capacity is reserved.
+Sending staff work from the hospital that needs help placing a rejected patient. Their primary job is to submit rejected patient cases, choose an accepting hospital, provide patient reference details, and start delivery once capacity is reserved.
 
 ### Receiving Staff
 
-Receiving staff work from the hospital that may accept a patient. Their primary job is to update their own hospital capacity, triage incoming requests, accept or decline requests, reserve capacity, mark arrivals, and complete transfers.
+Receiving staff work from the hospital that may accept a patient. Their primary job is to update their own hospital capacity, triage acceptance requests, accept or decline cases, reserve capacity, mark arrivals, and complete handoffs.
 
 ### Coordinator
 
-Coordinators monitor activity across hospitals. They do not replace hospital staff decisions, but they can watch network pressure, use the command view, escalate active requests, add coordinator notes, and review analytics.
+Coordinators act like the department dispatchers across hospitals. They do not replace hospital staff decisions, but they can watch network pressure, use the command view, escalate active cases, add coordinator notes, and review analytics.
 
 ### Admin
 
@@ -57,9 +58,9 @@ Admins manage system records. They can create and update users, hospitals, syste
 
 ## 6. What Makes CareBridge Different
 
-CareBridge is built around capacity rejection, not elective hospital transfer.
+CareBridge is built around a rejected-patient placement department, not elective hospital transfer.
 
-Traditional hospital systems often focus on internal patient records. CareBridge focuses on the moment when a hospital is full and a person needs another hospital that can accept them safely. The system helps staff decide where the patient can go, what capacity is available, what status the request is in, and who performed each action.
+Traditional hospital systems often focus on internal patient records. CareBridge focuses on the moment when a hospital is full and a person needs another hospital that can accept them safely. The system helps staff decide where the patient can go, what capacity is available, what delivery status the case is in, and who performed each action.
 
 ## 7. System Modules
 
@@ -75,11 +76,11 @@ Traditional hospital systems often focus on internal patient records. CareBridge
 ### Authenticated Pages
 
 - Dashboard
-- Hospital Capacity
-- Create Transfer
-- Incoming Requests
-- Transfer Tracking
-- Transfer Detail
+- Capacity Desk
+- New Rejected Case
+- Acceptance Queue
+- Delivery Tracking
+- Placement and Delivery Detail
 - Command View
 - Hospital Directory
 - Analytics
@@ -111,9 +112,9 @@ Capacity is tracked per hospital with:
 
 Receiving staff can update only their own hospital capacity.
 
-### Transfer Requests
+### Rejected Patient Cases
 
-A transfer request contains:
+A rejected patient case contains:
 
 - Sending hospital.
 - Receiving hospital.
@@ -134,24 +135,24 @@ A transfer request contains:
 - Handoff notes.
 - Coordinator notes.
 
-### Hospital Recommendations
+### Accepting Hospital Recommendations
 
-Sending staff can view suggested receiving hospitals. Recommendations are ranked based on matching capacity for the selected case type:
+Sending staff can view suggested accepting hospitals. Recommendations are ranked based on matching capacity for the selected case type:
 
 - General case uses general beds.
 - Emergency case uses emergency beds.
 - ICU case uses ICU beds.
 
-### Incoming Request Triage
+### Acceptance Queue Triage
 
-Receiving staff can see incoming requests for their hospital. Requests are sorted by urgency and waiting time. They can:
+Receiving staff can see rejected patient cases sent to their hospital. Cases are sorted by urgency and waiting time. They can:
 
 - Accept with conditions.
 - Decline with a reason.
 - Reserve capacity after accepting.
 - View request details.
 
-### Delivery Monitoring
+### Patient Delivery Monitoring
 
 The delivery workflow tracks:
 
@@ -165,9 +166,9 @@ The delivery workflow tracks:
 - Transport contact.
 - Estimated arrival time.
 
-### Coordinator Command View
+### Department Command View
 
-The command view groups active requests by status:
+The command view groups active rejected patient cases by status:
 
 - Pending
 - Accepted
@@ -253,14 +254,14 @@ The selected theme is stored in local storage.
 
 | Capability | Sending Staff | Receiving Staff | Coordinator | Admin |
 | --- | --- | --- | --- | --- |
-| Create transfer request | Yes | No | No | No |
-| View own hospital-related transfers | Yes | Yes | Yes | Yes |
-| View all transfers | No | No | Yes | Yes |
+| Submit rejected patient case | Yes | No | No | No |
+| View own hospital-related cases | Yes | Yes | Yes | Yes |
+| View all cases | No | No | Yes | Yes |
 | Update own hospital capacity | No | Yes | No | No |
 | Accept incoming request | No | Yes | No | No |
 | Decline incoming request | No | Yes | No | No |
 | Reserve capacity | No | Yes | No | No |
-| Start transfer | Yes | No | No | No |
+| Start patient delivery | Yes | No | No | No |
 | Mark patient arrived | No | Yes | No | No |
 | Complete transfer | No | Yes | No | No |
 | Cancel own outgoing request | Yes | No | No | No |
@@ -392,7 +393,7 @@ Important fields:
 
 ### transfer_logs
 
-Stores action history for transfer requests.
+Stores action history for rejected patient cases.
 
 Important fields:
 
@@ -441,18 +442,18 @@ Important fields:
 | GET | `/api/hospitals/{id}/capacity` | Show hospital capacity. |
 | PUT | `/api/hospitals/{id}/capacity` | Update hospital capacity. |
 
-### Transfer Requests
+### Rejected Patient Case API
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| GET | `/api/transfer-requests` | List accessible transfers. |
-| GET | `/api/transfer-recommendations` | Get ranked receiving hospital suggestions. |
-| GET | `/api/transfer-requests/export` | Export filtered transfer report as CSV. |
-| POST | `/api/transfer-requests` | Create transfer request. |
+| GET | `/api/transfer-requests` | List accessible rejected patient cases. |
+| GET | `/api/transfer-recommendations` | Get ranked accepting hospital suggestions. |
+| GET | `/api/transfer-requests/export` | Export filtered placement report as CSV. |
+| POST | `/api/transfer-requests` | Create rejected patient case. |
 | GET | `/api/transfer-board` | Get command board data. |
-| GET | `/api/transfer-requests/{id}` | Show transfer details. |
-| GET | `/api/incoming-requests` | List incoming requests for receiving staff. |
-| GET | `/api/transfer-tracking` | List transfer tracking data. |
+| GET | `/api/transfer-requests/{id}` | Show placement and delivery details. |
+| GET | `/api/incoming-requests` | List acceptance queue cases for receiving staff. |
+| GET | `/api/transfer-tracking` | List delivery tracking data. |
 
 ### Transfer Actions
 

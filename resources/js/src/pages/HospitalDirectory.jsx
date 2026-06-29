@@ -46,9 +46,9 @@ export default function HospitalDirectory() {
         <div>
             <div className="feature-hero directory-hero">
                 <div>
-                    <span>Network Directory</span>
-                    <h2>Hospital Directory</h2>
-                    <p>Search partner hospitals, contacts, active status, and available capacity.</p>
+                    <span>Placement Directory</span>
+                    <h2>Accepting Hospital Directory</h2>
+                    <p>Search partner hospitals, contacts, active status, and capacity that can accept rejected patients.</p>
                 </div>
                 <div className="hero-metrics">
                     <div><strong>{hospitals.length}</strong><small>Hospitals</small></div>
@@ -59,7 +59,7 @@ export default function HospitalDirectory() {
 
             <div className="directory-toolbar">
                 <div className="form-group directory-search">
-                    <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search hospitals, address, contact..." />
+                    <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search accepting hospitals, address, contact..." />
                 </div>
                 <div className="directory-filter-controls">
                     <select value={filters.caseType} onChange={(e) => setFilters({ ...filters, caseType: e.target.value })}>

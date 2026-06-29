@@ -1,12 +1,12 @@
 # CareBridge
 
-CareBridge is a hospital capacity coordination and transfer tracking system. It is designed for situations where a patient may be rejected or delayed because a hospital is full, and staff need a clear way to find another hospital with available capacity.
+CareBridge is a rejected patient placement and delivery coordination system. It is designed like a focused department for situations where a patient is rejected or delayed because a hospital is full, and staff need a clear way to find another hospital that can accept them.
 
-The system helps sending hospitals request help, receiving hospitals triage incoming requests, coordinators monitor the network, and admins manage users, hospitals, settings, and audit logs.
+The system helps sending hospitals submit rejected patient cases, accepting hospitals review and reserve capacity, coordinators monitor the placement department, and admins manage users, hospitals, settings, and audit logs.
 
 ## Project Purpose
 
-Many hospital systems focus on internal records. CareBridge focuses on the coordination moment when one hospital cannot accept a patient because capacity is full. Instead of treating this as a simple patient transfer tool, it acts as a shared capacity workspace for hospitals that need to route patients safely and quickly.
+Many hospital systems focus on internal records. CareBridge focuses on the department-like coordination moment when one hospital cannot accept a patient because capacity is full. Instead of treating this as a simple patient transfer tool, it acts as a specialized placement and delivery workspace for rejected patients.
 
 ## Use Case Scenario
 
@@ -14,7 +14,7 @@ A patient arrives at a hospital needing urgent care, but the hospital is already
 
 Without CareBridge, the patient or staff may need to look for another hospital manually. This can mean calling different hospitals one by one, waiting for confirmation, repeating the patient's situation, and hoping the available bed information is still accurate. This creates stress, delay, and uncertainty.
 
-With CareBridge, staff can create a request in the system. CareBridge shows which hospital can accept the patient based on available capacity, such as emergency beds, ICU beds, or general beds. The receiving hospital can accept, decline, or reserve the needed capacity directly in the system.
+With CareBridge, staff can send the case to the placement department workspace. CareBridge shows which hospital can accept the patient based on available capacity, such as emergency beds, ICU beds, or general beds. The accepting hospital can accept, decline, or reserve the needed capacity directly in the system.
 
 Because of this, the hassle of manually searching for another hospital is reduced. The patient does not have to keep looking for an available hospital, and staff can quickly coordinate with a hospital that has space.
 
@@ -25,8 +25,8 @@ Because of this, the hassle of manually searching for another hospital is reduce
 - Signup requests require admin approval before the account can sign in.
 - Role-based dashboards and navigation.
 - Dark mode across public and authenticated pages.
-- Hospital capacity management for available general, emergency, ICU, and ambulance capacity.
-- Transfer request creation for rejected or capacity-limited patients.
+- Hospital capacity desk for available general, emergency, ICU, and ambulance capacity.
+- Rejected patient case creation for capacity-limited patients.
 - Privacy confirmation and handoff document checklist during request creation.
 - Suggested receiving hospitals based on matching available bed type.
 - Incoming request triage for receiving staff.
@@ -35,7 +35,7 @@ Because of this, the hassle of manually searching for another hospital is reduce
 - Coordinator command view for active network requests.
 - Admin management for users, account approval, hospitals, system settings, and demo data refresh.
 - Audit logs with filters, CSV export, action, role, search term, and date range.
-- Transfer tracking filters, global search, and CSV export for monitor roles.
+- Delivery tracking filters, global search, and CSV export for monitor roles.
 - Analytics for status distribution, urgency, case type, rejection reasons, completion rate, and transfer activity.
 - Notification alerts for recent transfer activity.
 - Expired reservations automatically release reserved capacity back to the receiving hospital.
@@ -44,21 +44,21 @@ Because of this, the hassle of manually searching for another hospital is reduce
 
 | Role | Main Purpose |
 | --- | --- |
-| Sending Staff | Create transfer requests, monitor outbound transfers, reroute declined requests, and start reserved transfers. |
-| Receiving Staff | Update own hospital capacity, review incoming requests, accept or decline, reserve beds, mark arrivals, and complete transfers. |
-| Coordinator | Monitor network-wide activity, use the command view, escalate requests, add coordinator notes, and view analytics. |
-| Admin | Manage users, hospitals, settings, audit logs, demo data, analytics, and the command view. |
+| Sending Staff | Submit rejected patient cases, monitor placement, reroute declined cases, and start delivery after reservation. |
+| Receiving Staff | Update own hospital capacity, review acceptance queue, accept or decline, reserve beds, mark arrivals, and complete handoffs. |
+| Coordinator | Act as the department dispatcher, monitor network-wide placement and delivery, escalate cases, add coordinator notes, and view analytics. |
+| Admin | Manage department users, hospitals, settings, audit logs, demo data, analytics, and the command view. |
 
 ## Core Workflow
 
-1. A sending staff user creates a transfer request because their hospital is full or cannot accept the patient.
+1. A sending staff user submits a rejected patient case because their hospital is full or cannot accept the patient.
 2. CareBridge suggests hospitals with matching available capacity.
-3. The receiving hospital reviews the incoming request.
+3. The accepting hospital reviews the case.
 4. Receiving staff accepts with optional conditions or declines with a reason.
 5. Accepted requests can reserve matching bed capacity.
 6. If the reservation expires before departure, the capacity is released automatically.
-7. Sending staff starts the transfer and records transport information.
-8. Receiving staff marks patient arrival and completes the transfer.
+7. Sending staff starts patient delivery and records transport information.
+8. Receiving staff marks patient arrival and completes the handoff.
 9. Coordinators and admins can monitor, escalate, export, and audit the workflow.
 
 ## Tech Stack

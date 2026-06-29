@@ -6,10 +6,10 @@ import ThemeToggle from './ThemeToggle';
 
 const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: 'DB' },
-    { path: '/hospital-capacity', label: 'Hospital Capacity', icon: 'HC', roles: ['receiving_staff'] },
-    { path: '/create-transfer', label: 'Create Transfer', icon: '+', roles: ['sending_staff'] },
-    { path: '/incoming-requests', label: 'Incoming Requests', icon: 'IN', roles: ['receiving_staff'] },
-    { path: '/transfer-tracking', label: 'Transfer Tracking', icon: 'TR' },
+    { path: '/hospital-capacity', label: 'Capacity Desk', icon: 'HC', roles: ['receiving_staff'] },
+    { path: '/create-transfer', label: 'New Rejected Case', icon: '+', roles: ['sending_staff'] },
+    { path: '/incoming-requests', label: 'Acceptance Queue', icon: 'IN', roles: ['receiving_staff'] },
+    { path: '/transfer-tracking', label: 'Delivery Tracking', icon: 'DT' },
     { path: '/coordinator-board', label: 'Command View', icon: 'CV', roles: ['coordinator', 'admin'] },
     { path: '/hospital-directory', label: 'Directory', icon: 'HD', roles: ['sending_staff', 'coordinator', 'admin'] },
     { path: '/analytics', label: 'Analytics', icon: 'AN', roles: ['coordinator', 'admin'] },
@@ -101,15 +101,15 @@ export default function Layout({ children, theme, toggleTheme }) {
             <main className="main-content">
                 <header className="topbar">
                     <div>
-                        <div className="topbar-eyebrow">Care Network</div>
-                        <div className="topbar-title">Hospital Capacity Coordination</div>
+                        <div className="topbar-eyebrow">Placement Department</div>
+                        <div className="topbar-title">Rejected Patient Placement and Delivery</div>
                     </div>
                     <form className="topbar-search" onSubmit={handleGlobalSearch}>
                         <input
                             value={globalSearch}
                             onChange={(event) => setGlobalSearch(event.target.value)}
-                            placeholder="Search transfers..."
-                            aria-label="Search transfers"
+                            placeholder="Search rejected cases..."
+                            aria-label="Search rejected patient cases"
                         />
                     </form>
                     <div className="topbar-actions">

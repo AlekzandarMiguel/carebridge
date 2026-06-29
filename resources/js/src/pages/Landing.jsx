@@ -3,71 +3,71 @@ import { Link } from 'react-router-dom';
 import ThemeToggle from '../components/ThemeToggle';
 
 const stats = [
-    { value: '7', label: 'Transfer states tracked' },
-    { value: '4', label: 'Role-aware workspaces' },
-    { value: '24/7', label: 'Operations visibility' },
+    { value: '7', label: 'Case states tracked' },
+    { value: '1', label: 'Focused placement department' },
+    { value: '24/7', label: 'Delivery visibility' },
 ];
 
 const features = [
     {
         number: '01',
-        title: 'Capacity Awareness',
-        text: 'View available general, emergency, ICU, and ambulance capacity before sending a transfer request.',
+        title: 'Rejected Patient Intake',
+        text: 'Create one clear case when a patient cannot be accepted because the hospital is full.',
     },
     {
         number: '02',
-        title: 'Request Workflow',
-        text: 'Move requests from pending to accepted, reserved, in transfer, completed, declined, or cancelled with clear ownership.',
+        title: 'Placement and Acceptance',
+        text: 'Find hospitals with matching capacity, request acceptance, and reserve the needed bed before delivery starts.',
     },
     {
         number: '03',
-        title: 'Operational Analytics',
-        text: 'Monitor request volume, urgency, case type, transfer timing, and completion performance across the network.',
+        title: 'Delivery Monitoring',
+        text: 'Monitor patient movement, arrival, handoff, rejection reasons, and department performance across the network.',
     },
 ];
 
 const workflow = [
-    'Sending hospital creates a request',
-    'Receiving hospital accepts or declines',
+    'A rejected patient case enters the department queue',
+    'The department finds a hospital that can accept',
     'Capacity is reserved for the matching case type',
-    'Transfer starts, completes, and is logged',
+    'Patient delivery is monitored until handoff',
 ];
 
 const roles = [
     {
         title: 'Sending Staff',
-        text: 'Create transfer requests and start reserved transfers from your hospital.',
+        text: 'Submit rejected patient cases and start delivery after capacity is reserved.',
     },
     {
         title: 'Receiving Staff',
-        text: 'Review incoming requests, reserve capacity, and complete accepted transfers.',
+        text: 'Review acceptance requests, reserve capacity, and confirm patient arrival.',
     },
     {
         title: 'Coordinator',
-        text: 'Watch the full transfer picture and coordinate status updates across hospitals.',
+        text: 'Act as the department dispatcher for rejected patient placement and delivery.',
     },
     {
         title: 'Admin',
-        text: 'Maintain system-level visibility and operational configuration.',
+        text: 'Maintain the department system, users, hospitals, settings, and records.',
     },
 ];
 
 const differentiators = [
     {
-        title: 'Built for patients rejected by full hospitals',
-        text: 'The system is for people who cannot be accepted because a hospital is already full, not for choosing a better hospital by preference.',
+        title: 'A dedicated rejected-patient department',
+        text: 'CareBridge works like a focused department for people who cannot be accepted because a hospital is already full.',
     },
     {
-        title: 'Find capacity before turning people away',
-        text: 'Hospitals can see which nearby facilities still have matching bed capacity before rejecting or delaying care.',
+        title: 'Placement before abandonment',
+        text: 'The workflow helps staff find another accepting hospital instead of leaving the patient or family to search manually.',
     },
     {
-        title: 'Full-hospital coordination',
-        text: 'The workflow starts when one hospital is full and needs a receiving hospital that can accept the person safely.',
+        title: 'Delivery is part of the work',
+        text: 'The case does not stop at acceptance. The department monitors delivery, arrival, and handoff.',
     },
     {
-        title: 'A focused safety net',
-        text: 'It is a lightweight coordination layer for capacity rejection scenarios, not a replacement for a full hospital record system.',
+        title: 'Not a general transfer tool',
+        text: 'It is a focused operational safety net for rejection scenarios, not a full hospital record system.',
     },
 ];
 
@@ -89,10 +89,10 @@ export default function Landing({ theme, toggleTheme }) {
                 </div>
 
                 <div className="landing-hero-content">
-                    <p className="landing-kicker">Hospital capacity coordination</p>
+                    <p className="landing-kicker">Rejected patient placement department</p>
                     <h1>CareBridge</h1>
                     <p>
-                        A focused command workspace for people who may be rejected because a hospital is full, helping staff find available capacity across partner hospitals.
+                        A specialized coordination workspace for rejected patients, helping staff find an accepting hospital and monitor delivery until handoff.
                     </p>
 
                     <div className="landing-actions">
@@ -117,9 +117,9 @@ export default function Landing({ theme, toggleTheme }) {
                 </div>
 
                 <div className="landing-next">
-                    <span>Live capacity</span>
-                    <span>Transfer tracking</span>
-                    <span>Role-based access</span>
+                    <span>Placement queue</span>
+                    <span>Delivery tracking</span>
+                    <span>Department roles</span>
                     <span>Audit logs</span>
                 </div>
             </section>
@@ -127,8 +127,8 @@ export default function Landing({ theme, toggleTheme }) {
             <section className="landing-section landing-overview">
                 <div className="landing-section-header">
                     <p className="landing-section-kicker">What it manages</p>
-                    <h2>Built for fast hospital coordination</h2>
-                    <p>Keep the transfer workflow visible from request to completion, with each hospital seeing the work that belongs to them.</p>
+                    <h2>Built like a focused department for rejected patients</h2>
+                    <p>Keep placement, acceptance, reserved capacity, delivery, and handoff visible in one shared workspace.</p>
                 </div>
                 <div className="landing-feature-grid">
                     {features.map((feature) => (
@@ -144,8 +144,8 @@ export default function Landing({ theme, toggleTheme }) {
             <section className="landing-section landing-workflow-band">
                 <div className="landing-section-header">
                     <p className="landing-section-kicker">Workflow</p>
-                    <h2>From request to completion without losing context</h2>
-                    <p>Every transfer follows a simple operational path, with status changes logged along the way.</p>
+                    <h2>From rejection to safe handoff without losing context</h2>
+                    <p>Every case follows a simple department path, with decisions and status changes logged along the way.</p>
                 </div>
                 <div className="landing-timeline">
                     {workflow.map((item, index) => (
@@ -161,7 +161,7 @@ export default function Landing({ theme, toggleTheme }) {
                 <div className="landing-section-header">
                     <p className="landing-section-kicker">Access by role</p>
                     <h2>Each team gets the controls they need</h2>
-                    <p>CareBridge separates sending, receiving, coordination, and administrative responsibilities.</p>
+                    <p>CareBridge separates intake, acceptance, dispatch coordination, and administrative responsibilities.</p>
                 </div>
                 <div className="landing-role-grid">
                     {roles.map((role) => (
@@ -176,8 +176,8 @@ export default function Landing({ theme, toggleTheme }) {
             <section className="landing-section landing-different">
                 <div className="landing-section-header">
                     <p className="landing-section-kicker">Why this idea is different</p>
-                    <h2>CareBridge is built for capacity rejection, not elective transfer.</h2>
-                    <p>When a hospital is full, people can be rejected, delayed, or redirected without a clear shared view of available capacity. This system focuses on that moment: finding a receiving hospital, reserving the right capacity, and tracking the status until care is handed off.</p>
+                    <h2>CareBridge is built as a rejected-patient placement and delivery department.</h2>
+                    <p>When a hospital is full, people can be rejected, delayed, or redirected without a clear next step. This system focuses on that moment: finding an accepting hospital, reserving the right capacity, and tracking delivery until care is handed off.</p>
                 </div>
                 <div className="landing-different-grid">
                     {differentiators.map((item) => (
@@ -196,23 +196,23 @@ export default function Landing({ theme, toggleTheme }) {
                 </div>
                 <div className="landing-assurance-grid">
                     <div>
-                        <strong>Capacity reservations</strong>
-                        <p>Reserved transfers consume matching bed capacity so availability stays realistic.</p>
+                        <strong>Placement reservations</strong>
+                        <p>Reserved cases consume matching bed capacity so availability stays realistic.</p>
                     </div>
                     <div>
                         <strong>Scoped visibility</strong>
-                        <p>Staff see transfers involving their hospital while coordinators and admins get broader context.</p>
+                        <p>Staff see cases involving their hospital while coordinators and admins get the department view.</p>
                     </div>
                     <div>
                         <strong>Action history</strong>
-                        <p>Transfer status changes are recorded for review and operational handoff.</p>
+                        <p>Case status changes are recorded for review and operational handoff.</p>
                     </div>
                 </div>
             </section>
 
             <section className="landing-final">
-                <h2>Start coordinating capacity-based care with a clearer view.</h2>
-                <p>Use a demo account or create a hospital staff account to explore the workflow.</p>
+                <h2>Start coordinating rejected patient placement with a clearer view.</h2>
+                <p>Use a demo account or create a hospital staff account to explore the department workflow.</p>
                 <div className="landing-actions landing-final-actions">
                     <Link to="/login" className="landing-cta landing-cta-primary">
                         <span>Sign In</span>

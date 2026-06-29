@@ -53,7 +53,7 @@ export default function TransferTracking() {
             setData(res.data.transfer_requests);
         } catch (err) {
             console.error(err);
-            setError('Unable to load transfer tracking.');
+            setError('Unable to load delivery tracking.');
         } finally {
             setLoading(false);
         }
@@ -77,9 +77,9 @@ export default function TransferTracking() {
         setError('');
         try {
             const res = await exportTransferRequests(filters);
-            downloadBlob(res.data, 'carebridge-transfer-report.csv');
+            downloadBlob(res.data, 'carebridge-placement-report.csv');
         } catch (err) {
-            setError(err.response?.data?.message || 'Unable to export transfer report.');
+            setError(err.response?.data?.message || 'Unable to export placement report.');
         }
     };
 
@@ -126,19 +126,19 @@ export default function TransferTracking() {
     const inMovement = rows.filter((req) => req.status === 'in_transfer').length;
     const minutesUntil = (value) => value ? Math.max(0, Math.round((new Date(value).getTime() - Date.now()) / 60000)) : null;
 
-    if (loading) return <div className="loading">Loading transfer tracking...</div>;
+    if (loading) return <div className="loading">Loading delivery tracking...</div>;
 
     return (
         <div>
             <div className="feature-hero">
                 <div>
-                    <span>{user.role === 'sending_staff' ? 'Outbound Queue' : 'Transfer Monitoring'}</span>
-                    <h2>Transfer Tracking</h2>
-                    <p>Track patient movement, reservation timers, and transfer outcomes. Auto-refreshes every 10 seconds.</p>
+                    <span>{user.role === 'sending_staff' ? 'Rejected Case Queue' : 'Delivery Department Monitoring'}</span>
+                    <h2>Delivery Tracking</h2>
+                    <p>Track rejected patient placement, reservation timers, delivery movement, and handoff outcomes. Auto-refreshes every 10 seconds.</p>
                 </div>
                 <div className="hero-metrics">
                     <div><strong>{outboundWaiting}</strong><small>Waiting</small></div>
-                    <div><strong>{inMovement}</strong><small>In transfer</small></div>
+                    <div><strong>{inMovement}</strong><small>In delivery</small></div>
                     <div><strong>{declinedOutbound}</strong><small>Need reroute</small></div>
                 </div>
             </div>
@@ -195,7 +195,7 @@ export default function TransferTracking() {
                 <div className="card-body">
                     {!data || data.data.length === 0 ? (
                         <div className="empty-state">
-                            <p>No transfer requests found.</p>
+                            <p>No rejected patient cases found.</p>
                         </div>
                     ) : (
                         <>

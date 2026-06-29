@@ -4,10 +4,10 @@ import { createAdminHospital, createAdminUser, getAdminData, getSystemSettings, 
 const blankUser = { name: '', email: '', role: 'sending_staff', hospital_id: '', password: 'password123', account_status: 'approved' };
 const blankHospital = { name: '', address: '', contact_number: '', transfer_contact_name: '', transfer_contact_phone: '', emergency_contact_name: '', emergency_contact_phone: '', status: 'active' };
 const permissionRows = [
-    ['Sending Staff', 'Create requests, reroute declined patients, start outbound transfer'],
-    ['Receiving Staff', 'Triage incoming, accept/decline, reserve beds, update own capacity'],
-    ['Coordinator', 'Command view, escalation, coordinator notes, analytics'],
-    ['Admin', 'Manage users/hospitals, command view, audit logs, settings'],
+    ['Sending Staff', 'Submit rejected patient cases, reroute declined cases, start delivery'],
+    ['Receiving Staff', 'Review acceptance queue, accept/decline cases, reserve beds, update own capacity'],
+    ['Coordinator', 'Department command view, escalation, coordinator notes, analytics'],
+    ['Admin', 'Manage department users/hospitals, command view, audit logs, settings'],
 ];
 
 export default function AdminManagement() {

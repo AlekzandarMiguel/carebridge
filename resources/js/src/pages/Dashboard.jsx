@@ -6,32 +6,32 @@ import { getUser, roleLabel } from '../utils/roles';
 
 const roleDashboard = {
     sending_staff: {
-        title: 'Sending Dashboard',
-        subtitle: 'Focus on outbound requests, transfer movement, and delivery start.',
+        title: 'Rejected Case Intake',
+        subtitle: 'Submit rejected patient cases, monitor placement, and start delivery after capacity is reserved.',
         cards: ['total_requests', 'pending_requests', 'accepted_requests', 'in_transfer', 'en_route_patients', 'completed_requests', 'declined_requests'],
     },
     receiving_staff: {
-        title: 'Receiving Dashboard',
-        subtitle: 'Focus on incoming decisions, reserved capacity, arrivals, and completed handoffs.',
+        title: 'Acceptance Desk',
+        subtitle: 'Review rejected patient cases, reserve capacity, confirm arrivals, and complete handoffs.',
         cards: ['pending_requests', 'accepted_requests', 'in_transfer', 'arrived_patients', 'completed_requests', 'declined_requests'],
     },
     coordinator: {
-        title: 'Coordinator Dashboard',
-        subtitle: 'Monitor network movement and operational pressure without changing hospital actions.',
+        title: 'Department Dispatcher Dashboard',
+        subtitle: 'Monitor rejected patient placement and delivery pressure without changing hospital actions.',
         cards: ['total_requests', 'pending_requests', 'in_transfer', 'en_route_patients', 'arrived_patients', 'completed_requests', 'declined_requests'],
     },
     admin: {
-        title: 'Admin Dashboard',
-        subtitle: 'Review system-wide activity while managing configuration separately.',
+        title: 'Department Admin Dashboard',
+        subtitle: 'Review department-wide activity while managing configuration separately.',
         cards: ['total_requests', 'pending_requests', 'accepted_requests', 'completed_requests', 'declined_requests'],
     },
 };
 
 const statCards = {
-    total_requests: { icon: 'ALL', label: 'Total Requests', color: 'blue' },
+    total_requests: { icon: 'ALL', label: 'Total Cases', color: 'blue' },
     pending_requests: { icon: '...', label: 'Pending', color: 'yellow' },
     accepted_requests: { icon: 'OK', label: 'Accepted', color: 'cyan' },
-    in_transfer: { icon: 'TR', label: 'In Transfer', color: 'blue' },
+    in_transfer: { icon: 'DT', label: 'In Delivery', color: 'blue' },
     en_route_patients: { icon: 'GO', label: 'Patients En Route', color: 'cyan' },
     arrived_patients: { icon: 'IN', label: 'Patients Arrived', color: 'yellow' },
     completed_requests: { icon: 'DONE', label: 'Completed', color: 'green' },
@@ -64,7 +64,7 @@ export default function Dashboard() {
     const user = getUser();
     const dashboard = roleDashboard[user.role] || {
         title: `${roleLabel(user.role)} Dashboard`,
-        subtitle: 'Review your assigned transfer workspace.',
+        subtitle: 'Review your assigned placement and delivery workspace.',
         cards: Object.keys(statCards),
     };
 
@@ -107,11 +107,11 @@ export default function Dashboard() {
             </div>
 
             <div className="card">
-                <div className="card-header">Recent Transfer Requests</div>
+                <div className="card-header">Recent Rejected Patient Cases</div>
                 <div className="card-body">
                     {recent_requests.length === 0 ? (
                         <div className="empty-state">
-                            <p>No transfer requests yet.</p>
+                            <p>No rejected patient cases yet.</p>
                         </div>
                     ) : (
                         <div className="table-wrapper">

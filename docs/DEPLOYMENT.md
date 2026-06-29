@@ -82,7 +82,7 @@ Then verify these workflows manually:
 
 - Login and logout
 - Signup request and admin approval
-- Create transfer request
-- Accept, reserve, start transfer, arrive, and complete
+- Create rejected patient case
+- Accept, reserve, start delivery, arrive, and complete
 - Dark mode
-- CSV export for transfer and audit reports
+- CSV export for placement and audit reports

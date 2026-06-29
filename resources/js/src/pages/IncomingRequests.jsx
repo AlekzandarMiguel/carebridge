@@ -23,7 +23,7 @@ export default function IncomingRequests() {
             setRequests(res.data.incoming_requests);
         } catch (err) {
             console.error(err);
-            setError('Unable to load incoming requests.');
+            setError('Unable to load acceptance queue.');
         } finally {
             setLoading(false);
         }
@@ -47,15 +47,15 @@ export default function IncomingRequests() {
     };
 
     const handleDecline = (id) => {
-        if (!window.confirm('Decline this request and send it back for rerouting?')) {
+        if (!window.confirm('Decline this rejected patient case and send it back for placement rerouting?')) {
             return Promise.reject(new Error('Action cancelled.'));
         }
         const reason = declineReasons[id] || 'no_general_bed';
-        return declineTransfer(id, 'Declined by receiving hospital.', reason);
+        return declineTransfer(id, 'Declined by accepting hospital.', reason);
     };
 
     const handleAccept = (id) => {
-        if (!window.confirm('Accept this request for your hospital?')) {
+        if (!window.confirm('Accept this rejected patient case for your hospital?')) {
             return Promise.reject(new Error('Action cancelled.'));
         }
 
@@ -82,15 +82,15 @@ export default function IncomingRequests() {
     };
     const minutesUntil = (value) => value ? Math.max(0, Math.round((new Date(value).getTime() - Date.now()) / 60000)) : null;
 
-    if (loading) return <div className="loading">Loading incoming requests...</div>;
+    if (loading) return <div className="loading">Loading acceptance queue...</div>;
 
     return (
         <div>
             <div className="feature-hero">
                 <div>
-                    <span>Receiving Triage</span>
-                    <h2>Incoming Requests</h2>
-                    <p>Requests are sorted by urgency and waiting time so the highest-risk cases stay visible.</p>
+                    <span>Acceptance Desk</span>
+                    <h2>Rejected Patient Acceptance Queue</h2>
+                    <p>Cases are sorted by urgency and waiting time so the highest-risk rejected patients stay visible.</p>
                 </div>
                 <div className="hero-metrics">
                     <div><strong>{pendingCount}</strong><small>Pending</small></div>
@@ -112,7 +112,7 @@ export default function IncomingRequests() {
                         </button>
                     ))}
                 </div>
-                <span>{triageRequests.length} requests shown</span>
+                <span>{triageRequests.length} cases shown</span>
             </div>
 
             {success && <div className="alert alert-success">{success}</div>}
@@ -122,7 +122,7 @@ export default function IncomingRequests() {
                 <div className="card-body">
                     {triageRequests.length === 0 ? (
                         <div className="empty-state">
-                            <p>No incoming requests at this time.</p>
+                            <p>No rejected patient cases need acceptance right now.</p>
                         </div>
                     ) : (
                         <div className="table-wrapper">
@@ -130,7 +130,7 @@ export default function IncomingRequests() {
                                 <thead>
                                     <tr>
                                         <th>Reference</th>
-                                        <th>From Hospital</th>
+                                        <th>Sending Hospital</th>
                                         <th>Case Type</th>
                                         <th>Urgency</th>
                                         <th>Notes</th>
@@ -165,14 +165,14 @@ export default function IncomingRequests() {
                                                             <button
                                                                 className="btn btn-success btn-sm"
                                                                 disabled={actionLoading === req.id}
-                                                                onClick={() => handleAction(req.id, () => handleAccept(req.id), 'Request accepted. Update capacity if this affects availability.')}
+                                                                onClick={() => handleAction(req.id, () => handleAccept(req.id), 'Case accepted. Update capacity if this affects availability.')}
                                                             >
                                                                 Accept
                                                             </button>
                                                             <button
                                                                 className="btn btn-danger btn-sm"
                                                                 disabled={actionLoading === req.id}
-                                                                onClick={() => handleAction(req.id, () => handleDecline(req.id), 'Request declined.')}
+                                                                onClick={() => handleAction(req.id, () => handleDecline(req.id), 'Case declined.')}
                                                             >
                                                                 Decline
                                                             </button>

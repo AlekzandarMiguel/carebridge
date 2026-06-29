@@ -42,16 +42,16 @@ export default function Login({ theme, toggleTheme }) {
                         <img src="/images/carebridge-logo.svg" alt="CareBridge" />
                     </Link>
                     <div className="auth-panel-copy">
-                        <p className="landing-kicker">Operations access</p>
-                        <h1>Sign in to coordinate hospital capacity.</h1>
+                        <p className="landing-kicker">Department access</p>
+                        <h1>Sign in to coordinate rejected patient placement.</h1>
                         <p>
-                            Open the dashboard for transfer tracking, capacity visibility, incoming requests, and role-based coordination.
+                            Open the department workspace for rejected patient intake, accepting hospital coordination, delivery tracking, and role-based controls.
                         </p>
                     </div>
                     <div className="auth-benefit-grid">
                         <div>
-                            <strong>Capacity-aware</strong>
-                            <span>Reserve matching beds when transfers move forward.</span>
+                            <strong>Placement-aware</strong>
+                            <span>Reserve matching beds when rejected cases move forward.</span>
                         </div>
                         <div>
                             <strong>Role scoped</strong>
@@ -59,7 +59,7 @@ export default function Login({ theme, toggleTheme }) {
                         </div>
                         <div>
                             <strong>Status logged</strong>
-                            <span>Track request movement from creation to completion.</span>
+                            <span>Track rejected patient cases from intake to handoff.</span>
                         </div>
                     </div>
                 </section>

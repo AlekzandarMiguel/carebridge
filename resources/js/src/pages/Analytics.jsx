@@ -34,13 +34,13 @@ export default function Analytics() {
 
     return (
         <div>
-            <h2 style={{ fontSize: '20px', marginBottom: '24px' }}>Analytics</h2>
+            <h2 style={{ fontSize: '20px', marginBottom: '24px' }}>Department Analytics</h2>
 
             {/* Summary Cards */}
             <div className="summary-grid">
                 <div className="summary-card">
                     <h3>{summary.total_requests}</h3>
-                    <p>Total Requests</p>
+                    <p>Total Rejected Cases</p>
                 </div>
                 <div className="summary-card">
                     <h3>{summary.completed_requests}</h3>
@@ -48,11 +48,11 @@ export default function Analytics() {
                 </div>
                 <div className="summary-card">
                     <h3>{summary.success_rate}%</h3>
-                    <p>Success Rate</p>
+                    <p>Placement Success Rate</p>
                 </div>
                 <div className="summary-card">
                     <h3>{summary.avg_coordination_time_minutes}</h3>
-                    <p>Avg Time (min)</p>
+                    <p>Avg Placement Time (min)</p>
                 </div>
             </div>
 
@@ -112,7 +112,7 @@ export default function Analytics() {
 
                 {/* Transfers Over Time */}
                 <div className="analytics-card">
-                    <h3>Transfers Over Time (Last 7 Days)</h3>
+                    <h3>Rejected Cases Over Time (Last 7 Days)</h3>
                     {transfers_over_time.length === 0 ? (
                         <div className="empty-state"><p>No data for the last 7 days.</p></div>
                     ) : (
@@ -148,17 +148,17 @@ export default function Analytics() {
 
             {/* Hospital Stats Table */}
             <div className="card mt-24">
-                <div className="card-header">Top Hospitals by Transfer Volume</div>
+                <div className="card-header">Top Hospitals by Rejected Case Volume</div>
                 <div className="card-body">
                     {hospital_stats.length === 0 ? (
-                        <div className="empty-state"><p>No transfer data yet.</p></div>
+                        <div className="empty-state"><p>No rejected patient case data yet.</p></div>
                     ) : (
                         <div className="table-wrapper">
                             <table>
                                 <thead>
                                     <tr>
                                         <th>Hospital</th>
-                                        <th>Total Transfers</th>
+                                        <th>Total Cases</th>
                                     </tr>
                                 </thead>
                                 <tbody>

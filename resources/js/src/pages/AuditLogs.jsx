@@ -33,9 +33,9 @@ export default function AuditLogs() {
         <div>
             <div className="feature-hero">
                 <div>
-                    <span>System Review</span>
+                    <span>Department Review</span>
                     <h2>Audit Logs</h2>
-                    <p>Review transfer actions, user activity, timestamps, and operational remarks.</p>
+                    <p>Review rejected patient case actions, user activity, timestamps, and operational remarks.</p>
                 </div>
                 <div className="hero-metrics">
                     <div><strong>{logs?.total || 0}</strong><small>Total logs</small></div>

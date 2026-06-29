@@ -1,6 +1,6 @@
 <svg width="460" height="96" viewBox="0 0 460 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">CareBridge logo</title>
-  <desc id="desc">A hospital transfer coordination logo with a medical cross and connected care pathway.</desc>
+  <desc id="desc">A rejected patient placement and delivery coordination logo with a medical cross and connected care pathway.</desc>
   <defs>
     <linearGradient id="markGradient" x1="14" y1="10" x2="82" y2="86" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#38BDF8"/>
@@ -28,6 +28,6 @@
     Care<tspan fill="#0891B2">Bridge</tspan>
   </text>
   <text x="104" y="76" fill="#64748B" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" letter-spacing="0.8">
-    HOSPITAL CAPACITY COORDINATION
+    PATIENT PLACEMENT COORDINATION
   </text>
 </svg>
