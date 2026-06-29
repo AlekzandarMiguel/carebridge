@@ -24,6 +24,7 @@ export default function TransferTracking() {
         urgency_level: searchParams.get('urgency_level') || '',
         case_type: searchParams.get('case_type') || '',
         delivery_status: searchParams.get('delivery_status') || '',
+        archived: searchParams.get('archived') || 'without',
     });
     const user = JSON.parse(localStorage.getItem('carebridge_user') || '{}');
 
@@ -38,6 +39,7 @@ export default function TransferTracking() {
             urgency_level: searchParams.get('urgency_level') || '',
             case_type: searchParams.get('case_type') || '',
             delivery_status: searchParams.get('delivery_status') || '',
+            archived: searchParams.get('archived') || 'without',
         });
         setCurrentPage(1);
     }, [searchParams]);
@@ -67,7 +69,7 @@ export default function TransferTracking() {
     };
 
     const clearFilters = () => {
-        const nextFilters = { q: '', status: '', urgency_level: '', case_type: '', delivery_status: '' };
+        const nextFilters = { q: '', status: '', urgency_level: '', case_type: '', delivery_status: '', archived: 'without' };
         setCurrentPage(1);
         setFilters(nextFilters);
         setSearchParams({});
@@ -184,6 +186,13 @@ export default function TransferTracking() {
                             <option value="icu">ICU</option>
                         </select>
                     </div>
+                    <div className="form-group">
+                        <select value={filters.archived} onChange={(e) => updateFilter('archived', e.target.value)}>
+                            <option value="without">Active only</option>
+                            <option value="with">Active and archived</option>
+                            <option value="only">Archived only</option>
+                        </select>
+                    </div>
                 </div>
                 <div className="action-buttons">
                     {['coordinator', 'dispatcher', 'admin'].includes(user.role) && <button className="btn btn-primary btn-sm" onClick={handleExport}>Export CSV</button>}
@@ -209,6 +218,7 @@ export default function TransferTracking() {
                                             <th>Case</th>
                                             <th>Urgency</th>
                                             <th>Status</th>
+                                            <th>Archive</th>
                                             <th>Patient Delivery</th>
                                             <th>Created</th>
                                             <th>Actions</th>
@@ -225,6 +235,7 @@ export default function TransferTracking() {
                                                     {req.urgency_level}
                                                 </td>
                                                 <td><StatusBadge status={req.status} /></td>
+                                                <td>{req.archived_at ? 'Archived' : 'Active'}</td>
                                                 <td>
                                                     <div className="delivery-monitor">
                                                         {req.needs_attention && (

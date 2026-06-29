@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createAdminHospital, createAdminUser, getAdminData, getSystemSettings, refreshDemoData, updateAdminHospital, updateAdminUser, updateSystemSettings } from '../api/axios';
 
 const blankUser = { name: '', email: '', role: 'sending_staff', hospital_id: '', password: 'password123', account_status: 'approved' };
-const blankHospital = { name: '', address: '', contact_number: '', transfer_contact_name: '', transfer_contact_phone: '', emergency_contact_name: '', emergency_contact_phone: '', status: 'active' };
+const blankHospital = { name: '', address: '', latitude: '', longitude: '', contact_number: '', transfer_contact_name: '', transfer_contact_phone: '', emergency_contact_name: '', emergency_contact_phone: '', status: 'active' };
 const permissionRows = [
     ['Intake Staff', 'Submit rejected patient cases, reroute declined cases, start delivery'],
     ['Acceptance Staff', 'Review acceptance queue, accept/decline cases, reserve beds, update own capacity'],
@@ -61,11 +61,16 @@ export default function AdminManagement() {
         setMessage('');
         setError('');
         try {
+            const payload = {
+                ...hospitalForm,
+                latitude: hospitalForm.latitude === '' ? null : hospitalForm.latitude,
+                longitude: hospitalForm.longitude === '' ? null : hospitalForm.longitude,
+            };
             if (editingHospitalId) {
-                await updateAdminHospital(editingHospitalId, hospitalForm);
+                await updateAdminHospital(editingHospitalId, payload);
                 setMessage('Hospital updated.');
             } else {
-                await createAdminHospital(hospitalForm);
+                await createAdminHospital(payload);
                 setMessage('Hospital created.');
             }
             setHospitalForm(blankHospital);
@@ -196,6 +201,16 @@ export default function AdminManagement() {
                             </div>
                             <div className="form-grid">
                                 <div className="form-group">
+                                    <label>Latitude</label>
+                                    <input type="number" step="0.0000001" value={hospitalForm.latitude || ''} onChange={(e) => setHospitalForm({ ...hospitalForm, latitude: e.target.value })} />
+                                </div>
+                                <div className="form-group">
+                                    <label>Longitude</label>
+                                    <input type="number" step="0.0000001" value={hospitalForm.longitude || ''} onChange={(e) => setHospitalForm({ ...hospitalForm, longitude: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="form-grid">
+                                <div className="form-group">
                                     <label>Transfer Desk Name</label>
                                     <input value={hospitalForm.transfer_contact_name || ''} onChange={(e) => setHospitalForm({ ...hospitalForm, transfer_contact_name: e.target.value })} />
                                 </div>
@@ -301,10 +316,10 @@ export default function AdminManagement() {
                             <tbody>
                                 {data.hospitals.map((hospital) => (
                                     <tr key={hospital.id}>
-                                        <td><strong>{hospital.name}</strong><br /><small>{hospital.address}</small></td>
+                                        <td><strong>{hospital.name}</strong><br /><small>{hospital.address}</small><br /><small>{hospital.latitude && hospital.longitude ? `${hospital.latitude}, ${hospital.longitude}` : 'No coordinates'}</small></td>
                                         <td>{hospital.contact_number}<br /><small>{hospital.transfer_contact_name || 'Transfer desk'} {hospital.transfer_contact_phone || ''}</small></td>
                                         <td>{hospital.status}</td>
-                                        <td><button className="btn btn-outline btn-sm" onClick={() => { setEditingHospitalId(hospital.id); setHospitalForm({ name: hospital.name, address: hospital.address, contact_number: hospital.contact_number, transfer_contact_name: hospital.transfer_contact_name || '', transfer_contact_phone: hospital.transfer_contact_phone || '', emergency_contact_name: hospital.emergency_contact_name || '', emergency_contact_phone: hospital.emergency_contact_phone || '', status: hospital.status }); }}>Edit</button></td>
+                                        <td><button className="btn btn-outline btn-sm" onClick={() => { setEditingHospitalId(hospital.id); setHospitalForm({ name: hospital.name, address: hospital.address, latitude: hospital.latitude || '', longitude: hospital.longitude || '', contact_number: hospital.contact_number, transfer_contact_name: hospital.transfer_contact_name || '', transfer_contact_phone: hospital.transfer_contact_phone || '', emergency_contact_name: hospital.emergency_contact_name || '', emergency_contact_phone: hospital.emergency_contact_phone || '', status: hospital.status }); }}>Edit</button></td>
                                     </tr>
                                 ))}
                             </tbody>

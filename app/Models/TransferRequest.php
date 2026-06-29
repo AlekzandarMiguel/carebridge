@@ -45,6 +45,9 @@ class TransferRequest extends Model
         'reserved_until',
         'handoff_notes',
         'coordinator_notes',
+        'archived_at',
+        'archived_by',
+        'archive_reason',
         'route_distance_km',
         'estimated_travel_minutes',
         'delivery_events',
@@ -62,6 +65,7 @@ class TransferRequest extends Model
         'privacy_confirmed' => 'boolean',
         'reserved_until' => 'datetime',
         'assigned_at' => 'datetime',
+        'archived_at' => 'datetime',
         'route_distance_km' => 'decimal:2',
         'delivery_events' => 'array',
     ];
@@ -102,6 +106,11 @@ class TransferRequest extends Model
     public function assignedDispatcher()
     {
         return $this->belongsTo(User::class, 'assigned_dispatcher_id');
+    }
+
+    public function archiver()
+    {
+        return $this->belongsTo(User::class, 'archived_by');
     }
 
     public function logs()

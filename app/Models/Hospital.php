@@ -12,12 +12,19 @@ class Hospital extends Model
     protected $fillable = [
         'name',
         'address',
+        'latitude',
+        'longitude',
         'contact_number',
         'transfer_contact_name',
         'transfer_contact_phone',
         'emergency_contact_name',
         'emergency_contact_phone',
         'status',
+    ];
+
+    protected $casts = [
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
     ];
 
     public function users()

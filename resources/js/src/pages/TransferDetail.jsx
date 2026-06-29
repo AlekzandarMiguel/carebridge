@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getTransferRequest, markPatientArrived, completeTransfer, updateCoordinatorNotes, updateRouteEstimate, addDeliveryEvent, uploadTransferAttachment, deleteTransferAttachment } from '../api/axios';
+import { archiveTransfer, downloadBlob, downloadTransferAttachment, getTransferRequest, markPatientArrived, completeTransfer, updateCoordinatorNotes, updateRouteEstimate, addDeliveryEvent, uploadTransferAttachment, deleteTransferAttachment, unarchiveTransfer } from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
 
 const deliveryLabels = {
@@ -140,6 +140,16 @@ export default function TransferDetail() {
         }
     };
 
+    const downloadAttachment = async (attachment) => {
+        setError('');
+        try {
+            const res = await downloadTransferAttachment(transfer.id, attachment.id);
+            downloadBlob(res.data, attachment.original_name);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Unable to download attachment.');
+        }
+    };
+
     const removeAttachment = async (attachmentId) => {
         if (!window.confirm('Remove this attachment?')) return;
 
@@ -152,6 +162,23 @@ export default function TransferDetail() {
             loadTransfer();
         } catch (err) {
             setError(err.response?.data?.message || 'Unable to remove attachment.');
+        }
+    };
+
+    const toggleArchive = async () => {
+        setMessage('');
+        setError('');
+        try {
+            if (transfer.archived_at) {
+                await unarchiveTransfer(transfer.id);
+                setMessage('Case restored.');
+            } else {
+                await archiveTransfer(transfer.id, 'Closed from case detail.');
+                setMessage('Case archived.');
+            }
+            loadTransfer();
+        } catch (err) {
+            setError(err.response?.data?.message || 'Unable to update archive status.');
         }
     };
 
@@ -193,6 +220,11 @@ export default function TransferDetail() {
                 </div>
                 <div className="action-buttons">
                     <button className="btn btn-outline" onClick={() => window.print()}>Print Summary</button>
+                    {canMonitor && (
+                        <button className="btn btn-outline" type="button" onClick={toggleArchive}>
+                            {transfer.archived_at ? 'Restore Case' : 'Archive Case'}
+                        </button>
+                    )}
                     <Link to="/transfer-tracking" className="btn btn-outline">Back</Link>
                 </div>
             </div>
@@ -216,6 +248,7 @@ export default function TransferDetail() {
                         <div><span>Documents Ready</span><strong>{transfer.documents_ready ? 'Yes' : 'No'}</strong></div>
                         <div><span>Privacy Confirmed</span><strong>{transfer.privacy_confirmed ? 'Yes' : 'No'}</strong></div>
                         <div><span>Accept Conditions</span><strong>{transfer.accept_conditions || '-'}</strong></div>
+                        <div><span>Archive Status</span><strong>{transfer.archived_at ? `Archived - ${transfer.archive_reason || 'No reason'}` : 'Active'}</strong></div>
                         <div><span>Notes</span><strong>{transfer.notes || '-'}</strong></div>
                     </div>
                 </div>
@@ -376,7 +409,7 @@ export default function TransferDetail() {
                                     <span>{attachment.document_type?.replace('_', ' ')} - {Math.max(1, Math.round((attachment.size_bytes || 0) / 1024))} KB - {attachment.uploader?.name || 'Unknown uploader'}</span>
                                 </div>
                                 <div className="action-buttons">
-                                    <a className="btn btn-outline btn-sm" href={attachment.download_url} target="_blank" rel="noreferrer">Open</a>
+                                    <button className="btn btn-outline btn-sm" type="button" onClick={() => downloadAttachment(attachment)}>Download</button>
                                     {(user.role === 'admin' || attachment.uploaded_by === user.id) && (
                                         <button className="btn btn-danger btn-sm" type="button" onClick={() => removeAttachment(attachment.id)}>Remove</button>
                                     )}

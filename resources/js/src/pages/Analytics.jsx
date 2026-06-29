@@ -26,7 +26,7 @@ export default function Analytics() {
     if (loading) return <div className="loading">Loading analytics...</div>;
     if (!data) return <div className="empty-state"><p>Unable to load analytics.</p></div>;
 
-    const { status_distribution, urgency_distribution, case_type_distribution, decline_reason_distribution, transfers_over_time, hospital_stats, summary } = data;
+    const { status_distribution, urgency_distribution, case_type_distribution, decline_reason_distribution, transfers_over_time, hospital_stats, hospital_pressure, assignment_stats, summary } = data;
 
     const formatDate = (dateStr) => {
         return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -53,6 +53,22 @@ export default function Analytics() {
                 <div className="summary-card">
                     <h3>{summary.avg_coordination_time_minutes}</h3>
                     <p>Avg Placement Time (min)</p>
+                </div>
+                <div className="summary-card">
+                    <h3>{summary.avg_delivery_time_minutes}</h3>
+                    <p>Avg Delivery Time (min)</p>
+                </div>
+                <div className="summary-card">
+                    <h3>{summary.sla_breach_rate}%</h3>
+                    <p>SLA Breach Rate</p>
+                </div>
+                <div className="summary-card">
+                    <h3>{assignment_stats?.unassigned_active || 0}</h3>
+                    <p>Unassigned Active Cases</p>
+                </div>
+                <div className="summary-card">
+                    <h3>{assignment_stats?.avg_travel_minutes || 0}</h3>
+                    <p>Avg Route ETA (min)</p>
                 </div>
             </div>
 
@@ -166,6 +182,36 @@ export default function Analytics() {
                                         <tr key={i}>
                                             <td><strong>{hs.hospital_name}</strong></td>
                                             <td>{hs.total}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="card mt-24">
+                <div className="card-header">Current Hospital Pressure</div>
+                <div className="card-body">
+                    {!hospital_pressure || hospital_pressure.length === 0 ? (
+                        <div className="empty-state"><p>No hospital capacity data yet.</p></div>
+                    ) : (
+                        <div className="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Hospital</th>
+                                        <th>Open Beds</th>
+                                        <th>Ambulances</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {hospital_pressure.map((hospital, i) => (
+                                        <tr key={i}>
+                                            <td><strong>{hospital.hospital_name}</strong></td>
+                                            <td>{hospital.open_beds}</td>
+                                            <td>{hospital.ambulances}</td>
                                         </tr>
                                     ))}
                                 </tbody>

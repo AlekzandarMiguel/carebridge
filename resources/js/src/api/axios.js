@@ -55,6 +55,7 @@ export const getTransferRecommendations = (caseType = 'general') => api.get('/tr
 export const createTransferRequest = (data) => api.post('/transfer-requests', data);
 export const getTransferRequest = (id) => api.get(`/transfer-requests/${id}`);
 export const exportTransferRequests = (filters = {}) => api.get('/transfer-requests/export', { params: filters, responseType: 'blob' });
+export const getWallboard = () => api.get('/wallboard');
 
 // Incoming Requests
 export const getIncomingRequests = () => api.get('/incoming-requests');
@@ -74,7 +75,10 @@ export const assignDispatcher = (id, assigned_dispatcher_id) => api.put(`/transf
 export const updateRouteEstimate = (id, data = {}) => api.put(`/transfer-requests/${id}/route-estimate`, data);
 export const addDeliveryEvent = (id, data = {}) => api.post(`/transfer-requests/${id}/delivery-events`, data);
 export const uploadTransferAttachment = (id, data) => api.post(`/transfer-requests/${id}/attachments`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const downloadTransferAttachment = (id, attachmentId) => api.get(`/transfer-requests/${id}/attachments/${attachmentId}/download`, { responseType: 'blob' });
 export const deleteTransferAttachment = (id, attachmentId) => api.delete(`/transfer-requests/${id}/attachments/${attachmentId}`);
+export const archiveTransfer = (id, archive_reason = 'Archived from department workflow.') => api.put(`/transfer-requests/${id}/archive`, { archive_reason });
+export const unarchiveTransfer = (id) => api.put(`/transfer-requests/${id}/unarchive`);
 
 // Transfer Tracking
 export const getTransferTracking = (page = 1, filters = {}) => api.get('/transfer-tracking', { params: { page, ...filters } });

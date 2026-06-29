@@ -14,6 +14,8 @@ class HospitalSeeder extends Seeder
             [
                 'name' => 'City General Hospital',
                 'address' => '123 Main St, Metro City',
+                'latitude' => 14.599512,
+                'longitude' => 120.984222,
                 'contact_number' => '555-0101',
                 'capacity' => [
                     'general_beds_available' => 12,
@@ -25,6 +27,8 @@ class HospitalSeeder extends Seeder
             [
                 'name' => 'St. Mary Medical Center',
                 'address' => '456 Oak Ave, Metro City',
+                'latitude' => 14.609100,
+                'longitude' => 121.022300,
                 'contact_number' => '555-0102',
                 'capacity' => [
                     'general_beds_available' => 8,
@@ -36,6 +40,8 @@ class HospitalSeeder extends Seeder
             [
                 'name' => 'Riverside Community Hospital',
                 'address' => '789 River Rd, Metro City',
+                'latitude' => 14.579400,
+                'longitude' => 121.035900,
                 'contact_number' => '555-0103',
                 'capacity' => [
                     'general_beds_available' => 20,
@@ -47,6 +53,8 @@ class HospitalSeeder extends Seeder
             [
                 'name' => 'Metro Emergency Center',
                 'address' => '321 Emergency Blvd, Metro City',
+                'latitude' => 14.554700,
+                'longitude' => 121.024400,
                 'contact_number' => '555-0104',
                 'capacity' => [
                     'general_beds_available' => 4,
@@ -58,6 +66,8 @@ class HospitalSeeder extends Seeder
             [
                 'name' => 'Sunrise Regional Hospital',
                 'address' => '654 Sunrise Dr, Metro City',
+                'latitude' => 14.633100,
+                'longitude' => 121.043700,
                 'contact_number' => '555-0105',
                 'capacity' => [
                     'general_beds_available' => 15,
@@ -73,6 +83,8 @@ class HospitalSeeder extends Seeder
                 ['name' => $data['name']],
                 [
                     'address' => $data['address'],
+                    'latitude' => $data['latitude'],
+                    'longitude' => $data['longitude'],
                     'contact_number' => $data['contact_number'],
                     'status' => 'active',
                 ],

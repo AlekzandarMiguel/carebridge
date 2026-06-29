@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Hospital;
+use App\Models\SystemSetting;
 use App\Models\TransferRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +21,7 @@ class AnalyticsController extends Controller
         }
 
         $baseQuery = TransferRequest::query();
+        $activeQuery = TransferRequest::whereNull('archived_at');
 
         // Total counts by status
         $statusCounts = (clone $baseQuery)
@@ -93,11 +96,23 @@ class AnalyticsController extends Controller
         // Average coordination time (from created to completed, in minutes)
         $completedTransfers = (clone $baseQuery)
             ->where('status', 'completed')
-            ->get(['created_at', 'updated_at']);
+            ->get(['created_at', 'updated_at', 'delivery_started_at', 'delivery_completed_at']);
 
         $avgCoordinationTime = $completedTransfers->isNotEmpty()
             ? $completedTransfers->avg(fn ($transfer) => $transfer->created_at->diffInMinutes($transfer->updated_at))
             : 0;
+        $avgDeliveryTime = $completedTransfers->whereNotNull('delivery_started_at')->whereNotNull('delivery_completed_at')->isNotEmpty()
+            ? $completedTransfers
+                ->whereNotNull('delivery_started_at')
+                ->whereNotNull('delivery_completed_at')
+                ->avg(fn ($transfer) => $transfer->delivery_started_at->diffInMinutes($transfer->delivery_completed_at))
+            : 0;
+
+        $slaMinutes = (int) (SystemSetting::where('key', 'sla_pending_minutes')->value('value') ?? 20);
+        $slaBreached = (clone $baseQuery)
+            ->whereIn('status', ['pending', 'accepted'])
+            ->where('created_at', '<=', now()->subMinutes($slaMinutes))
+            ->count();
 
         // Hospital-level stats (top hospitals by transfers)
         $hospitalStats = (clone $baseQuery)
@@ -121,6 +136,24 @@ class AnalyticsController extends Controller
             'avg_travel_minutes' => round((clone $baseQuery)->whereNotNull('estimated_travel_minutes')->avg('estimated_travel_minutes') ?? 0),
         ];
 
+        $hospitalPressure = Hospital::with('latestCapacity')
+            ->where('status', 'active')
+            ->get()
+            ->map(function (Hospital $hospital) {
+                $capacity = $hospital->latestCapacity;
+                $openBeds = $capacity
+                    ? $capacity->general_beds_available + $capacity->emergency_beds_available + $capacity->icu_beds_available
+                    : 0;
+
+                return [
+                    'hospital_name' => $hospital->name,
+                    'open_beds' => $openBeds,
+                    'ambulances' => $capacity?->ambulance_available ?? 0,
+                ];
+            })
+            ->sortBy('open_beds')
+            ->values();
+
         $totalRequests = array_sum(array_values($statusCounts));
         $completedCount = $statusCounts['completed'] ?? 0;
         $successRate = $totalRequests > 0
@@ -134,12 +167,17 @@ class AnalyticsController extends Controller
             'case_type_distribution' => $caseTypeChart,
             'decline_reason_distribution' => $declineReasonChart,
             'hospital_stats' => $hospitalStats,
+            'hospital_pressure' => $hospitalPressure,
             'assignment_stats' => $assignmentStats,
             'summary' => [
                 'total_requests' => $totalRequests,
+                'active_requests' => (clone $activeQuery)->whereIn('status', ['pending', 'accepted', 'reserved', 'in_transfer'])->count(),
                 'completed_requests' => $completedCount,
                 'success_rate' => $successRate,
+                'sla_breached' => $slaBreached,
+                'sla_breach_rate' => $totalRequests > 0 ? round(($slaBreached / $totalRequests) * 100, 1) : 0,
                 'avg_coordination_time_minutes' => round($avgCoordinationTime),
+                'avg_delivery_time_minutes' => round($avgDeliveryTime),
             ],
         ]);
     }

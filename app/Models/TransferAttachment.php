@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class TransferAttachment extends Model
 {
@@ -36,6 +35,6 @@ class TransferAttachment extends Model
 
     public function getDownloadUrlAttribute(): string
     {
-        return Storage::disk('public')->url($this->path);
+        return "/api/transfer-requests/{$this->transfer_request_id}/attachments/{$this->id}/download";
     }
 }

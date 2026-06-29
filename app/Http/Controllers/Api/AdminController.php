@@ -102,6 +102,8 @@ class AdminController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'contact_number' => 'required|string|max:80',
             'transfer_contact_name' => 'nullable|string|max:255',
             'transfer_contact_phone' => 'nullable|string|max:80',
@@ -128,6 +130,8 @@ class AdminController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'contact_number' => 'required|string|max:80',
             'transfer_contact_name' => 'nullable|string|max:255',
             'transfer_contact_phone' => 'nullable|string|max:80',

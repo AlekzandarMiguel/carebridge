@@ -43,7 +43,7 @@ QUEUE_CONNECTION=database
 
 ## Storage and Attachments
 
-CareBridge supports uploading handoff and supporting documents to rejected patient cases.
+CareBridge supports uploading handoff and supporting documents to rejected patient cases. Attachments are stored privately and downloaded through authenticated API routes.
 
 Run this once after deployment:
 
@@ -54,7 +54,7 @@ php artisan storage:link
 Make sure the server can write to:
 
 ```text
-storage/app/public
+storage/app/private
 storage/framework
 storage/logs
 ```
@@ -99,12 +99,14 @@ Recommended production path:
 3. Subscribe the React header and command board to private role or hospital channels.
 4. Keep polling as a fallback for poor connections.
 
+The current app polls alerts every 5 seconds for near-realtime feedback until a WebSocket service is configured.
+
 ## Backups
 
 Back up at least:
 
 - Database
-- `storage/app/public`
+- `storage/app/private`
 - `.env` through a secure secrets manager or encrypted backup
 
 Suggested schedule:
@@ -137,6 +139,12 @@ php artisan db:seed
 
 For production, create a real admin account through a secure one-time seed or database admin process, then remove any demo credentials.
 
+You can create or update a real admin without demo seeders:
+
+```bash
+php artisan carebridge:create-admin admin@example.com --name="System Admin"
+```
+
 ## Recommended Server Tasks
 
 - Run `php artisan migrate --force` during deployments.
@@ -165,6 +173,9 @@ Then verify these workflows manually:
 - Accept, reserve, start delivery, arrive, and complete
 - Assign dispatcher and add delivery timeline update
 - Upload and open a case attachment
+- Download a private attachment as an authenticated user
+- Archive and restore a closed case
+- Open the department wallboard
 - Mark notifications read
 - Dark mode
 - CSV export for placement and audit reports

@@ -35,16 +35,20 @@ Because of this, the hassle of manually searching for another hospital is reduce
 - Dispatcher assignment for active placement and delivery cases.
 - Delivery event timeline for departed, location update, delayed, receiving area arrival, and handoff updates.
 - SLA and ETA warning states for cases that are waiting too long or running late.
-- Case attachments for referral notes, lab results, imaging, consent, transport forms, and supporting documents.
-- Map-ready route links from the sending hospital to the accepting hospital.
+- Secure case attachments for referral notes, lab results, imaging, consent, transport forms, and supporting documents.
+- Map-ready route links and coordinate-based route estimates between hospitals.
 - Command view for active network requests, dispatcher assignment, escalation, SLA monitoring, and network pressure.
+- Department wallboard for active cases, assignment gaps, ETA risk, and SLA risk.
+- Archive and restore workflow for closed cases.
 - Admin management for users, account approval, hospitals, system settings, and demo data refresh.
 - Audit logs with filters, CSV export, action, role, search term, and date range.
 - Delivery tracking filters, global search, and CSV export for monitor roles.
 - Analytics for status distribution, urgency, case type, rejection reasons, completion rate, and transfer activity.
-- Notification alerts with priority labels, unread counts, and read controls.
+- Notification alerts with priority labels, unread counts, read controls, and faster near-realtime polling.
 - Expired reservations automatically release reserved capacity back to the receiving hospital.
 - Route-based frontend code splitting for faster page loading.
+- Production admin command: `php artisan carebridge:create-admin`.
+- Browser test scaffold for Playwright.
 
 ## User Roles
 
@@ -144,7 +148,14 @@ Run the frontend production build:
 npm run build
 ```
 
-Before using attachments locally, run:
+Browser test scaffolding is included. Install Playwright before running it:
+
+```bash
+npm install --save-dev @playwright/test
+npm run test:browser
+```
+
+For any public uploaded assets in local development, run:
 
 ```bash
 php artisan storage:link

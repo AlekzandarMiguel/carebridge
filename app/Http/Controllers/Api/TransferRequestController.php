@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TransferRequestController extends Controller
 {
@@ -30,6 +31,7 @@ class TransferRequestController extends Controller
             'urgency_level' => 'nullable|in:normal,urgent,critical',
             'case_type' => 'nullable|in:general,emergency,icu',
             'delivery_status' => 'nullable|in:not_started,en_route,arrived,delivered',
+            'archived' => 'nullable|in:with,only,without',
         ]);
 
         $requests = $this->visibleTransferQuery($request)
@@ -46,6 +48,8 @@ class TransferRequestController extends Controller
             ->when($validated['urgency_level'] ?? null, fn ($q, $urgency) => $q->where('urgency_level', $urgency))
             ->when($validated['case_type'] ?? null, fn ($q, $caseType) => $q->where('case_type', $caseType))
             ->when($validated['delivery_status'] ?? null, fn ($q, $deliveryStatus) => $q->where('delivery_status', $deliveryStatus))
+            ->when(($validated['archived'] ?? 'without') === 'only', fn ($q) => $q->whereNotNull('archived_at'))
+            ->when(($validated['archived'] ?? 'without') === 'without', fn ($q) => $q->whereNull('archived_at'))
             ->orderByRaw("CASE urgency_level WHEN 'critical' THEN 1 WHEN 'urgent' THEN 2 ELSE 3 END")
             ->latest()
             ->paginate(15)
@@ -155,6 +159,7 @@ class TransferRequestController extends Controller
             'status' => 'pending',
             'created_by' => $user->id,
         ]);
+        $this->applyRouteEstimateFromCoordinates($transferRequest);
 
         $transferRequest->logAction($user->id, 'created', 'Transfer request created.');
 
@@ -699,7 +704,7 @@ class TransferRequestController extends Controller
         ]);
 
         $file = $validated['file'];
-        $path = $file->store("transfer-attachments/{$transferRequest->id}", 'public');
+        $path = $file->store("transfer-attachments/{$transferRequest->id}");
 
         $attachment = TransferAttachment::create([
             'transfer_request_id' => $transferRequest->id,
@@ -735,7 +740,7 @@ class TransferRequestController extends Controller
             return response()->json(['message' => 'Only the uploader or an admin can remove this attachment.'], 403);
         }
 
-        Storage::disk('public')->delete($attachment->path);
+        Storage::delete($attachment->path);
         $originalName = $attachment->original_name;
         $attachment->delete();
         $transferRequest->logAction($user->id, 'attachment_removed', "Removed {$originalName}.");
@@ -743,6 +748,73 @@ class TransferRequestController extends Controller
         return response()->json([
             'message' => 'Attachment removed.',
             'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher', 'escalator', 'attachments.uploader', 'logs.user'),
+        ]);
+    }
+
+    public function downloadAttachment(Request $request, int $id, int $attachmentId): StreamedResponse|JsonResponse
+    {
+        $transferRequest = TransferRequest::findOrFail($id);
+
+        if (!$this->canAccessTransfer($request, $transferRequest)) {
+            return response()->json(['message' => 'You are not allowed to download this attachment.'], 403);
+        }
+
+        $attachment = $transferRequest->attachments()->findOrFail($attachmentId);
+
+        if (!Storage::exists($attachment->path)) {
+            return response()->json(['message' => 'Attachment file is missing from storage.'], 404);
+        }
+
+        return Storage::download($attachment->path, $attachment->original_name);
+    }
+
+    public function archive(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!in_array($user->role, self::MONITOR_ROLES)) {
+            return response()->json(['message' => 'Only department monitors can archive cases.'], 403);
+        }
+
+        $transferRequest = TransferRequest::findOrFail($id);
+        $validated = $request->validate([
+            'archive_reason' => 'nullable|string|max:255',
+        ]);
+
+        $transferRequest->update([
+            'archived_at' => now(),
+            'archived_by' => $user->id,
+            'archive_reason' => $validated['archive_reason'] ?? 'Archived from department workflow.',
+        ]);
+
+        $transferRequest->logAction($user->id, 'archived', $transferRequest->archive_reason);
+
+        return response()->json([
+            'message' => 'Case archived.',
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher', 'escalator'),
+        ]);
+    }
+
+    public function unarchive(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!in_array($user->role, self::MONITOR_ROLES)) {
+            return response()->json(['message' => 'Only department monitors can restore archived cases.'], 403);
+        }
+
+        $transferRequest = TransferRequest::findOrFail($id);
+        $transferRequest->update([
+            'archived_at' => null,
+            'archived_by' => null,
+            'archive_reason' => null,
+        ]);
+
+        $transferRequest->logAction($user->id, 'unarchived', 'Case restored to active workflow.');
+
+        return response()->json([
+            'message' => 'Case restored.',
+            'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher', 'escalator'),
         ]);
     }
 
@@ -760,6 +832,7 @@ class TransferRequestController extends Controller
         $statuses = ['pending', 'accepted', 'reserved', 'in_transfer', 'completed', 'declined'];
         $requests = TransferRequest::with(['sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher', 'escalator'])
             ->whereIn('status', $statuses)
+            ->whereNull('archived_at')
             ->when(!in_array($user->role, self::MONITOR_ROLES), function ($q) use ($hospitalId) {
                 $q->where(function ($scoped) use ($hospitalId) {
                     $scoped->where('sending_hospital_id', $hospitalId)
@@ -780,6 +853,35 @@ class TransferRequestController extends Controller
                 ->orderBy('role')
                 ->orderBy('name')
                 ->get(['id', 'name', 'role']),
+        ]);
+    }
+
+    public function wallboard(Request $request): JsonResponse
+    {
+        $this->releaseExpiredReservations();
+
+        $user = $request->user();
+
+        if (!in_array($user->role, self::MONITOR_ROLES)) {
+            return response()->json(['message' => 'Only department monitors can view the wallboard.'], 403);
+        }
+
+        $active = TransferRequest::with(['sendingHospital', 'receivingHospital', 'assignedDispatcher'])
+            ->whereNull('archived_at')
+            ->whereIn('status', ['pending', 'accepted', 'reserved', 'in_transfer'])
+            ->orderByRaw("CASE urgency_level WHEN 'critical' THEN 1 WHEN 'urgent' THEN 2 ELSE 3 END")
+            ->latest()
+            ->take(40)
+            ->get();
+
+        return response()->json([
+            'metrics' => [
+                'active_cases' => $active->count(),
+                'needs_attention' => $active->where('needs_attention', true)->count(),
+                'unassigned' => $active->whereNull('assigned_dispatcher_id')->count(),
+                'in_delivery' => $active->where('status', 'in_transfer')->count(),
+            ],
+            'cases' => $active->values(),
         ]);
     }
 
@@ -893,5 +995,39 @@ class TransferRequestController extends Controller
             'icu' => 'icu_beds_available',
             default => 'general_beds_available',
         };
+    }
+
+    private function applyRouteEstimateFromCoordinates(TransferRequest $transferRequest): void
+    {
+        $transferRequest->loadMissing('sendingHospital', 'receivingHospital');
+        $sending = $transferRequest->sendingHospital;
+        $receiving = $transferRequest->receivingHospital;
+
+        if (!$sending?->latitude || !$sending?->longitude || !$receiving?->latitude || !$receiving?->longitude) {
+            return;
+        }
+
+        if ($transferRequest->route_distance_km && $transferRequest->estimated_travel_minutes) {
+            return;
+        }
+
+        $distance = $this->distanceKm((float) $sending->latitude, (float) $sending->longitude, (float) $receiving->latitude, (float) $receiving->longitude);
+        $roadDistance = round($distance * 1.25, 2);
+
+        $transferRequest->update([
+            'route_distance_km' => $transferRequest->route_distance_km ?? $roadDistance,
+            'estimated_travel_minutes' => $transferRequest->estimated_travel_minutes ?? max(5, (int) ceil(($roadDistance / 35) * 60)),
+        ]);
+    }
+
+    private function distanceKm(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $earthRadiusKm = 6371;
+        $latDelta = deg2rad($lat2 - $lat1);
+        $lonDelta = deg2rad($lon2 - $lon1);
+        $a = sin($latDelta / 2) ** 2
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($lonDelta / 2) ** 2;
+
+        return $earthRadiusKm * 2 * atan2(sqrt($a), sqrt(1 - $a));
     }
 }

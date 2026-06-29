@@ -8,6 +8,7 @@ use App\Models\TransferRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -215,15 +216,18 @@ class TransferWorkflowTest extends TestCase
 
         Sanctum::actingAs($coordinator);
         $this->getJson('/api/transfer-board')->assertOk();
+        $this->getJson('/api/wallboard')->assertOk();
         $this->getJson('/api/analytics')->assertOk();
 
         Sanctum::actingAs($dispatcher);
         $this->getJson('/api/transfer-board')->assertOk();
+        $this->getJson('/api/wallboard')->assertOk();
         $this->getJson('/api/analytics')->assertOk();
         $this->getJson('/api/audit-logs')->assertForbidden();
 
         Sanctum::actingAs($admin);
         $this->getJson('/api/transfer-board')->assertOk();
+        $this->getJson('/api/wallboard')->assertOk();
         $this->getJson('/api/audit-logs')->assertOk();
     }
 
@@ -336,7 +340,7 @@ class TransferWorkflowTest extends TestCase
 
     public function test_staff_can_upload_case_attachments_and_see_sla_state(): void
     {
-        config(['filesystems.disks.public.root' => sys_get_temp_dir().DIRECTORY_SEPARATOR.'carebridge-test-public']);
+        config(['filesystems.disks.local.root' => sys_get_temp_dir().DIRECTORY_SEPARATOR.'carebridge-test-private']);
         [$sendingHospital, $receivingHospital] = $this->createHospitals();
         $sender = $this->createUser($sendingHospital, 'sending_staff');
 
@@ -375,6 +379,61 @@ class TransferWorkflowTest extends TestCase
             ->assertJsonPath('transfer_request.sla_state', 'breached')
             ->assertJsonPath('transfer_request.needs_attention', true)
             ->assertJsonCount(1, 'transfer_request.attachments');
+
+        $attachmentId = $upload->json('attachment.id');
+        $this->get("/api/transfer-requests/{$transfer->id}/attachments/{$attachmentId}/download")
+            ->assertOk();
+    }
+
+    public function test_monitor_roles_can_archive_restore_and_use_wallboard(): void
+    {
+        [$sendingHospital, $receivingHospital, $otherHospital] = $this->createHospitals();
+        $sender = $this->createUser($sendingHospital, 'sending_staff');
+        $dispatcher = $this->createUser($otherHospital, 'dispatcher');
+
+        Sanctum::actingAs($sender);
+        $createResponse = $this->postJson('/api/transfer-requests', [
+            'receiving_hospital_id' => $receivingHospital->id,
+            'patient_reference_code' => 'PT-2026-0014',
+            'case_type' => 'general',
+            'urgency_level' => 'normal',
+            'privacy_confirmed' => true,
+        ])->assertCreated();
+
+        $transferId = $createResponse->json('transfer_request.id');
+        $this->assertNotNull($createResponse->json('transfer_request.route_distance_km'));
+
+        Sanctum::actingAs($dispatcher);
+        $this->getJson('/api/wallboard')
+            ->assertOk()
+            ->assertJsonPath('metrics.active_cases', 1);
+
+        $this->putJson("/api/transfer-requests/{$transferId}/archive", [
+            'archive_reason' => 'Closed after review.',
+        ])->assertOk();
+
+        $this->getJson('/api/transfer-tracking?archived=only')
+            ->assertOk()
+            ->assertJsonPath('transfer_requests.data.0.id', $transferId);
+
+        $this->putJson("/api/transfer-requests/{$transferId}/unarchive")
+            ->assertOk()
+            ->assertJsonPath('transfer_request.archived_at', null);
+    }
+
+    public function test_production_admin_command_creates_admin(): void
+    {
+        $this->artisan('carebridge:create-admin', [
+            'email' => 'production.admin@example.com',
+            '--name' => 'Production Admin',
+            '--password' => 'secure-password123',
+        ])->assertExitCode(0);
+
+        $admin = User::where('email', 'production.admin@example.com')->firstOrFail();
+
+        $this->assertSame('admin', $admin->role);
+        $this->assertSame('approved', $admin->account_status);
+        $this->assertTrue(Hash::check('secure-password123', $admin->password));
     }
 
     public function test_notifications_have_priority_and_can_be_marked_read(): void
@@ -584,6 +643,8 @@ class TransferWorkflowTest extends TestCase
         $sendingHospital = Hospital::create([
             'name' => 'City General Hospital',
             'address' => '123 Main St',
+            'latitude' => 14.599512,
+            'longitude' => 120.984222,
             'contact_number' => '555-0101',
             'status' => 'active',
         ]);
@@ -591,6 +652,8 @@ class TransferWorkflowTest extends TestCase
         $receivingHospital = Hospital::create([
             'name' => 'St. Mary Medical Center',
             'address' => '456 Oak Ave',
+            'latitude' => 14.609100,
+            'longitude' => 121.022300,
             'contact_number' => '555-0102',
             'status' => 'active',
         ]);
@@ -598,6 +661,8 @@ class TransferWorkflowTest extends TestCase
         $otherHospital = Hospital::create([
             'name' => 'Riverside Community Hospital',
             'address' => '789 River Rd',
+            'latitude' => 14.579400,
+            'longitude' => 121.035900,
             'contact_number' => '555-0103',
             'status' => 'active',
         ]);

@@ -17,6 +17,7 @@ const CoordinatorBoard = lazy(() => import('./pages/CoordinatorBoard'));
 const HospitalDirectory = lazy(() => import('./pages/HospitalDirectory'));
 const AdminManagement = lazy(() => import('./pages/AdminManagement'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
+const Wallboard = lazy(() => import('./pages/Wallboard'));
 const SignUp = lazy(() => import('./pages/SignUp'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
@@ -114,6 +115,14 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={['coordinator', 'dispatcher', 'admin']}>
                             <Layout theme={theme} toggleTheme={toggleTheme}><CoordinatorBoard /></Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/wallboard"
+                    element={
+                        <ProtectedRoute allowedRoles={['coordinator', 'dispatcher', 'admin']}>
+                            <Layout theme={theme} toggleTheme={toggleTheme}><Wallboard /></Layout>
                         </ProtectedRoute>
                     }
                 />

@@ -69,10 +69,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/transfer-requests/{id}/route-estimate', [TransferRequestController::class, 'updateRouteEstimate']);
     Route::post('/transfer-requests/{id}/delivery-events', [TransferRequestController::class, 'addDeliveryEvent']);
     Route::post('/transfer-requests/{id}/attachments', [TransferRequestController::class, 'uploadAttachment']);
+    Route::get('/transfer-requests/{id}/attachments/{attachmentId}/download', [TransferRequestController::class, 'downloadAttachment']);
     Route::delete('/transfer-requests/{id}/attachments/{attachmentId}', [TransferRequestController::class, 'deleteAttachment']);
+    Route::put('/transfer-requests/{id}/archive', [TransferRequestController::class, 'archive']);
+    Route::put('/transfer-requests/{id}/unarchive', [TransferRequestController::class, 'unarchive']);
 
     // Transfer Tracking
     Route::get('/transfer-tracking', [TransferRequestController::class, 'index']);
+    Route::get('/wallboard', [TransferRequestController::class, 'wallboard']);
 
     // Analytics
     Route::get('/analytics', [AnalyticsController::class, 'index']);

@@ -231,7 +231,11 @@ Case attachments let authorized users upload supporting documents such as:
 - Transport forms.
 - Supporting documents.
 
-Attachments are stored on the configured Laravel public disk and linked to the rejected patient case. The uploader or an admin can remove an attachment.
+Attachments are stored privately and linked to the rejected patient case. Downloads go through authenticated API requests. The uploader or an admin can remove an attachment.
+
+### Archive and Closed Cases
+
+Department monitors can archive completed, cancelled, declined, or reviewed cases so daily queues stay focused on active work. Archived cases can be filtered in delivery tracking and restored if they need more follow-up.
 
 ### Admin Management
 
@@ -316,6 +320,10 @@ The selected theme is stored in local storage.
 
 React pages are loaded with route-based code splitting. This reduces the initial application bundle and loads heavier pages only when the user visits them.
 
+### Department Wallboard
+
+The wallboard is a large operational view for coordinators, dispatchers, and admins. It focuses on active cases, cases needing attention, unassigned cases, in-delivery cases, assigned dispatcher, ETA risk, and SLA risk.
+
 ## 9. Roles and Permissions
 
 | Capability | Intake Staff | Acceptance Staff | Coordinator | Dispatcher | Admin |
@@ -335,6 +343,7 @@ React pages are loaded with route-based code splitting. This reduces the initial
 | Update route estimate | Yes | Yes | Yes | Yes | Yes |
 | Add delivery timeline update | Yes | Yes | Yes | Yes | Yes |
 | Upload case attachment | Yes | Yes | Yes | Yes | Yes |
+| Archive or restore case | No | No | Yes | Yes | Yes |
 | Escalate transfer | No | No | Yes | Yes | Yes |
 | Add coordinator notes | No | No | Yes | Yes | Yes |
 | View command board | No | No | Yes | Yes | Yes |
@@ -471,6 +480,9 @@ Important fields:
 - `delivery_eta_state`
 - `needs_attention`
 - `route_map_url`
+- `archived_at`
+- `archived_by`
+- `archive_reason`
 
 ### transfer_attachments
 
@@ -577,13 +589,17 @@ Important fields:
 | PUT | `/api/transfer-requests/{id}/route-estimate` | Update route distance and travel estimate. |
 | POST | `/api/transfer-requests/{id}/delivery-events` | Add a delivery timeline event. |
 | POST | `/api/transfer-requests/{id}/attachments` | Upload a case attachment. |
+| GET | `/api/transfer-requests/{id}/attachments/{attachmentId}/download` | Download a private case attachment. |
 | DELETE | `/api/transfer-requests/{id}/attachments/{attachmentId}` | Remove a case attachment. |
+| PUT | `/api/transfer-requests/{id}/archive` | Archive a case. |
+| PUT | `/api/transfer-requests/{id}/unarchive` | Restore an archived case. |
 
 ### Analytics, Notifications, and Admin
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
 | GET | `/api/dashboard` | Dashboard metrics. |
+| GET | `/api/wallboard` | Live department wallboard data. |
 | GET | `/api/analytics` | Analytics data. |
 | GET | `/api/notifications` | Recent activity alerts. |
 | POST | `/api/notifications/{id}/read` | Mark notification as read. |
@@ -628,6 +644,7 @@ Important pages:
 - `AdminManagement.jsx`
 - `AuditLogs.jsx`
 - `Settings.jsx`
+- `Wallboard.jsx`
 
 Important components:
 
@@ -748,7 +765,14 @@ Run frontend build:
 npm run build
 ```
 
-For attachments, also run:
+Browser test scaffolding is available:
+
+```bash
+npm install --save-dev @playwright/test
+npm run test:browser
+```
+
+For public storage assets, also run:
 
 ```bash
 php artisan storage:link
@@ -775,6 +799,10 @@ Current feature tests cover:
 - Admin settings.
 - Audit filters.
 - Attachment upload.
+- Authenticated attachment download.
+- Archive and restore workflow.
+- Wallboard access.
+- Production admin command.
 - Notification priority and read state.
 - SLA state on case responses.
 
@@ -792,7 +820,7 @@ Current feature tests cover:
 
 ## 20. Known Limitations
 
-- Notifications currently use polling rather than realtime broadcasting, with a deployment path documented for Laravel broadcasting.
+- Notifications currently use 5-second polling rather than realtime broadcasting, with a deployment path documented for Laravel broadcasting.
 - There are no browser automation tests yet.
 - There is no real SMS, email, ambulance dispatch, or external route-distance API integration.
 - Production password reset should use a configured mail provider.
