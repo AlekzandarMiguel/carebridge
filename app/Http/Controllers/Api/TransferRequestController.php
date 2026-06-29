@@ -80,8 +80,8 @@ class TransferRequestController extends Controller
                 'Delivery Status',
                 'Case Type',
                 'Urgency',
-                'Sending Hospital',
-                'Receiving Hospital',
+                'Rejected From',
+                'Accepting Hospital',
                 'Dispatcher',
                 'Created At',
                 'Reserved Until',
@@ -109,7 +109,7 @@ class TransferRequestController extends Controller
             }
 
             fclose($handle);
-        }, 'carebridge-transfer-report.csv', [
+        }, 'carebridge-placement-report.csv', [
             'Content-Type' => 'text/csv',
         ]);
     }
@@ -119,11 +119,11 @@ class TransferRequestController extends Controller
         $user = $request->user();
 
         if ($user->role !== 'sending_staff') {
-            return response()->json(['message' => 'Only sending staff can create transfer requests.'], 403);
+            return response()->json(['message' => 'Only intake staff can create rejected patient placement cases.'], 403);
         }
 
         if (!$user->hospital_id) {
-            return response()->json(['message' => 'Your account is not assigned to a hospital.'], 422);
+            return response()->json(['message' => 'Your account is not assigned to a placement origin.'], 422);
         }
 
         $validated = $request->validate([
@@ -147,7 +147,7 @@ class TransferRequestController extends Controller
         ]);
 
         if ((int) $validated['receiving_hospital_id'] === (int) $user->hospital_id) {
-            return response()->json(['message' => 'Receiving hospital must be different from your hospital.'], 422);
+            return response()->json(['message' => 'Accepting hospital must be different from the rejected patient origin.'], 422);
         }
 
         $transferRequest = TransferRequest::create([
@@ -161,10 +161,10 @@ class TransferRequestController extends Controller
         ]);
         $this->applyRouteEstimateFromCoordinates($transferRequest);
 
-        $transferRequest->logAction($user->id, 'created', 'Transfer request created.');
+        $transferRequest->logAction($user->id, 'created', 'Rejected patient placement case created.');
 
         return response()->json([
-            'message' => 'Transfer request created successfully.',
+            'message' => 'Rejected patient placement case created successfully.',
             'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'assignedDispatcher'),
         ], 201);
     }
@@ -174,7 +174,7 @@ class TransferRequestController extends Controller
         $user = $request->user();
 
         if ($user->role !== 'sending_staff') {
-            return response()->json(['message' => 'Only sending staff can view receiving hospital recommendations.'], 403);
+            return response()->json(['message' => 'Only intake staff can view accepting hospital recommendations.'], 403);
         }
 
         $validated = $request->validate([
@@ -187,22 +187,31 @@ class TransferRequestController extends Controller
             ->where('status', 'active')
             ->whereKeyNot($user->hospital_id)
             ->get()
-            ->map(function (Hospital $hospital) use ($bedColumn) {
+            ->map(function (Hospital $hospital) use ($bedColumn, $user) {
                 $capacity = $hospital->latestCapacity;
                 $matchingBeds = $capacity?->{$bedColumn} ?? 0;
                 $totalBeds = $capacity
                     ? $capacity->general_beds_available + $capacity->emergency_beds_available + $capacity->icu_beds_available
                     : 0;
+                $origin = $user->hospital;
+                $distance = ($origin?->latitude && $origin?->longitude && $hospital->latitude && $hospital->longitude)
+                    ? round($this->distanceKm((float) $origin->latitude, (float) $origin->longitude, (float) $hospital->latitude, (float) $hospital->longitude) * 1.25, 2)
+                    : null;
 
                 return [
                     'id' => $hospital->id,
                     'name' => $hospital->name,
                     'address' => $hospital->address,
                     'contact_number' => $hospital->contact_number,
+                    'status' => $hospital->status,
                     'latest_capacity' => $capacity,
                     'matching_beds' => $matchingBeds,
                     'total_beds' => $totalBeds,
-                    'recommendation_score' => ($matchingBeds * 10) + $totalBeds + (($capacity?->ambulance_available ?? 0) * 2),
+                    'ambulance_available' => $capacity?->ambulance_available ?? 0,
+                    'distance_km' => $distance,
+                    'estimated_travel_minutes' => $distance ? max(5, (int) ceil(($distance / 35) * 60)) : null,
+                    'match_status' => $matchingBeds > 0 ? 'Can accept matching need' : 'No matching bed now',
+                    'recommendation_score' => ($matchingBeds * 10) + $totalBeds + (($capacity?->ambulance_available ?? 0) * 2) - ($distance ? min(12, $distance / 4) : 0),
                 ];
             })
             ->sortByDesc('recommendation_score')
@@ -230,7 +239,7 @@ class TransferRequestController extends Controller
         ])->findOrFail($id);
 
         if (!$this->canAccessTransfer($request, $transferRequest)) {
-            return response()->json(['message' => 'You are not allowed to view this transfer request.'], 403);
+            return response()->json(['message' => 'You are not allowed to view this placement case.'], 403);
         }
 
         return response()->json([
@@ -243,11 +252,11 @@ class TransferRequestController extends Controller
         $transferRequest = TransferRequest::findOrFail($id);
 
         if (!$this->canActAsReceivingHospital($request, $transferRequest)) {
-            return response()->json(['message' => 'Only the receiving hospital can accept this request.'], 403);
+            return response()->json(['message' => 'Only the accepting hospital can accept this placement case.'], 403);
         }
 
         if ($transferRequest->status !== 'pending') {
-            return response()->json(['message' => 'Only pending requests can be accepted.'], 422);
+            return response()->json(['message' => 'Only searching placement cases can be accepted.'], 422);
         }
 
         $user = $request->user();
@@ -261,11 +270,11 @@ class TransferRequestController extends Controller
         ]);
 
         $remarks = $validated['accept_conditions']
-            ?? 'Request accepted by receiving hospital.';
+            ?? 'Placement case accepted by accepting hospital.';
         $transferRequest->logAction($user->id, 'accepted', $remarks);
 
         return response()->json([
-            'message' => 'Transfer request accepted.',
+            'message' => 'Placement case accepted.',
             'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher'),
         ]);
     }
@@ -275,11 +284,11 @@ class TransferRequestController extends Controller
         $transferRequest = TransferRequest::findOrFail($id);
 
         if (!$this->canActAsReceivingHospital($request, $transferRequest)) {
-            return response()->json(['message' => 'Only the receiving hospital can decline this request.'], 403);
+            return response()->json(['message' => 'Only the accepting hospital can decline this placement case.'], 403);
         }
 
         if ($transferRequest->status !== 'pending') {
-            return response()->json(['message' => 'Only pending requests can be declined.'], 422);
+            return response()->json(['message' => 'Only searching placement cases can be declined.'], 422);
         }
 
         $user = $request->user();
@@ -306,7 +315,7 @@ class TransferRequestController extends Controller
         $transferRequest->logAction($user->id, 'declined', $remarks);
 
         return response()->json([
-            'message' => 'Transfer request declined.',
+            'message' => 'Placement case declined.',
             'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher'),
         ]);
     }
@@ -318,11 +327,11 @@ class TransferRequestController extends Controller
         $transferRequest = TransferRequest::findOrFail($id);
 
         if (!$this->canActAsReceivingHospital($request, $transferRequest)) {
-            return response()->json(['message' => 'Only the receiving hospital can reserve capacity for this request.'], 403);
+            return response()->json(['message' => 'Only the accepting hospital can reserve capacity for this placement case.'], 403);
         }
 
         if ($transferRequest->status !== 'accepted') {
-            return response()->json(['message' => 'Only accepted requests can be reserved.'], 422);
+            return response()->json(['message' => 'Only accepted placement cases can reserve capacity.'], 422);
         }
 
         $user = $request->user();
@@ -349,13 +358,13 @@ class TransferRequestController extends Controller
                 'reserved_until' => now()->addMinutes(max(5, $reservationMinutes)),
             ]);
 
-            $transferRequest->logAction($user->id, 'reserved', "Slot reserved at receiving hospital for {$reservationMinutes} minutes.");
+            $transferRequest->logAction($user->id, 'reserved', "Capacity slot reserved at accepting hospital for {$reservationMinutes} minutes.");
 
             return $transferRequest;
         });
 
         if (!$reservedTransfer) {
-            return response()->json(['message' => 'No matching bed capacity is available at the receiving hospital.'], 422);
+            return response()->json(['message' => 'No matching bed capacity is available at the accepting hospital.'], 422);
         }
 
         return response()->json([
@@ -371,15 +380,15 @@ class TransferRequestController extends Controller
         $transferRequest = TransferRequest::findOrFail($id);
 
         if (!$this->canActAsSendingHospital($request, $transferRequest)) {
-            return response()->json(['message' => 'Only the sending hospital can start this transfer.'], 403);
+            return response()->json(['message' => 'Only intake staff from the rejected patient origin can start delivery.'], 403);
         }
 
         if ($transferRequest->status !== 'reserved') {
-            return response()->json(['message' => 'Only reserved requests can start transfer.'], 422);
+            return response()->json(['message' => 'Only reserved placement cases can start delivery.'], 422);
         }
 
         if ($transferRequest->reserved_until && now()->greaterThan($transferRequest->reserved_until)) {
-            return response()->json(['message' => 'The reservation timer has expired. Ask the receiving hospital to reserve again.'], 422);
+            return response()->json(['message' => 'The reservation timer has expired. Ask the accepting hospital to reserve again.'], 422);
         }
 
         $validated = $request->validate([
@@ -398,7 +407,7 @@ class TransferRequestController extends Controller
             'status' => 'in_transfer',
             'delivery_status' => 'en_route',
             'delivery_started_at' => now(),
-            'delivery_last_location' => $validated['delivery_last_location'] ?? 'Departed from sending hospital',
+            'delivery_last_location' => $validated['delivery_last_location'] ?? 'Departed from rejected patient origin',
             'delivery_notes' => $validated['delivery_notes'] ?? $transferRequest->delivery_notes,
             'transport_team' => $validated['transport_team'] ?? $transferRequest->transport_team,
             'ambulance_unit' => $validated['ambulance_unit'] ?? $transferRequest->ambulance_unit,
@@ -408,10 +417,10 @@ class TransferRequestController extends Controller
             'estimated_travel_minutes' => $validated['estimated_travel_minutes'] ?? $transferRequest->estimated_travel_minutes,
         ]);
 
-        $transferRequest->logAction($user->id, 'in_transfer', 'Patient transfer in progress.');
+        $transferRequest->logAction($user->id, 'in_transfer', 'Patient delivery is in progress.');
 
         return response()->json([
-            'message' => 'Transfer started.',
+            'message' => 'Patient delivery started.',
             'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher'),
         ]);
     }
@@ -421,11 +430,11 @@ class TransferRequestController extends Controller
         $transferRequest = TransferRequest::findOrFail($id);
 
         if (!$this->canActAsReceivingHospital($request, $transferRequest)) {
-            return response()->json(['message' => 'Only the receiving hospital can mark patient arrival.'], 403);
+            return response()->json(['message' => 'Only the accepting hospital can mark patient arrival.'], 403);
         }
 
         if ($transferRequest->status !== 'in_transfer') {
-            return response()->json(['message' => 'Only in-transfer requests can be marked as arrived.'], 422);
+            return response()->json(['message' => 'Only active delivery cases can be marked as arrived.'], 422);
         }
 
         if ($transferRequest->delivery_status === 'delivered') {
@@ -442,12 +451,12 @@ class TransferRequestController extends Controller
         $transferRequest->update([
             'delivery_status' => 'arrived',
             'patient_arrived_at' => now(),
-            'delivery_last_location' => $validated['delivery_last_location'] ?? 'Arrived at receiving hospital',
+            'delivery_last_location' => $validated['delivery_last_location'] ?? 'Arrived at accepting hospital',
             'delivery_notes' => $validated['delivery_notes'] ?? $transferRequest->delivery_notes,
             'handoff_notes' => $validated['handoff_notes'] ?? $transferRequest->handoff_notes,
         ]);
 
-        $transferRequest->logAction($user->id, 'patient_arrived', 'Patient arrived at receiving hospital.');
+        $transferRequest->logAction($user->id, 'patient_arrived', 'Patient arrived at accepting hospital.');
 
         return response()->json([
             'message' => 'Patient arrival recorded.',
@@ -460,11 +469,11 @@ class TransferRequestController extends Controller
         $transferRequest = TransferRequest::findOrFail($id);
 
         if (!$this->canActAsReceivingHospital($request, $transferRequest)) {
-            return response()->json(['message' => 'Only the receiving hospital can complete this transfer.'], 403);
+            return response()->json(['message' => 'Only the accepting hospital can complete this delivery.'], 403);
         }
 
         if ($transferRequest->status !== 'in_transfer') {
-            return response()->json(['message' => 'Only in-transfer requests can be completed.'], 422);
+            return response()->json(['message' => 'Only active delivery cases can be completed.'], 422);
         }
 
         $validated = $request->validate([
@@ -478,15 +487,15 @@ class TransferRequestController extends Controller
             'delivery_status' => 'delivered',
             'patient_arrived_at' => $transferRequest->patient_arrived_at ?? now(),
             'delivery_completed_at' => now(),
-            'delivery_last_location' => 'Delivered to receiving hospital care team',
+            'delivery_last_location' => 'Delivered to accepting hospital care team',
             'delivery_notes' => $validated['delivery_notes'] ?? $transferRequest->delivery_notes,
             'handoff_notes' => $validated['handoff_notes'] ?? $transferRequest->handoff_notes,
         ]);
 
-        $transferRequest->logAction($user->id, 'completed', 'Patient transfer completed successfully.');
+        $transferRequest->logAction($user->id, 'completed', 'Patient placement and delivery completed successfully.');
 
         return response()->json([
-            'message' => 'Transfer completed.',
+            'message' => 'Delivery completed.',
             'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher'),
         ]);
     }
@@ -496,19 +505,19 @@ class TransferRequestController extends Controller
         $transferRequest = TransferRequest::findOrFail($id);
 
         if (!$this->canAccessTransfer($request, $transferRequest)) {
-            return response()->json(['message' => 'You are not allowed to cancel this transfer request.'], 403);
+            return response()->json(['message' => 'You are not allowed to cancel this placement case.'], 403);
         }
 
         if (!$this->canActAsSendingHospital($request, $transferRequest)) {
-            return response()->json(['message' => 'Only the sending hospital can cancel this transfer request.'], 403);
+            return response()->json(['message' => 'Only intake staff from the rejected patient origin can cancel this placement case.'], 403);
         }
 
         if (!in_array($transferRequest->status, ['pending', 'accepted', 'reserved'])) {
-            return response()->json(['message' => 'This request cannot be cancelled in its current status.'], 422);
+            return response()->json(['message' => 'This placement case cannot be cancelled in its current status.'], 422);
         }
 
         $user = $request->user();
-        $remarks = $request->input('remarks', 'Transfer cancelled.');
+        $remarks = $request->input('remarks', 'Placement case cancelled.');
 
         $transferRequest->update([
             'status' => 'cancelled',
@@ -517,7 +526,7 @@ class TransferRequestController extends Controller
         $transferRequest->logAction($user->id, 'cancelled', $remarks);
 
         return response()->json([
-            'message' => 'Transfer cancelled.',
+            'message' => 'Placement case cancelled.',
             'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher'),
         ]);
     }
@@ -527,13 +536,13 @@ class TransferRequestController extends Controller
         $user = $request->user();
 
         if (!in_array($user->role, self::MONITOR_ROLES)) {
-            return response()->json(['message' => 'Only coordinators and admins can escalate transfer requests.'], 403);
+            return response()->json(['message' => 'Only department monitors can escalate placement cases.'], 403);
         }
 
         $transferRequest = TransferRequest::findOrFail($id);
 
         if (!in_array($transferRequest->status, ['pending', 'accepted', 'reserved', 'in_transfer'])) {
-            return response()->json(['message' => 'Only active transfer requests can be escalated.'], 422);
+            return response()->json(['message' => 'Only active placement cases can be escalated.'], 422);
         }
 
         $validated = $request->validate([
@@ -551,7 +560,7 @@ class TransferRequestController extends Controller
         $transferRequest->logAction($user->id, 'escalated', $reason);
 
         return response()->json([
-            'message' => 'Transfer request escalated.',
+            'message' => 'Placement case escalated.',
             'transfer_request' => $transferRequest->load('sendingHospital', 'receivingHospital', 'creator', 'acceptor', 'assignedDispatcher', 'escalator'),
         ]);
     }
@@ -658,7 +667,7 @@ class TransferRequestController extends Controller
             'departed' => 'Departed',
             'location_update' => 'Location update',
             'delayed' => 'Delayed',
-            'arrived_gate' => 'Arrived at receiving area',
+            'arrived_gate' => 'Arrived at accepting area',
             'handoff_completed' => 'Handoff completed',
         ];
         $events = $transferRequest->delivery_events ?? [];

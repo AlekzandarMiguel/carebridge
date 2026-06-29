@@ -39,7 +39,9 @@ class AuthController extends Controller
             Auth::logout();
 
             throw ValidationException::withMessages([
-                'email' => ['Your account is waiting for admin approval.'],
+                'email' => [$user->account_status === 'suspended'
+                    ? 'Your account has been suspended. Contact an admin for access.'
+                    : 'Your account is waiting for admin approval.'],
             ]);
         }
 

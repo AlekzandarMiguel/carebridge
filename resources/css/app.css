@@ -2065,6 +2065,202 @@ html[data-theme="dark"] .badge {
 .delivery-arrived { background: var(--warning); box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.16); }
 .delivery-delivered { background: var(--success); box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.16); }
 
+.route-map-card .card-body {
+    padding: 0;
+}
+
+.route-map {
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background:
+        radial-gradient(circle at 16% 20%, rgba(37, 99, 235, 0.13), transparent 28%),
+        radial-gradient(circle at 84% 22%, rgba(16, 185, 129, 0.15), transparent 24%),
+        linear-gradient(135deg, #f8fafc, #eef6ff);
+}
+
+.route-map-empty {
+    min-height: 220px;
+    display: grid;
+    place-items: center;
+    padding: 28px;
+    text-align: center;
+}
+
+.route-map-empty div,
+.route-map-head,
+.route-map-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.route-map-empty div {
+    display: grid;
+    justify-items: center;
+}
+
+.route-map-head,
+.route-map-foot {
+    align-items: center;
+    padding: 18px 20px;
+}
+
+.route-map-head strong,
+.route-map-empty strong {
+    display: block;
+    color: var(--gray-900);
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.route-map-head span,
+.route-map-empty span,
+.route-map-foot span {
+    display: block;
+    margin-top: 4px;
+    color: var(--gray-500);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.route-map svg {
+    width: 100%;
+    min-height: 260px;
+    display: block;
+}
+
+.route-map-grid {
+    fill: rgba(255, 255, 255, 0.64);
+    stroke: rgba(148, 163, 184, 0.42);
+    stroke-dasharray: 4 8;
+}
+
+.route-map-shadow {
+    fill: none;
+    stroke: rgba(15, 23, 42, 0.12);
+    stroke-width: 18;
+    stroke-linecap: round;
+}
+
+.route-map-line {
+    fill: none;
+    stroke-width: 9;
+    stroke-linecap: round;
+}
+
+.route-node {
+    stroke: white;
+    stroke-width: 5;
+    filter: drop-shadow(0 10px 18px rgba(15, 23, 42, 0.18));
+}
+
+.route-node-start {
+    fill: #2563eb;
+}
+
+.route-node-end {
+    fill: #10b981;
+}
+
+.route-current {
+    fill: #f59e0b;
+    stroke: white;
+    stroke-width: 5;
+    filter: drop-shadow(0 8px 18px rgba(245, 158, 11, 0.36));
+}
+
+.route-map text {
+    fill: var(--gray-700);
+    font-size: 13px;
+    font-weight: 900;
+}
+
+html[data-theme="dark"] .route-map {
+    border-color: rgba(96, 165, 250, 0.28);
+    background:
+        radial-gradient(circle at 18% 18%, rgba(37, 99, 235, 0.24), transparent 28%),
+        radial-gradient(circle at 82% 18%, rgba(16, 185, 129, 0.22), transparent 24%),
+        linear-gradient(135deg, #07111f, #101827);
+}
+
+html[data-theme="dark"] .route-map-grid {
+    fill: rgba(15, 23, 42, 0.58);
+    stroke: rgba(148, 163, 184, 0.25);
+}
+
+html[data-theme="dark"] .route-map-shadow {
+    stroke: rgba(0, 0, 0, 0.38);
+}
+
+html[data-theme="dark"] .route-map text,
+html[data-theme="dark"] .route-map-head strong,
+html[data-theme="dark"] .route-map-empty strong {
+    fill: #e5f0ff;
+    color: #e5f0ff;
+}
+
+html[data-theme="dark"] .route-map-head span,
+html[data-theme="dark"] .route-map-empty span,
+html[data-theme="dark"] .route-map-foot span {
+    color: #a8c3e8;
+}
+
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .summary-card,
+html[data-theme="dark"] .insight-panel,
+html[data-theme="dark"] .auth-form-card,
+html[data-theme="dark"] .notification-popover,
+html[data-theme="dark"] .board-column,
+html[data-theme="dark"] .board-card,
+html[data-theme="dark"] .wallboard-card,
+html[data-theme="dark"] .recommendation-card,
+html[data-theme="dark"] .attachment-item {
+    background: #101827;
+    border-color: rgba(148, 163, 184, 0.22);
+    color: #e5edf8;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+    background: #0b1220;
+    border-color: rgba(148, 163, 184, 0.28);
+    color: #e5edf8;
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+    color: #8191a8;
+}
+
+html[data-theme="dark"] table {
+    color: #e5edf8;
+}
+
+html[data-theme="dark"] th,
+html[data-theme="dark"] td,
+html[data-theme="dark"] .card-header,
+html[data-theme="dark"] .detail-list-panel div,
+html[data-theme="dark"] .compact-list div,
+html[data-theme="dark"] .notification-item {
+    border-color: rgba(148, 163, 184, 0.2);
+}
+
+html[data-theme="dark"] .alert {
+    border-color: rgba(148, 163, 184, 0.26);
+}
+
+html[data-theme="dark"] .alert-success {
+    background: rgba(5, 150, 105, 0.16);
+    color: #a7f3d0;
+}
+
+html[data-theme="dark"] .alert-error {
+    background: rgba(220, 38, 38, 0.15);
+    color: #fecaca;
+}
+
 .urgency-normal {
     color: var(--gray-600);
     font-weight: 700;

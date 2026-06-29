@@ -9,6 +9,23 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        User::whereIn('email', [
+            'maria@overflowcare.com',
+            'admin@overflowcare.com',
+        ])->get()->each(function (User $user) {
+            $hasHistory = $user->createdTransferRequests()->exists()
+                || $user->acceptedTransferRequests()->exists()
+                || $user->transferLogs()->exists();
+
+            if ($hasHistory) {
+                $user->update(['account_status' => 'suspended']);
+
+                return;
+            }
+
+            $user->delete();
+        });
+
         $users = [
             // Hospital 1 - City General Hospital
             ['name' => 'Dr. Sarah Chen', 'email' => 'sarah@citygeneral.com', 'role' => 'sending_staff', 'hospital_id' => 1],

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { archiveTransfer, downloadBlob, downloadTransferAttachment, getTransferRequest, markPatientArrived, completeTransfer, updateCoordinatorNotes, updateRouteEstimate, addDeliveryEvent, uploadTransferAttachment, deleteTransferAttachment, unarchiveTransfer } from '../api/axios';
 import StatusBadge from '../components/StatusBadge';
+import RouteMap from '../components/RouteMap';
 
 const deliveryLabels = {
     not_started: 'Not Started',
@@ -239,7 +240,7 @@ export default function TransferDetail() {
                         <StatusBadge status={transfer.status} />
                     </div>
                     <div className="card-body detail-list detail-list-panel">
-                        <div><span>Sending Hospital</span><strong>{transfer.sending_hospital?.name}</strong></div>
+                        <div><span>Rejected From</span><strong>{transfer.sending_hospital?.name}</strong></div>
                         <div><span>Accepting Hospital</span><strong>{transfer.receiving_hospital?.name || '-'}</strong></div>
                         <div><span>Case Type</span><strong>{transfer.case_type}</strong></div>
                         <div><span>Urgency</span><strong>{transfer.urgency_level}</strong></div>
@@ -265,7 +266,6 @@ export default function TransferDetail() {
                         <div><span>Route Distance</span><strong>{transfer.route_distance_km ? `${transfer.route_distance_km} km` : '-'}</strong></div>
                         <div><span>Travel Estimate</span><strong>{transfer.estimated_travel_minutes ? `${transfer.estimated_travel_minutes} min` : '-'}</strong></div>
                         <div><span>Assigned Dispatcher</span><strong>{transfer.assigned_dispatcher?.name || 'Unassigned'}</strong></div>
-                        <div><span>Map Route</span><strong>{transfer.route_map_url ? <a href={transfer.route_map_url} target="_blank" rel="noreferrer">Open route map</a> : '-'}</strong></div>
                         <div><span>Delivery Notes</span><strong>{transfer.delivery_notes || '-'}</strong></div>
                         <div><span>Handoff Notes</span><strong>{transfer.handoff_notes || '-'}</strong></div>
                         {transfer.status === 'in_transfer' && canReceive && (
@@ -287,6 +287,13 @@ export default function TransferDetail() {
                             </div>
                         )}
                     </div>
+                </div>
+            </div>
+
+            <div className="card mt-24 route-map-card">
+                <div className="card-header">Placement Route</div>
+                <div className="card-body">
+                    <RouteMap transfer={transfer} />
                 </div>
             </div>
 
@@ -333,7 +340,7 @@ export default function TransferDetail() {
                                             <option value="departed">Departed</option>
                                             <option value="location_update">Location update</option>
                                             <option value="delayed">Delayed</option>
-                                            <option value="arrived_gate">Arrived at receiving area</option>
+                                            <option value="arrived_gate">Arrived at accepting area</option>
                                             <option value="handoff_completed">Handoff completed</option>
                                         </select>
                                     </div>

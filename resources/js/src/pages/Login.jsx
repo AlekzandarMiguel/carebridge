@@ -18,12 +18,11 @@ export default function Login({ theme, toggleTheme }) {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const signIn = async (loginEmail, loginPassword) => {
         setError('');
         setLoading(true);
         try {
-            const res = await login(email, password);
+            const res = await login(loginEmail, loginPassword);
             localStorage.setItem('carebridge_token', res.data.token);
             localStorage.setItem('carebridge_user', JSON.stringify(res.data.user));
             navigate('/dashboard');
@@ -32,6 +31,17 @@ export default function Login({ theme, toggleTheme }) {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        signIn(email, password);
+    };
+
+    const handleDemoLogin = (demoEmail) => {
+        setEmail(demoEmail);
+        setPassword('password123');
+        signIn(demoEmail, 'password123');
     };
 
     return (
@@ -117,10 +127,8 @@ export default function Login({ theme, toggleTheme }) {
                                 <button
                                     type="button"
                                     key={demoEmail}
-                                    onClick={() => {
-                                        setEmail(demoEmail);
-                                        setPassword('password123');
-                                    }}
+                                    disabled={loading}
+                                    onClick={() => handleDemoLogin(demoEmail)}
                                 >
                                     <strong>{role}</strong>
                                     <span>{demoEmail}</span>

@@ -10,6 +10,16 @@ const deliveryLabels = {
     delivered: 'Delivered',
 };
 
+const statusLabels = {
+    pending: 'Searching',
+    accepted: 'Accepted',
+    reserved: 'Dispatching',
+    in_transfer: 'In Delivery',
+    completed: 'Completed',
+    declined: 'Rejected',
+    cancelled: 'Cancelled',
+};
+
 export default function TransferTracking() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -156,8 +166,8 @@ export default function TransferTracking() {
                     <div className="form-group">
                         <select value={filters.status} onChange={(e) => updateFilter('status', e.target.value)}>
                             <option value="">All statuses</option>
-                            {['pending', 'accepted', 'reserved', 'in_transfer', 'completed', 'declined', 'cancelled'].map((status) => (
-                                <option value={status} key={status}>{status.replace('_', ' ')}</option>
+                            {Object.entries(statusLabels).map(([status, label]) => (
+                                <option value={status} key={status}>{label}</option>
                             ))}
                         </select>
                     </div>
@@ -279,9 +289,9 @@ export default function TransferTracking() {
                                                             <button
                                                                 className="btn btn-primary btn-sm"
                                                                 disabled={actionLoading === req.id}
-                                                                onClick={() => handleAction(req.id, confirmAction('Start patient delivery now?', startTransfer), 'Transfer started.')}
+                                                                onClick={() => handleAction(req.id, confirmAction('Start patient delivery now?', startTransfer), 'Delivery started.')}
                                                             >
-                                                                Start Transfer
+                                                                Start Delivery
                                                             </button>
                                                         )}
                                                         {req.status === 'in_transfer' && canActAsReceiving(req) && (

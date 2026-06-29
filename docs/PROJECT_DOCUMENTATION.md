@@ -70,7 +70,7 @@ Admins manage system records. They can create and update users, hospitals, syste
 
 ## 6. What Makes CareBridge Different
 
-CareBridge is built around a rejected-patient placement department, not elective hospital transfer.
+CareBridge is built around a rejected-patient placement department, not a broad hospital transfer system.
 
 Traditional hospital systems often focus on internal patient records. CareBridge focuses on the moment when a hospital is full and a person needs another hospital that can accept them safely. The system helps staff decide where the patient can go, what capacity is available, what delivery status the case is in, and who performed each action.
 
@@ -177,7 +177,7 @@ Acceptance staff can see rejected patient cases sent to their hospital. Cases ar
 
 The delivery workflow tracks:
 
-- Transfer started time.
+- Delivery started time.
 - Patient arrival time.
 - Delivery completed time.
 - Current or last known location.
@@ -189,21 +189,22 @@ The delivery workflow tracks:
 - Route distance.
 - Estimated travel minutes.
 - Assigned dispatcher.
-- Delivery events, including departed, location update, delayed, receiving area arrival, and handoff completed.
+- Delivery events, including departed, location update, delayed, accepting area arrival, and handoff completed.
 - SLA state for pending or accepted cases.
 - ETA state for active delivery movement.
-- Route map link based on hospital addresses.
+- Built-in route map based on hospital coordinates.
 
 ### Department Command View
 
-The command view groups active rejected patient cases by status:
+The command view groups active rejected patient cases by workflow lane:
 
-- Pending
+- Rejected
+- Searching
 - Accepted
-- Reserved
-- In transfer
+- Dispatching
+- En Route
+- Arrived
 - Completed
-- Declined
 
 It also shows:
 
@@ -814,7 +815,7 @@ Current feature tests cover:
 - Public registration creates pending accounts that require admin approval.
 - Admin, coordinator, and dispatcher routes are checked on the backend.
 - Hospital capacity updates are restricted to acceptance staff from the same hospital.
-- Transfer actions are checked against sending and receiving hospital ownership.
+- Placement and delivery actions are checked against rejected-origin and accepting-hospital ownership.
 - Dispatcher route and delivery updates are limited to unassigned or self-assigned cases, unless the user is coordinator or admin.
 - Attachments are validated by type and size.
 

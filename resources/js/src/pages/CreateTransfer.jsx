@@ -7,7 +7,7 @@ const checklistLabels = {
     lab_results: 'Relevant lab results',
     imaging: 'Imaging or diagnostic summary',
     consent: 'Transfer consent confirmed',
-    transport_form: 'Transport details prepared',
+    transport_form: 'Delivery details prepared',
 };
 
 const emptyChecklist = Object.keys(checklistLabels).reduce((items, key) => ({ ...items, [key]: false }), {});
@@ -228,7 +228,7 @@ export default function CreateTransfer() {
                                 value={form.notes}
                                 onChange={handleChange}
                                 rows={3}
-                                placeholder="Additional details about the patient or transfer..."
+                                placeholder="Additional details about why placement is needed..."
                             />
                         </div>
 
@@ -373,8 +373,13 @@ export default function CreateTransfer() {
                                 <span className="recommendation-rank">#{index + 1}</span>
                                 <span className="recommendation-content">
                                     <strong>{hospital.name}</strong>
-                                    <small>{hospital.matching_beds} matching beds - {hospital.total_beds} total beds</small>
-                                    <small>{hospital.contact_number}</small>
+                                    <small>{hospital.match_status}</small>
+                                    <small>
+                                        {hospital.matching_beds} matching beds - {hospital.total_beds} total beds - {hospital.ambulance_available} ambulance
+                                    </small>
+                                    <small>
+                                        {hospital.distance_km ? `${hospital.distance_km} km / ${hospital.estimated_travel_minutes} min` : 'Distance pending'} - {hospital.contact_number}
+                                    </small>
                                 </span>
                                 <span className="recommendation-meter" aria-hidden="true">
                                     <span style={{ width: `${Math.min(100, hospital.matching_beds * 18)}%` }}></span>

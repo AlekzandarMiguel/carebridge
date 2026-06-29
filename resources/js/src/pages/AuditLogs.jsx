@@ -88,7 +88,7 @@ export default function AuditLogs() {
                                         <th>Action</th>
                                         <th>Reference</th>
                                         <th>User</th>
-                                        <th>Route</th>
+                                        <th>Placement Route</th>
                                         <th>Remarks</th>
                                     </tr>
                                 </thead>

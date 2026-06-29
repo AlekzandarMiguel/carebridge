@@ -104,7 +104,7 @@ export default function HospitalDirectory() {
                                 <span className={`badge badge-${hospital.status === 'active' ? 'completed' : 'cancelled'}`}>{hospital.status}</span>
                             </div>
                             <strong className="directory-contact">{hospital.contact_number}</strong>
-                            <p>{hospital.transfer_contact_name || 'Transfer desk'} {hospital.transfer_contact_phone || ''}</p>
+                            <p>{hospital.transfer_contact_name || 'Placement desk'} {hospital.transfer_contact_phone || ''}</p>
                             <p>{hospital.emergency_contact_name ? `Emergency: ${hospital.emergency_contact_name} ${hospital.emergency_contact_phone || ''}` : 'Emergency contact not listed'}</p>
                             <div className="capacity-strip">
                                 <span>{totalBeds} total beds</span>

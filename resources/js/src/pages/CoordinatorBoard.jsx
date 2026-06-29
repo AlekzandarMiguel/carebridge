@@ -4,12 +4,13 @@ import { getHospitals, getSystemSettings, getTransferBoard, escalateTransfer, as
 import StatusBadge from '../components/StatusBadge';
 
 const columns = [
-    ['pending', 'Pending'],
-    ['accepted', 'Accepted'],
-    ['reserved', 'Reserved'],
-    ['in_transfer', 'In Movement'],
-    ['completed', 'Completed'],
-    ['declined', 'Declined'],
+    ['rejected', 'Rejected', (req) => req.status === 'declined'],
+    ['searching', 'Searching', (req) => req.status === 'pending'],
+    ['accepted', 'Accepted', (req) => req.status === 'accepted'],
+    ['dispatching', 'Dispatching', (req) => req.status === 'reserved' || (req.status === 'in_transfer' && (req.delivery_status || 'not_started') === 'not_started')],
+    ['en_route', 'En Route', (req) => req.status === 'in_transfer' && (req.delivery_status || 'not_started') === 'en_route'],
+    ['arrived', 'Arrived', (req) => req.status === 'in_transfer' && req.delivery_status === 'arrived'],
+    ['completed', 'Completed', (req) => req.status === 'completed'],
 ];
 
 const urgencyOrder = ['critical', 'urgent', 'normal'];
@@ -176,17 +177,22 @@ export default function CoordinatorBoard() {
             </div>
 
             <div className="board-grid">
-                {columns.map(([status, label], index) => (
-                    <section className="board-column" key={status}>
+                {columns.map(([lane, label, filter], index) => {
+                    const laneRequests = allRequests
+                        .filter(filter)
+                        .sort((a, b) => urgencyOrder.indexOf(a.urgency_level) - urgencyOrder.indexOf(b.urgency_level));
+
+                    return (
+                    <section className="board-column" key={lane}>
                         <div className={`board-column-header board-lane-${index}`}>
                             <div>
                                 <strong>{label}</strong>
-                                <small>{status === 'in_transfer' ? 'Delivery movement' : 'Department queue'}</small>
+                                <small>{['en_route', 'arrived'].includes(lane) ? 'Delivery movement' : 'Department queue'}</small>
                             </div>
-                            <span>{board[status]?.length || 0}</span>
+                            <span>{laneRequests.length}</span>
                         </div>
                         <div className="board-card-list">
-                            {(board[status] || []).sort((a, b) => urgencyOrder.indexOf(a.urgency_level) - urgencyOrder.indexOf(b.urgency_level)).map((req) => (
+                            {laneRequests.map((req) => (
                                 <Link to={`/transfer-requests/${req.id}`} className="board-card" key={req.id}>
                                     <div className="flex-between">
                                         <strong>{req.patient_reference_code}</strong>
@@ -248,12 +254,13 @@ export default function CoordinatorBoard() {
                                     )}
                                 </Link>
                             ))}
-                            {(board[status] || []).length === 0 && (
+                            {laneRequests.length === 0 && (
                                 <div className="board-empty">No cases in this lane.</div>
                             )}
                         </div>
                     </section>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );

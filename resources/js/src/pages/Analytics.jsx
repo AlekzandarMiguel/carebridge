@@ -126,7 +126,7 @@ export default function Analytics() {
                     </ResponsiveContainer>
                 </div>
 
-                {/* Transfers Over Time */}
+                {/* Placement Cases Over Time */}
                 <div className="analytics-card">
                     <h3>Rejected Cases Over Time (Last 7 Days)</h3>
                     {transfers_over_time.length === 0 ? (

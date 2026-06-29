@@ -95,7 +95,7 @@ export default function AdminManagement() {
     };
 
     const runDemoRefresh = async () => {
-        if (!window.confirm('Refresh demo hospitals, users, and capacities? Existing transfer history will stay.')) return;
+        if (!window.confirm('Refresh demo hospitals, users, and capacities? Existing placement history will stay.')) return;
         setMessage('');
         setError('');
         try {
@@ -211,11 +211,11 @@ export default function AdminManagement() {
                             </div>
                             <div className="form-grid">
                                 <div className="form-group">
-                                    <label>Transfer Desk Name</label>
+                                    <label>Placement Desk Name</label>
                                     <input value={hospitalForm.transfer_contact_name || ''} onChange={(e) => setHospitalForm({ ...hospitalForm, transfer_contact_name: e.target.value })} />
                                 </div>
                                 <div className="form-group">
-                                    <label>Transfer Desk Phone</label>
+                                    <label>Placement Desk Phone</label>
                                     <input value={hospitalForm.transfer_contact_phone || ''} onChange={(e) => setHospitalForm({ ...hospitalForm, transfer_contact_phone: e.target.value })} />
                                 </div>
                                 <div className="form-group">
@@ -317,7 +317,7 @@ export default function AdminManagement() {
                                 {data.hospitals.map((hospital) => (
                                     <tr key={hospital.id}>
                                         <td><strong>{hospital.name}</strong><br /><small>{hospital.address}</small><br /><small>{hospital.latitude && hospital.longitude ? `${hospital.latitude}, ${hospital.longitude}` : 'No coordinates'}</small></td>
-                                        <td>{hospital.contact_number}<br /><small>{hospital.transfer_contact_name || 'Transfer desk'} {hospital.transfer_contact_phone || ''}</small></td>
+                                        <td>{hospital.contact_number}<br /><small>{hospital.transfer_contact_name || 'Placement desk'} {hospital.transfer_contact_phone || ''}</small></td>
                                         <td>{hospital.status}</td>
                                         <td><button className="btn btn-outline btn-sm" onClick={() => { setEditingHospitalId(hospital.id); setHospitalForm({ name: hospital.name, address: hospital.address, latitude: hospital.latitude || '', longitude: hospital.longitude || '', contact_number: hospital.contact_number, transfer_contact_name: hospital.transfer_contact_name || '', transfer_contact_phone: hospital.transfer_contact_phone || '', emergency_contact_name: hospital.emergency_contact_name || '', emergency_contact_phone: hospital.emergency_contact_phone || '', status: hospital.status }); }}>Edit</button></td>
                                     </tr>

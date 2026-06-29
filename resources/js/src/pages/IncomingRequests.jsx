@@ -130,7 +130,7 @@ export default function IncomingRequests() {
                                 <thead>
                                     <tr>
                                         <th>Reference</th>
-                                        <th>Sending Hospital</th>
+                                        <th>Rejected From</th>
                                         <th>Case Type</th>
                                         <th>Urgency</th>
                                         <th>Notes</th>

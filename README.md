@@ -28,24 +28,24 @@ Because of this, the hassle of manually searching for another hospital is reduce
 - Hospital capacity desk for available general, emergency, ICU, and ambulance capacity.
 - Rejected patient case creation for capacity-limited patients.
 - Privacy confirmation and handoff document checklist during request creation.
-- Suggested receiving hospitals based on matching available bed type.
-- Incoming request triage for acceptance staff.
-- Accept, decline, reserve, start transfer, mark arrived, complete, cancel, and escalate actions.
+- Placement matching that ranks accepting hospitals by matching beds, total capacity, ambulance availability, distance, and estimated travel time.
+- Incoming placement triage for acceptance staff.
+- Accept, decline, reserve, start delivery, mark arrived, complete, cancel, and escalate actions.
 - Patient delivery monitoring with transport team, ambulance unit, contact, ETA, route distance, travel estimate, location, and delivery notes.
 - Dispatcher assignment for active placement and delivery cases.
-- Delivery event timeline for departed, location update, delayed, receiving area arrival, and handoff updates.
+- Delivery event timeline for departed, location update, delayed, accepting area arrival, and handoff updates.
 - SLA and ETA warning states for cases that are waiting too long or running late.
 - Secure case attachments for referral notes, lab results, imaging, consent, transport forms, and supporting documents.
-- Map-ready route links and coordinate-based route estimates between hospitals.
-- Command view for active network requests, dispatcher assignment, escalation, SLA monitoring, and network pressure.
+- Built-in route map that plots the delivery path from origin to final accepting destination using hospital coordinates.
+- Command view for Rejected, Searching, Accepted, Dispatching, En Route, Arrived, and Completed lanes.
 - Department wallboard for active cases, assignment gaps, ETA risk, and SLA risk.
 - Archive and restore workflow for closed cases.
 - Admin management for users, account approval, hospitals, system settings, and demo data refresh.
 - Audit logs with filters, CSV export, action, role, search term, and date range.
 - Delivery tracking filters, global search, and CSV export for monitor roles.
-- Analytics for status distribution, urgency, case type, rejection reasons, completion rate, and transfer activity.
+- Analytics for status distribution, urgency, case type, rejection reasons, completion rate, and placement activity.
 - Notification alerts with priority labels, unread counts, read controls, and faster near-realtime polling.
-- Expired reservations automatically release reserved capacity back to the receiving hospital.
+- Expired reservations automatically release reserved capacity back to the accepting hospital.
 - Route-based frontend code splitting for faster page loading.
 - Production admin command: `php artisan carebridge:create-admin`.
 - Browser test scaffold for Playwright.
@@ -84,7 +84,7 @@ Because of this, the hassle of manually searching for another hospital is reduce
 - Recharts
 - Axios
 - PHP 8.2+
-- SQLite by default for local development
+- MySQL or MariaDB for local development
 
 ## Local Setup
 

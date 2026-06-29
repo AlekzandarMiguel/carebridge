@@ -5,7 +5,7 @@ const statusLabels = {
     accepted: 'Accepted',
     declined: 'Declined',
     reserved: 'Reserved',
-    in_transfer: 'In Transfer',
+    in_transfer: 'In Delivery',
     completed: 'Completed',
     cancelled: 'Cancelled',
 };

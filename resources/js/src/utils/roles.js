@@ -2,7 +2,7 @@ export const roleHome = {
     sending_staff: '/create-transfer',
     receiving_staff: '/incoming-requests',
     coordinator: '/coordinator-board',
-    dispatcher: '/coordinator-board',
+    dispatcher: '/transfer-tracking',
     admin: '/admin',
 };
 

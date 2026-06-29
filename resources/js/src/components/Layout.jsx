@@ -7,12 +7,13 @@ import ThemeToggle from './ThemeToggle';
 const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: 'DB' },
     { path: '/hospital-capacity', label: 'Capacity Desk', icon: 'HC', roles: ['receiving_staff'] },
-    { path: '/create-transfer', label: 'New Rejected Case', icon: '+', roles: ['sending_staff'] },
+    { path: '/create-transfer', label: 'Rejected Intake', icon: '+', roles: ['sending_staff'] },
     { path: '/incoming-requests', label: 'Acceptance Queue', icon: 'IN', roles: ['receiving_staff'] },
-    { path: '/transfer-tracking', label: 'Delivery Tracking', icon: 'DT' },
-    { path: '/coordinator-board', label: 'Command View', icon: 'CV', roles: ['coordinator', 'dispatcher', 'admin'] },
+    { path: '/transfer-tracking', label: 'Case Tracking', icon: 'CT', roles: ['sending_staff', 'receiving_staff'] },
+    { path: '/transfer-tracking', label: 'Delivery Board', icon: 'DT', roles: ['dispatcher', 'coordinator', 'admin'] },
+    { path: '/coordinator-board', label: 'Command View', icon: 'CV', roles: ['coordinator', 'admin'] },
     { path: '/wallboard', label: 'Wallboard', icon: 'WB', roles: ['coordinator', 'dispatcher', 'admin'] },
-    { path: '/hospital-directory', label: 'Directory', icon: 'HD', roles: ['sending_staff', 'coordinator', 'dispatcher', 'admin'] },
+    { path: '/hospital-directory', label: 'Placement Directory', icon: 'PD', roles: ['sending_staff', 'coordinator', 'dispatcher', 'admin'] },
     { path: '/analytics', label: 'Analytics', icon: 'AN', roles: ['coordinator', 'dispatcher', 'admin'] },
     { path: '/admin', label: 'Admin', icon: 'AD', roles: ['admin'] },
     { path: '/audit-logs', label: 'Audit Logs', icon: 'AL', roles: ['admin'] },
@@ -109,9 +110,9 @@ export default function Layout({ children, theme, toggleTheme }) {
                     <img className="sidebar-brand-logo" src="/images/carebridge-logo.svg" alt="CareBridge" />
                 </div>
                 <nav className="sidebar-nav">
-                    {navItems.filter((item) => roleCanAccess(user.role, item.roles)).map((item) => (
+                    {navItems.filter((item) => roleCanAccess(user.role, item.roles)).map((item, index) => (
                         <NavLink
-                            key={item.path}
+                            key={`${item.path}-${index}`}
                             to={item.path}
                             className={({ isActive }) =>
                                 `sidebar-link ${isActive ? 'active' : ''}`
