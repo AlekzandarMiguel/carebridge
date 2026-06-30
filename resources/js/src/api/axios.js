@@ -99,6 +99,8 @@ export const getAnalytics = () => api.get('/analytics');
 export const getAdminData = () => api.get('/admin');
 export const createAdminUser = (data) => api.post('/admin/users', data);
 export const updateAdminUser = (id, data) => api.put(`/admin/users/${id}`, data);
+export const updateAdminUserStatus = (id, account_status, remarks = '') => api.put(`/admin/users/${id}/status`, { account_status, remarks });
+export const resetAdminUserPassword = (id, password = '') => api.put(`/admin/users/${id}/reset-password`, { password });
 export const createAdminHospital = (data) => api.post('/admin/hospitals', data);
 export const updateAdminHospital = (id, data) => api.put(`/admin/hospitals/${id}`, data);
 export const getSystemSettings = () => api.get('/admin/system-settings');

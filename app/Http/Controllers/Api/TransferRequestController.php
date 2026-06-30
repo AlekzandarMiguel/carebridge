@@ -287,6 +287,15 @@ class TransferRequestController extends Controller
             ], 422);
         }
 
+        $googleRoute = $this->googleRouteEstimate($sending, $receiving);
+
+        if ($googleRoute) {
+            return response()->json([
+                ...$googleRoute,
+                'message' => 'Route calculated from Google Maps routing API.',
+            ]);
+        }
+
         $geoRoute = $this->geoApiRouteEstimate($sending, $receiving);
 
         if ($geoRoute) {
@@ -658,7 +667,7 @@ class TransferRequestController extends Controller
     {
         $user = $request->user();
 
-        if (!in_array($user->role, self::MONITOR_ROLES)) {
+        if (!in_array($user->role, ['coordinator', 'dispatcher', 'admin'])) {
             return response()->json(['message' => 'Only department monitors can assign delivery dispatchers.'], 403);
         }
 
@@ -674,6 +683,16 @@ class TransferRequestController extends Controller
 
         if (!$dispatcher) {
             return response()->json(['message' => 'Selected user must be an approved dispatcher.'], 422);
+        }
+
+        if ($user->role === 'dispatcher') {
+            if ((int) $dispatcher->id !== (int) $user->id) {
+                return response()->json(['message' => 'Dispatchers can only claim cases for themselves.'], 403);
+            }
+
+            if ($transferRequest->assigned_dispatcher_id && (int) $transferRequest->assigned_dispatcher_id !== (int) $user->id) {
+                return response()->json(['message' => 'This case is already assigned to another dispatcher.'], 422);
+            }
         }
 
         $transferRequest->update([
@@ -785,7 +804,7 @@ class TransferRequestController extends Controller
         if (!empty($validated['override_reason'])) {
             $remarks .= ' Override reason: '.$validated['override_reason'];
         }
-        $transferRequest->logAction($user->id, 'delivery_update', $remarks);
+        $transferRequest->logAction($user->id, $validated['event_type'], $remarks);
 
         return response()->json([
             'message' => 'Delivery update added.',
@@ -1010,8 +1029,7 @@ class TransferRequestController extends Controller
                 || (int) $transferRequest->assigned_dispatcher_id === (int) $user->id;
         }
 
-        return (int) $transferRequest->sending_hospital_id === (int) $user->hospital_id
-            || (int) $transferRequest->receiving_hospital_id === (int) $user->hospital_id;
+        return false;
     }
 
     private function visibleTransferQuery(Request $request)
@@ -1172,6 +1190,55 @@ class TransferRequestController extends Controller
                 'provider' => 'OSRM',
                 'distance_km' => round(((float) $route['distance']) / 1000, 2),
                 'estimated_travel_minutes' => max(1, (int) ceil(((float) $route['duration']) / 60)),
+                'geometry' => $this->thinRouteGeometry($coordinates),
+            ];
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function googleRouteEstimate(Hospital $sending, Hospital $receiving): ?array
+    {
+        $apiKey = (string) config('services.routing.google_key', '');
+        $baseUrl = rtrim((string) config('services.routing.google_directions_url', 'https://maps.googleapis.com/maps/api/directions/json'), '/');
+        $timeout = (int) config('services.routing.timeout', 4);
+
+        if ($apiKey === '' || $baseUrl === '') {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout($timeout)
+                ->acceptJson()
+                ->get($baseUrl, [
+                    'origin' => $sending->latitude.','.$sending->longitude,
+                    'destination' => $receiving->latitude.','.$receiving->longitude,
+                    'mode' => 'driving',
+                    'key' => $apiKey,
+                ]);
+
+            if (!$response->successful() || $response->json('status') !== 'OK') {
+                return null;
+            }
+
+            $route = $response->json('routes.0');
+            $leg = $route['legs'][0] ?? null;
+
+            if (!$route || !$leg || !isset($leg['distance']['value'], $leg['duration']['value'])) {
+                return null;
+            }
+
+            $coordinates = $this->decodeGooglePolyline($route['overview_polyline']['points'] ?? '');
+
+            if (count($coordinates) < 2) {
+                return null;
+            }
+
+            return [
+                'source' => 'google',
+                'provider' => 'Google Maps',
+                'distance_km' => round(((float) $leg['distance']['value']) / 1000, 2),
+                'estimated_travel_minutes' => max(1, (int) ceil(((float) $leg['duration']['value']) / 60)),
                 'geometry' => $this->thinRouteGeometry($coordinates),
             ];
         } catch (Throwable) {
@@ -1356,6 +1423,45 @@ class TransferRequestController extends Controller
         }
 
         return $thinned;
+    }
+
+    private function decodeGooglePolyline(string $encoded): array
+    {
+        $points = [];
+        $index = 0;
+        $lat = 0;
+        $lng = 0;
+        $length = strlen($encoded);
+
+        while ($index < $length) {
+            $result = 0;
+            $shift = 0;
+
+            do {
+                $byte = ord($encoded[$index++]) - 63;
+                $result |= ($byte & 0x1f) << $shift;
+                $shift += 5;
+            } while ($byte >= 0x20 && $index < $length);
+
+            $lat += ($result & 1) ? ~($result >> 1) : ($result >> 1);
+            $result = 0;
+            $shift = 0;
+
+            do {
+                $byte = ord($encoded[$index++]) - 63;
+                $result |= ($byte & 0x1f) << $shift;
+                $shift += 5;
+            } while ($byte >= 0x20 && $index < $length);
+
+            $lng += ($result & 1) ? ~($result >> 1) : ($result >> 1);
+
+            $points[] = [
+                'lat' => round($lat / 100000, 7),
+                'lng' => round($lng / 100000, 7),
+            ];
+        }
+
+        return $points;
     }
 
     private function distanceKm(float $lat1, float $lon1, float $lat2, float $lon2): float

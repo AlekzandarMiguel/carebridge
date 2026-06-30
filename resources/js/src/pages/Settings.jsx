@@ -10,6 +10,7 @@ export default function Settings() {
         arrival: true,
         completed_delivery: true,
         declined_case: true,
+        delivery_delay: true,
     };
     const [data, setData] = useState(null);
     const [form, setForm] = useState({
@@ -23,16 +24,7 @@ export default function Settings() {
     const [saving, setSaving] = useState(false);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
-    const [notificationPrefs, setNotificationPrefs] = useState(() => {
-        try {
-            return {
-                ...defaultNotificationPrefs,
-                ...JSON.parse(localStorage.getItem('carebridge_notification_preferences') || '{}'),
-            };
-        } catch (e) {
-            return defaultNotificationPrefs;
-        }
-    });
+    const [notificationPrefs, setNotificationPrefs] = useState(defaultNotificationPrefs);
 
     useEffect(() => {
         fetchSettings();
@@ -48,6 +40,10 @@ export default function Settings() {
                 current_password: '',
                 password: '',
                 password_confirmation: '',
+            });
+            setNotificationPrefs({
+                ...defaultNotificationPrefs,
+                ...(res.data.user.notification_preferences || {}),
             });
         } catch (err) {
             setError('Unable to load settings.');
@@ -93,11 +89,25 @@ export default function Settings() {
         }
     };
 
-    const toggleNotificationPref = (key) => {
+    const toggleNotificationPref = async (key) => {
         const next = { ...notificationPrefs, [key]: !notificationPrefs[key] };
         setNotificationPrefs(next);
-        localStorage.setItem('carebridge_notification_preferences', JSON.stringify(next));
-        setSuccess('Notification preferences saved on this device.');
+        setSuccess('');
+        setError('');
+
+        try {
+            const res = await updateSettings({
+                name: form.name,
+                email: form.email,
+                notification_preferences: next,
+            });
+            setData(res.data);
+            localStorage.setItem('carebridge_user', JSON.stringify(res.data.user));
+            setSuccess('Notification preferences saved.');
+        } catch (err) {
+            setNotificationPrefs(notificationPrefs);
+            setError(err.response?.data?.message || 'Unable to save notification preferences.');
+        }
     };
 
     if (loading) return <div className="loading">Loading settings...</div>;
@@ -177,6 +187,7 @@ export default function Settings() {
                                     ['arrival', 'Patient arrival alerts'],
                                     ['completed_delivery', 'Completed delivery alerts'],
                                     ['declined_case', 'Declined case and reroute alerts'],
+                                    ['delivery_delay', 'Delivery delay and late ETA alerts'],
                                 ].map(([key, label]) => (
                                     <label className="settings-list-item preference-row" key={key}>
                                         <input

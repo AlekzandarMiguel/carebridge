@@ -42,6 +42,8 @@ SANCTUM_STATEFUL_DOMAINS=your-domain.example
 SESSION_SECURE_COOKIE=true
 FILESYSTEM_DISK=public
 QUEUE_CONNECTION=database
+GOOGLE_MAPS_API_KEY=
+GOOGLE_MAPS_DIRECTIONS_URL=https://maps.googleapis.com/maps/api/directions/json
 GEOAPIFY_API_KEY=
 GEOAPIFY_API_URL=https://api.geoapify.com
 ROUTING_OSRM_URL=https://router.project-osrm.org
@@ -57,13 +59,15 @@ DB_PORT=3306
 DB_DATABASE=overflowcare
 DB_USERNAME=root
 DB_PASSWORD=
+GOOGLE_MAPS_API_KEY=
+GOOGLE_MAPS_DIRECTIONS_URL=https://maps.googleapis.com/maps/api/directions/json
 GEOAPIFY_API_KEY=
 GEOAPIFY_API_URL=https://api.geoapify.com
 ROUTING_OSRM_URL=https://router.project-osrm.org
 ROUTING_TIMEOUT=4
 ```
 
-`GEOAPIFY_API_KEY` enables Geoapify routing for the delivery map. If it is empty or unavailable, CareBridge tries the configured OSRM-compatible service from `ROUTING_OSRM_URL`. If both geo services are unavailable, CareBridge falls back to coordinate-based route estimates.
+`GOOGLE_MAPS_API_KEY` enables Google Directions API distance and ETA support. If it is empty or unavailable, CareBridge tries Geoapify through `GEOAPIFY_API_KEY`, then the configured OSRM-compatible service from `ROUTING_OSRM_URL`. If all route services are unavailable, CareBridge falls back to coordinate-based route estimates.
 
 ## Storage and Attachments
 
@@ -195,6 +199,7 @@ Then verify these workflows manually:
 
 - Login and logout
 - Signup request and admin approval
+- Admin enable/disable user and password reset controls
 - Create rejected patient case
 - Accept, reserve, start delivery, arrive, and complete
 - Assign dispatcher and add delivery timeline update
@@ -204,5 +209,6 @@ Then verify these workflows manually:
 - Archive and restore a closed case
 - Open the department wallboard
 - Mark notifications read
+- Toggle notification preferences in Settings and confirm muted alert types stay hidden
 - Dark mode
 - CSV export for placement and audit reports

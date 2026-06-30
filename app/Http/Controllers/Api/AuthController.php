@@ -209,6 +209,13 @@ class AuthController extends Controller
             'email' => 'required|email|max:255|unique:users,email,'.$user->id,
             'current_password' => 'nullable|required_with:password|string',
             'password' => 'nullable|string|min:8|confirmed',
+            'notification_preferences' => 'nullable|array',
+            'notification_preferences.sla_breach' => 'boolean',
+            'notification_preferences.assigned_case' => 'boolean',
+            'notification_preferences.arrival' => 'boolean',
+            'notification_preferences.completed_delivery' => 'boolean',
+            'notification_preferences.declined_case' => 'boolean',
+            'notification_preferences.delivery_delay' => 'boolean',
         ]);
 
         if (!empty($validated['password']) && !Hash::check($validated['current_password'], $user->password)) {
@@ -224,6 +231,13 @@ class AuthController extends Controller
 
         if (!empty($validated['password'])) {
             $user->password = $validated['password'];
+        }
+
+        if (array_key_exists('notification_preferences', $validated)) {
+            $user->notification_preferences = array_merge(
+                $this->defaultNotificationPreferences(),
+                $validated['notification_preferences'] ?? [],
+            );
         }
 
         $user->save();
@@ -342,6 +356,19 @@ class AuthController extends Controller
             'label' => Str::headline($role),
             'home' => '/dashboard',
             'permissions' => ['Access assigned hospital workflows'],
+        ];
+    }
+
+    private function defaultNotificationPreferences(): array
+    {
+        return [
+            'sla_breach' => true,
+            'assigned_case' => true,
+            'arrival' => true,
+            'completed_delivery' => true,
+            'declined_case' => true,
+            'delivery_delay' => true,
+            'case_activity' => true,
         ];
     }
 }

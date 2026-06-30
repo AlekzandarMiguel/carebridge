@@ -60,7 +60,10 @@ export default function TransferDetail() {
     const formatDate = (value) => value ? new Date(value).toLocaleString() : '-';
     const canReceive = transfer && user.role === 'receiving_staff' && transfer.receiving_hospital_id === user.hospital_id;
     const canMonitor = ['coordinator', 'dispatcher', 'admin'].includes(user.role);
-    const canUpdateDelivery = transfer && (canMonitor || canReceive || (user.role === 'sending_staff' && transfer.sending_hospital_id === user.hospital_id));
+    const canUpdateDelivery = transfer && (
+        ['coordinator', 'admin'].includes(user.role)
+        || (user.role === 'dispatcher' && (!transfer.assigned_dispatcher_id || Number(transfer.assigned_dispatcher_id) === Number(user.id)))
+    );
 
     const runAction = async (action, success) => {
         setMessage('');
@@ -205,8 +208,7 @@ export default function TransferDetail() {
             `Delivery Notes: ${transfer.delivery_notes || '-'}`,
             '',
             'Timeline',
-            ...timeline.map(([label, date]) => `${label}: ${formatDate(date)}`),
-            ...(transfer.delivery_events || []).map((event) => `${event.label || event.event_type}: ${formatDate(event.occurred_at)} ${event.location || ''} ${event.notes || ''}`),
+            ...(transfer.unified_timeline || []).map((item) => `${item.label}: ${formatDate(item.timestamp)} ${item.description || ''}`),
             '',
             'Audit Trail',
             ...(transfer.logs || []).map((log) => `${formatDate(log.created_at)} - ${log.action}: ${log.remarks || '-'} (${log.user?.name || 'System'})`),
@@ -227,12 +229,7 @@ export default function TransferDetail() {
 
     const deliveryStatus = transfer.delivery_status || 'not_started';
     const currentStep = deliverySteps.indexOf(deliveryStatus);
-    const timeline = [
-        ['Created', transfer.created_at],
-        ['Delivery Started', transfer.delivery_started_at],
-        ['Patient Arrived', transfer.patient_arrived_at],
-        ['Delivery Completed', transfer.delivery_completed_at],
-    ];
+    const timeline = (transfer.unified_timeline || []).filter((item) => item.active || item.timestamp);
 
     return (
         <div>
@@ -508,19 +505,12 @@ export default function TransferDetail() {
                 <div className="card">
                     <div className="card-header">Delivery Timeline</div>
                     <div className="card-body timeline-list advanced-timeline">
-                        {timeline.map(([label, date]) => (
-                            <div key={label} className={date ? 'active' : ''}>
+                        {timeline.map((item, index) => (
+                            <div key={`${item.key}-${item.timestamp || index}`} className={item.active ? 'active' : ''}>
                                 <span></span>
-                                <strong>{label}</strong>
-                                <small>{formatDate(date)}</small>
-                            </div>
-                        ))}
-                        {(transfer.delivery_events || []).map((event) => (
-                            <div key={event.id} className="active delivery-event-item">
-                                <span></span>
-                                <strong>{event.label || event.event_type?.replace('_', ' ')}</strong>
-                                <small>{formatDate(event.occurred_at)} {event.location ? `- ${event.location}` : ''}</small>
-                                {event.notes && <em>{event.notes}</em>}
+                                <strong>{item.label}</strong>
+                                <small>{formatDate(item.timestamp)}</small>
+                                {item.description && <em>{item.description}</em>}
                             </div>
                         ))}
                     </div>

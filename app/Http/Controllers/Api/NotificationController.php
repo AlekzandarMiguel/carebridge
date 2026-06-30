@@ -31,9 +31,10 @@ class NotificationController extends Controller
             $log->setAttribute('is_read', isset($readLookup[$log->id]));
             $log->setAttribute('priority', $this->priorityFor($log));
             $log->setAttribute('priority_label', ucfirst($log->priority));
+            $log->setAttribute('notification_type', $this->typeFor($log));
 
             return $log;
-        });
+        })->filter(fn (TransferLog $log) => $this->enabledForUser($user, $log->notification_type))->values();
 
         return response()->json([
             'notifications' => $notifications,
@@ -104,5 +105,35 @@ class NotificationController extends Controller
         }
 
         return 'normal';
+    }
+
+    private function typeFor(TransferLog $log): string
+    {
+        return match (true) {
+            in_array($log->action, ['escalated', 'reservation_expired']) || $log->transferRequest?->sla_state === 'breached' => 'sla_breach',
+            $log->action === 'assigned' => 'assigned_case',
+            in_array($log->action, ['patient_arrived', 'arrived_gate']) => 'arrival',
+            in_array($log->action, ['completed', 'handoff_completed']) => 'completed_delivery',
+            $log->action === 'declined' => 'declined_case',
+            in_array($log->action, ['delayed', 'delivery_update']) && $log->transferRequest?->delivery_eta_state === 'late' => 'delivery_delay',
+            default => 'case_activity',
+        };
+    }
+
+    private function enabledForUser($user, string $type): bool
+    {
+        $defaults = [
+            'sla_breach' => true,
+            'assigned_case' => true,
+            'arrival' => true,
+            'completed_delivery' => true,
+            'declined_case' => true,
+            'delivery_delay' => true,
+            'case_activity' => true,
+        ];
+
+        $preferences = array_merge($defaults, $user->notification_preferences ?? []);
+
+        return (bool) ($preferences[$type] ?? true);
     }
 }

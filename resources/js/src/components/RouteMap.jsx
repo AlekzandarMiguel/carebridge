@@ -71,6 +71,8 @@ export default function RouteMap({ transfer }) {
     const googleEmbedUrl = `https://maps.google.com/maps?saddr=${encodeURIComponent(mapPlace(origin))}&daddr=${encodeURIComponent(mapPlace(destination))}&output=embed`;
     const source = routeInfo?.source === 'geo'
         ? 'Geo route'
+        : routeInfo?.source === 'google'
+            ? 'Google route'
         : routeInfo?.source === 'road'
             ? 'Road route'
             : routeInfo?.source === 'estimated'

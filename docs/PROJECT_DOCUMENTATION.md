@@ -22,7 +22,7 @@ CareBridge addresses this by giving hospitals a shared department workflow for:
 - Monitoring patient delivery until handoff.
 - Recording delivery timeline events.
 - Uploading handoff and supporting documents.
-- Prioritizing notifications by urgency, SLA, and ETA state.
+- Prioritizing notifications by urgency, SLA, ETA state, and account-level notification preferences.
 - Recording actions for review and accountability.
 
 ## 3. Project Goals
@@ -170,7 +170,7 @@ A rejected patient case contains:
 - Attachments.
 - SLA state.
 - ETA state.
-- Compact embedded Google-style route panel using hospital names and addresses, plus Geoapify road routing, OSRM fallback, and coordinate fallback for distance and ETA support.
+- Compact embedded Google-style route panel using hospital names and addresses, plus Google Maps, Geoapify, OSRM, and coordinate fallback for distance and ETA support.
 - Priority score and label.
 
 ### Accepting Hospital Recommendations
@@ -210,7 +210,7 @@ The delivery workflow tracks:
 - Delivery events, including departed, location update, delayed, accepting area arrival, and handoff completed.
 - SLA state for pending or accepted cases.
 - ETA state for active delivery movement.
-- Route map based on hospital names, addresses, and coordinates. The frontend displays a compact embedded Google-style directions panel inside CareBridge. When `GEOAPIFY_API_KEY` is configured, the backend requests Geoapify for road distance, ETA, and route geometry. If Geoapify is unavailable or not configured, CareBridge tries the configured OSRM-compatible service, then falls back to a coordinate-based estimate.
+- Route map based on hospital names, addresses, and coordinates. The frontend displays a compact embedded Google-style directions panel inside CareBridge. When `GOOGLE_MAPS_API_KEY` is configured, the backend requests Google Directions API distance, ETA, and route geometry. If Google is unavailable or not configured, CareBridge tries Geoapify, then the configured OSRM-compatible service, then falls back to a coordinate-based estimate.
 
 ### Dispatcher Board
 
@@ -302,6 +302,9 @@ Admins can:
 - Create users.
 - Update users.
 - Approve, suspend, or keep accounts pending.
+- Disable or restore user accounts from quick actions.
+- Reset user passwords and revoke old sessions.
+- Review admin activity history for role, status, and password actions.
 - Create hospitals.
 - Update hospitals.
 - Manage hospital contact information.
@@ -935,7 +938,7 @@ Current feature tests cover:
 - Notifications currently use 5-second polling rather than realtime broadcasting, with a deployment path documented for Laravel broadcasting.
 - There are no browser automation tests yet.
 - There is no real SMS, email, or ambulance dispatch integration.
-- Road route estimates use Geoapify when `GEOAPIFY_API_KEY` is configured. If unavailable, CareBridge falls back to OSRM-compatible routing, then coordinate estimates. The visible map stays inside CareBridge as an embedded Google-style directions panel.
+- Road route estimates use Google Directions API when `GOOGLE_MAPS_API_KEY` is configured. If unavailable, CareBridge falls back to Geoapify, OSRM-compatible routing, then coordinate estimates. The visible map stays inside CareBridge as an embedded Google-style directions panel.
 - Production password reset should use a configured mail provider.
 - The system is a coordination tool, not a complete EHR.
 
@@ -943,7 +946,7 @@ Current feature tests cover:
 
 - Add realtime notifications with Laravel broadcasting.
 - Add browser-level tests for major React workflows.
-- Add optional authenticated/commercial routing provider support for production-grade traffic-aware ETA.
+- Add deeper traffic-aware routing options, such as live traffic windows and provider-specific incident data.
 - Add analytics chart export.
 - Add optional SMS/dispatch notifications.
 

@@ -60,16 +60,16 @@ Because of this, the hassle of manually searching for another hospital is reduce
 - Delivery event timeline for departed, location update, delayed, accepting area arrival, and handoff updates.
 - SLA and ETA warning states for cases that are waiting too long or running late.
 - Secure case attachments for referral notes, lab results, imaging, consent, transport forms, and supporting documents.
-- Compact embedded Google-style route panel using hospital names and addresses, with Geoapify/OSRM distance and ETA support.
+- Compact embedded Google-style route panel using hospital names and addresses, with Google Maps, Geoapify, OSRM, and local distance/ETA fallback support.
 - Dedicated dispatcher board for unassigned cases, assigned cases, ETA risk, ambulance/driver/contact, pickup/arrival checklist, route details, and delivery updates.
 - Automatic priority scoring based on urgency, waiting time, status, assignment, case type, SLA state, and ETA risk.
 - Patient privacy guard that blocks obvious personal details in intake notes and asks staff to use reference codes.
 - Downloadable case summary report from the case detail page.
-- Local notification preferences for SLA, assigned case, arrival, completion, and decline alerts.
+- Account-backed notification preferences for SLA, assigned case, arrival, completion, decline, and delivery delay alerts.
 - Command view for Rejected, Searching, Accepted, Dispatching, En Route, Arrived, and Completed lanes.
 - Department wallboard for active cases, assignment gaps, ETA risk, and SLA risk.
 - Archive and restore workflow for closed cases.
-- Admin management for users, account approval, hospitals, system settings, and demo data refresh.
+- Admin management for users, account approval, enable/disable actions, password resets, hospitals, system settings, role history, and demo data refresh.
 - Audit logs with filters, CSV export, action, role, search term, and date range.
 - Delivery tracking filters, global search, and CSV export for monitor roles.
 - Analytics for status distribution, urgency, case type, rejection reasons, completion rate, and placement activity.
@@ -152,11 +152,15 @@ DB_PORT=3306
 DB_DATABASE=overflowcare
 DB_USERNAME=root
 DB_PASSWORD=
+GOOGLE_MAPS_API_KEY=
+GOOGLE_MAPS_DIRECTIONS_URL=https://maps.googleapis.com/maps/api/directions/json
 GEOAPIFY_API_KEY=
 GEOAPIFY_API_URL=https://api.geoapify.com
 ROUTING_OSRM_URL=https://router.project-osrm.org
 ROUTING_TIMEOUT=4
 ```
+
+For production-grade distance and ETA, add a `GOOGLE_MAPS_API_KEY` with Directions API access or a `GEOAPIFY_API_KEY`. CareBridge tries Google Maps first, then Geoapify, then the configured OSRM service, then a local coordinate estimate.
 
 Run the project setup:
 
@@ -285,7 +289,7 @@ Full project documentation is available here:
 
 ## Repository Notes
 
-Some internal class names, database table names, and API routes still use `transfer` because the project started from a broader hospital transfer concept. The user-facing language has been updated toward rejected patient placement and delivery coordination. A future database rename from `transfer_requests` to `placement_cases` would make the internals match the current product direction more closely.
+Some internal class names and database table names still use `transfer` because the project started from a broader hospital transfer concept. The user-facing language has been updated toward rejected patient placement and delivery coordination, and safe `/api/placement-cases` aliases now point to the existing workflow. A future physical database rename from `transfer_requests` to `placement_cases` can be done later with a dedicated migration plan.
 
 The repository intentionally excludes local secrets and generated dependencies:
 

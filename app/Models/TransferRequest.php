@@ -78,6 +78,7 @@ class TransferRequest extends Model
         'route_map_url',
         'priority_score',
         'priority_label',
+        'unified_timeline',
     ];
 
     public function sendingHospital()
@@ -234,5 +235,74 @@ class TransferRequest extends Model
             .'&destination='
             .rawurlencode($destination)
             .'&travelmode=driving';
+    }
+
+    public function getUnifiedTimelineAttribute(): array
+    {
+        $items = [
+            $this->timelineItem('rejected', 'Rejected case created', $this->created_at, 'The placement department received the rejected patient case.'),
+            $this->timelineItem('searching', 'Searching for acceptance', $this->created_at, 'Accepting hospital search started.'),
+            $this->timelineItem(
+                'accepted',
+                'Accepted',
+                $this->statusInOrPast(['accepted', 'reserved', 'in_transfer', 'completed']) ? ($this->logs->firstWhere('action', 'accepted')?->created_at ?? $this->updated_at) : null,
+                $this->statusInOrPast(['accepted', 'reserved', 'in_transfer', 'completed']) ? 'Accepting hospital approved the case.' : null,
+            ),
+            $this->timelineItem('reserved', 'Capacity reserved', $this->logs->firstWhere('action', 'reserved')?->created_at, $this->statusInOrPast(['reserved', 'in_transfer', 'completed']) ? 'Matching capacity was reserved.' : null),
+            $this->timelineItem('dispatcher_assigned', 'Dispatcher assigned', $this->assigned_at, $this->assignedDispatcher?->name ? "Assigned to {$this->assignedDispatcher->name}." : null),
+            $this->timelineItem('pickup', 'Pickup started', $this->delivery_started_at, $this->delivery_started_at ? 'Patient delivery started from origin.' : null),
+            $this->timelineItem('en_route', 'En route', $this->delivery_started_at, $this->delivery_status === 'en_route' ? 'Patient is currently in delivery.' : null),
+            $this->timelineItem('arrived', 'Arrived', $this->patient_arrived_at, $this->patient_arrived_at ? 'Patient arrived at accepting hospital.' : null),
+            $this->timelineItem('completed', 'Handoff complete', $this->delivery_completed_at, $this->delivery_completed_at ? 'Placement and delivery handoff completed.' : null),
+        ];
+
+        foreach (($this->delivery_events ?? []) as $event) {
+            $items[] = [
+                'key' => $event['event_type'] ?? 'delivery_update',
+                'label' => $event['label'] ?? str_replace('_', ' ', $event['event_type'] ?? 'Delivery update'),
+                'timestamp' => $event['occurred_at'] ?? null,
+                'description' => trim(($event['location'] ?? '').' '.($event['notes'] ?? '')) ?: null,
+                'active' => true,
+                'source' => 'delivery',
+            ];
+        }
+
+        if ($this->relationLoaded('logs')) {
+            foreach ($this->logs as $log) {
+                if (in_array($log->action, ['created', 'accepted', 'reserved', 'in_transfer', 'patient_arrived', 'completed'])) {
+                    continue;
+                }
+
+                $items[] = [
+                    'key' => $log->action,
+                    'label' => str_replace('_', ' ', $log->action),
+                    'timestamp' => optional($log->created_at)->toISOString(),
+                    'description' => $log->remarks,
+                    'active' => true,
+                    'source' => 'audit',
+                ];
+            }
+        }
+
+        usort($items, fn ($a, $b) => strcmp((string) ($a['timestamp'] ?? '9999-12-31'), (string) ($b['timestamp'] ?? '9999-12-31')));
+
+        return $items;
+    }
+
+    private function timelineItem(string $key, string $label, $timestamp, ?string $description): array
+    {
+        return [
+            'key' => $key,
+            'label' => $label,
+            'timestamp' => $timestamp ? $timestamp->toISOString() : null,
+            'description' => $description,
+            'active' => (bool) $timestamp && (bool) $description,
+            'source' => 'workflow',
+        ];
+    }
+
+    private function statusInOrPast(array $statuses): bool
+    {
+        return in_array($this->status, $statuses, true);
     }
 }

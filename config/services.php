@@ -23,6 +23,8 @@ return [
     ],
 
     'routing' => [
+        'google_key' => env('GOOGLE_MAPS_API_KEY'),
+        'google_directions_url' => env('GOOGLE_MAPS_DIRECTIONS_URL', 'https://maps.googleapis.com/maps/api/directions/json'),
         'geoapify_key' => env('GEOAPIFY_API_KEY'),
         'geoapify_url' => env('GEOAPIFY_API_URL', 'https://api.geoapify.com'),
         'osrm_url' => env('ROUTING_OSRM_URL', 'https://router.project-osrm.org'),

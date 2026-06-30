@@ -46,12 +46,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Transfer Requests
     Route::get('/transfer-requests', [TransferRequestController::class, 'index']);
+    Route::get('/placement-cases', [TransferRequestController::class, 'index']);
     Route::get('/transfer-recommendations', [TransferRequestController::class, 'recommendations']);
+    Route::get('/placement-recommendations', [TransferRequestController::class, 'recommendations']);
     Route::get('/transfer-requests/export', [TransferRequestController::class, 'export']);
+    Route::get('/placement-cases/export', [TransferRequestController::class, 'export']);
     Route::post('/transfer-requests', [TransferRequestController::class, 'store']);
+    Route::post('/placement-cases', [TransferRequestController::class, 'store']);
     Route::get('/transfer-board', [TransferRequestController::class, 'board']);
+    Route::get('/placement-board', [TransferRequestController::class, 'board']);
     Route::get('/transfer-requests/{id}/route-suggestion', [TransferRequestController::class, 'routeSuggestion']);
+    Route::get('/placement-cases/{id}/route-suggestion', [TransferRequestController::class, 'routeSuggestion']);
     Route::get('/transfer-requests/{id}', [TransferRequestController::class, 'show']);
+    Route::get('/placement-cases/{id}', [TransferRequestController::class, 'show']);
 
     // Incoming Requests
     Route::get('/incoming-requests', [IncomingRequestController::class, 'index']);
@@ -91,6 +98,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin', [AdminController::class, 'index']);
     Route::post('/admin/users', [AdminController::class, 'createUser']);
     Route::put('/admin/users/{id}', [AdminController::class, 'updateUser']);
+    Route::put('/admin/users/{id}/status', [AdminController::class, 'updateUserStatus']);
+    Route::put('/admin/users/{id}/reset-password', [AdminController::class, 'resetUserPassword']);
     Route::post('/admin/hospitals', [AdminController::class, 'createHospital']);
     Route::put('/admin/hospitals/{id}', [AdminController::class, 'updateHospital']);
     Route::get('/admin/system-settings', [AdminController::class, 'systemSettings']);

@@ -21,6 +21,7 @@ class User extends Authenticatable
         'account_status',
         'approved_at',
         'approved_by',
+        'notification_preferences',
     ];
 
     protected $hidden = [
@@ -34,6 +35,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'approved_at' => 'datetime',
+            'notification_preferences' => 'array',
         ];
     }
 
@@ -60,5 +62,10 @@ class User extends Authenticatable
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function adminActivityLogs()
+    {
+        return $this->hasMany(AdminActivityLog::class, 'target_user_id');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AdminActivityLog;
 use App\Models\Hospital;
 use App\Models\SystemSetting;
 use App\Models\User;
@@ -10,6 +11,7 @@ use Database\Seeders\HospitalSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class AdminController extends Controller
 {
@@ -22,6 +24,10 @@ class AdminController extends Controller
         return response()->json([
             'users' => User::with('hospital', 'approver')->orderBy('account_status')->orderBy('role')->orderBy('name')->get(),
             'hospitals' => Hospital::with('latestCapacity')->orderBy('name')->get(),
+            'admin_activity' => AdminActivityLog::with(['admin', 'targetUser'])
+                ->latest()
+                ->take(20)
+                ->get(),
         ]);
     }
 
@@ -47,6 +53,10 @@ class AdminController extends Controller
             'approved_at' => $status === 'approved' ? now() : null,
             'approved_by' => $status === 'approved' ? $request->user()->id : null,
         ]);
+        $this->logAdminActivity($request, $user, 'user_created', [
+            'role' => $user->role,
+            'account_status' => $user->account_status,
+        ], 'User created by admin.');
 
         return response()->json([
             'message' => 'User created.',
@@ -61,6 +71,7 @@ class AdminController extends Controller
         }
 
         $user = User::findOrFail($id);
+        $before = $user->only(['name', 'email', 'role', 'hospital_id', 'account_status']);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,'.$user->id,
@@ -69,6 +80,8 @@ class AdminController extends Controller
             'password' => 'nullable|string|min:8',
             'account_status' => 'required|in:pending,approved,suspended',
         ]);
+
+        $passwordChanged = !empty($validated['password']);
 
         if (empty($validated['password'])) {
             unset($validated['password']);
@@ -86,10 +99,83 @@ class AdminController extends Controller
         }
 
         $user->update($validated);
+        $user->refresh();
+        $after = $user->only(['name', 'email', 'role', 'hospital_id', 'account_status']);
+        $changes = collect($after)
+            ->filter(fn ($value, $key) => ($before[$key] ?? null) !== $value)
+            ->map(fn ($value, $key) => ['from' => $before[$key] ?? null, 'to' => $value])
+            ->all();
+
+        if ($passwordChanged) {
+            $changes['password'] = ['from' => 'unchanged', 'to' => 'reset'];
+            $user->tokens()->delete();
+        }
+
+        if (!empty($changes)) {
+            $this->logAdminActivity($request, $user, 'user_updated', $changes, 'User account updated.');
+        }
 
         return response()->json([
             'message' => 'User updated.',
             'user' => $user->load('hospital'),
+        ]);
+    }
+
+    public function updateUserStatus(Request $request, int $id): JsonResponse
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Only admins can update account status.'], 403);
+        }
+
+        $target = User::findOrFail($id);
+        $validated = $request->validate([
+            'account_status' => 'required|in:pending,approved,suspended',
+            'remarks' => 'nullable|string|max:500',
+        ]);
+        $before = $target->account_status;
+
+        $target->update([
+            'account_status' => $validated['account_status'],
+            'approved_at' => $validated['account_status'] === 'approved' ? now() : null,
+            'approved_by' => $validated['account_status'] === 'approved' ? $request->user()->id : null,
+        ]);
+
+        if ($validated['account_status'] !== 'approved') {
+            $target->tokens()->delete();
+        }
+
+        $this->logAdminActivity($request, $target, 'account_status_changed', [
+            'account_status' => ['from' => $before, 'to' => $validated['account_status']],
+        ], $validated['remarks'] ?? 'Account status changed.');
+
+        return response()->json([
+            'message' => 'Account status updated.',
+            'user' => $target->load('hospital', 'approver'),
+        ]);
+    }
+
+    public function resetUserPassword(Request $request, int $id): JsonResponse
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Only admins can reset user passwords.'], 403);
+        }
+
+        $target = User::findOrFail($id);
+        $validated = $request->validate([
+            'password' => 'nullable|string|min:8',
+        ]);
+        $temporaryPassword = $validated['password'] ?? 'CareBridge-'.Str::upper(Str::random(6));
+
+        $target->forceFill(['password' => $temporaryPassword])->save();
+        $target->tokens()->delete();
+
+        $this->logAdminActivity($request, $target, 'password_reset', [
+            'password' => ['from' => 'hidden', 'to' => 'temporary reset'],
+        ], 'Admin reset user password.');
+
+        return response()->json([
+            'message' => 'Password reset. Share the temporary password securely.',
+            'temporary_password' => $temporaryPassword,
         ]);
     }
 
@@ -212,5 +298,16 @@ class AdminController extends Controller
         $stored = SystemSetting::pluck('value', 'key')->toArray();
 
         return array_merge($defaults, $stored);
+    }
+
+    private function logAdminActivity(Request $request, User $target, string $action, array $changes = [], ?string $remarks = null): void
+    {
+        AdminActivityLog::create([
+            'admin_user_id' => $request->user()?->id,
+            'target_user_id' => $target->id,
+            'action' => $action,
+            'changes' => $changes,
+            'remarks' => $remarks,
+        ]);
     }
 }
