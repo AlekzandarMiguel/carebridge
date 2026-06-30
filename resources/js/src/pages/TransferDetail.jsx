@@ -236,7 +236,7 @@ export default function TransferDetail() {
 
     return (
         <div>
-            <div className="feature-hero transfer-hero">
+            <div className="page-header">
                 <div>
                     <span>Rejected Case Summary</span>
                     <h2>Placement and Delivery Detail</h2>

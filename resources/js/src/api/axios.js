@@ -24,7 +24,9 @@ api.interceptors.response.use(
         if (error.response && error.response.status === 401) {
             localStorage.removeItem('carebridge_token');
             localStorage.removeItem('carebridge_user');
-            window.location.href = '/login';
+            if (!error.config?.url?.includes('/auth/logout')) {
+                window.location.href = '/login';
+            }
         }
         return Promise.reject(error);
     }

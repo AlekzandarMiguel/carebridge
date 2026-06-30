@@ -7,7 +7,7 @@ const roles = ['sending_staff', 'receiving_staff', 'dispatcher', 'coordinator', 
 export default function RoleMatrix() {
     return (
         <div>
-            <div className="feature-hero">
+            <div className="page-header">
                 <div>
                     <span>Role Governance</span>
                     <h2>Role Matrix</h2>

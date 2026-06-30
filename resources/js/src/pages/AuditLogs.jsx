@@ -31,7 +31,7 @@ export default function AuditLogs() {
 
     return (
         <div>
-            <div className="feature-hero">
+            <div className="page-header">
                 <div>
                     <span>Department Review</span>
                     <h2>Audit Logs</h2>

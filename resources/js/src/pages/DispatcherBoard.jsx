@@ -19,6 +19,7 @@ export default function DispatcherBoard() {
     const [error, setError] = useState('');
     const [routeDrafts, setRouteDrafts] = useState({});
     const [eventDrafts, setEventDrafts] = useState({});
+    const [expandedCaseId, setExpandedCaseId] = useState(null);
     const user = JSON.parse(localStorage.getItem('carebridge_user') || '{}');
 
     const loadBoard = async () => {
@@ -96,6 +97,7 @@ export default function DispatcherBoard() {
     const mine = rows.filter((item) => Number(item.assigned_dispatcher_id) === Number(user.id));
     const risk = rows.filter((item) => item.needs_attention);
     const other = rows.filter((item) => item.assigned_dispatcher_id && Number(item.assigned_dispatcher_id) !== Number(user.id));
+    const allDispatcherCases = [...mine, ...unassigned, ...other];
 
     const renderCard = (request, canEdit = false) => {
         const deliveryStatus = request.delivery_status || 'not_started';
@@ -104,8 +106,10 @@ export default function DispatcherBoard() {
         const departedEvent = (request.delivery_events || []).find((event) => event.event_type === 'departed');
         const handoffEvent = (request.delivery_events || []).find((event) => event.event_type === 'handoff_completed');
 
+        const isExpanded = Number(expandedCaseId) === Number(request.id);
+
         return (
-            <article className={`dispatcher-card ${request.needs_attention ? 'needs-attention' : ''}`} key={request.id}>
+            <article className={`dispatcher-card ${request.needs_attention ? 'needs-attention' : ''} ${canEdit ? 'is-editable' : ''} ${isExpanded ? 'is-expanded' : ''}`} key={request.id}>
                 <div className="dispatcher-card-head">
                     <div>
                         <strong>{request.patient_reference_code}</strong>
@@ -122,9 +126,9 @@ export default function DispatcherBoard() {
                 </div>
 
                 <div className="dispatcher-detail-line">
-                    <span>Unit: {request.ambulance_unit || 'Unassigned'}</span>
-                    <span>Contact: {request.transport_contact || 'Unassigned'}</span>
-                    <span>Last: {request.delivery_last_location || 'Waiting for location update'}</span>
+                    <span><small>Unit</small>{request.ambulance_unit || 'Unassigned'}</span>
+                    <span><small>Contact</small>{request.transport_contact || 'Unassigned'}</span>
+                    <span><small>Last Location</small>{request.delivery_last_location || 'Waiting for location update'}</span>
                 </div>
 
                 <div className="dispatcher-checklist">
@@ -142,9 +146,14 @@ export default function DispatcherBoard() {
                     </div>
                 )}
 
-                {canEdit && (
+                {canEdit && isExpanded && (
                     <div className="dispatcher-actions">
-                        <div className="route-estimate-grid">
+                        <div className="dispatcher-form-panel">
+                            <div className="dispatcher-form-head">
+                                <strong>Transport Details</strong>
+                                <span>Vehicle, team, ETA</span>
+                            </div>
+                            <div className="route-estimate-grid">
                             <input
                                 value={routeDraft.ambulance_unit ?? request.ambulance_unit ?? ''}
                                 onChange={(event) => setRouteDrafts({ ...routeDrafts, [request.id]: { ...routeDraft, ambulance_unit: event.target.value } })}
@@ -187,8 +196,15 @@ export default function DispatcherBoard() {
                                 placeholder="Current location"
                             />
                             <button className="btn btn-primary btn-sm" type="button" onClick={() => saveRoute(request)}>Save Delivery Details</button>
+                            </div>
                         </div>
-                        <div className="delivery-event-form">
+
+                        <div className="dispatcher-form-panel">
+                            <div className="dispatcher-form-head">
+                                <strong>Delivery Update</strong>
+                                <span>Movement log</span>
+                            </div>
+                            <div className="delivery-event-form">
                             <select
                                 value={eventDraft.event_type}
                                 onChange={(event) => setEventDrafts({ ...eventDrafts, [request.id]: { ...eventDraft, event_type: event.target.value } })}
@@ -215,12 +231,22 @@ export default function DispatcherBoard() {
                                 placeholder="Short update"
                             />
                             <button className="btn btn-outline btn-sm" type="button" onClick={() => addEvent(request)}>Add Update</button>
+                            </div>
                         </div>
                     </div>
                 )}
 
                 <div className="action-buttons">
                     {!request.assigned_dispatcher_id && <button className="btn btn-primary btn-sm" type="button" onClick={() => claimCase(request)}>Claim Case</button>}
+                    {canEdit && (
+                        <button
+                            className="btn btn-primary btn-sm"
+                            type="button"
+                            onClick={() => setExpandedCaseId(isExpanded ? null : request.id)}
+                        >
+                            {isExpanded ? 'Close Update' : 'Update Delivery'}
+                        </button>
+                    )}
                     <Link className="btn btn-outline btn-sm" to={`/placement-cases/${request.id}`}>Details</Link>
                 </div>
             </article>
@@ -228,8 +254,8 @@ export default function DispatcherBoard() {
     };
 
     return (
-        <div>
-            <div className="feature-hero">
+        <div className="dispatcher-page">
+            <div className="page-header">
                 <div>
                     <span>Delivery Operations</span>
                     <h2>Dispatcher Board</h2>
@@ -245,20 +271,14 @@ export default function DispatcherBoard() {
             {message && <div className="alert alert-success">{message}</div>}
             {error && <div className="alert alert-error">{error}</div>}
 
-            <div className="dispatcher-board-grid">
-                <section>
-                    <div className="section-heading-row"><h3>My Delivery Cases</h3><span>{mine.length}</span></div>
-                    <div className="dispatcher-card-list">{mine.length ? mine.map((item) => renderCard(item, true)) : <div className="board-empty">No cases assigned to you.</div>}</div>
-                </section>
-                <section>
-                    <div className="section-heading-row"><h3>Unassigned Cases</h3><span>{unassigned.length}</span></div>
-                    <div className="dispatcher-card-list">{unassigned.length ? unassigned.map((item) => renderCard(item)) : <div className="board-empty">No unassigned cases.</div>}</div>
-                </section>
-                <section>
-                    <div className="section-heading-row"><h3>Other Active Cases</h3><span>{other.length}</span></div>
-                    <div className="dispatcher-card-list">{other.length ? other.map((item) => renderCard(item)) : <div className="board-empty">No other active cases.</div>}</div>
-                </section>
-            </div>
+            <section className="dispatcher-board-section">
+                <div className="section-heading-row"><h3>All Dispatcher Cases</h3><span>{allDispatcherCases.length}</span></div>
+                <div className="dispatcher-card-list">
+                    {allDispatcherCases.length ? allDispatcherCases.map((item) => renderCard(item, Number(item.assigned_dispatcher_id) === Number(user.id))) : (
+                        <div className="board-empty">No active dispatcher cases.</div>
+                    )}
+                </div>
+            </section>
         </div>
     );
 }

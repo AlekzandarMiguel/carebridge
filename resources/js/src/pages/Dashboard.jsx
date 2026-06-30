@@ -126,25 +126,20 @@ export default function Dashboard() {
 
     return (
         <div>
-            <div className="page-heading-row">
-                <div>
-                    <span className="section-eyebrow">{dashboard.focus}</span>
-                    <h2>{dashboard.title}</h2>
-                    <p>{dashboard.subtitle}</p>
-                </div>
-            </div>
-
             <div className="role-workbench">
                 <section className="role-purpose-panel">
-                    <div>
+                    <div className="role-purpose-copy">
                         <span>Your responsibility</span>
                         <h3>{profile.label}</h3>
                         <p>{profile.purpose}</p>
                     </div>
-                    <div className="role-boundary-list">
-                        {profile.boundaries.slice(0, 3).map((item) => (
-                            <span key={item}>{item}</span>
-                        ))}
+                    <div className="role-boundary-block">
+                        <strong>Limits</strong>
+                        <div className="role-boundary-list">
+                            {profile.boundaries.slice(0, 3).map((item) => (
+                                <span key={item}>{item}</span>
+                            ))}
+                        </div>
                     </div>
                 </section>
 
@@ -158,7 +153,7 @@ export default function Dashboard() {
                 </section>
             </div>
 
-            <div className="stats-grid">
+            <div className={`stats-grid dashboard-stats-strip dashboard-stats-count-${dashboard.cards.length}`}>
                 {dashboard.cards.map((key) => (
                     <StatCard
                         key={key}

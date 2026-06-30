@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { createAdminHospital, createAdminUser, getAdminData, getSystemSettings, refreshDemoData, updateAdminHospital, updateAdminUser, updateSystemSettings } from '../api/axios';
-import { roleLabel, roleProfiles } from '../utils/roles';
+import { createAdminHospital, createAdminUser, getAdminData, getSystemSettings, updateAdminHospital, updateAdminUser, updateSystemSettings } from '../api/axios';
+import { roleLabel } from '../utils/roles';
 
 const blankUser = { name: '', email: '', role: 'sending_staff', hospital_id: '', password: 'password123', account_status: 'approved' };
 const blankHospital = { name: '', address: '', latitude: '', longitude: '', contact_number: '', transfer_contact_name: '', transfer_contact_phone: '', emergency_contact_name: '', emergency_contact_phone: '', status: 'active' };
-const roleMatrix = ['sending_staff', 'receiving_staff', 'dispatcher', 'coordinator', 'admin']
-    .map((role) => [role, roleProfiles[role]]);
 
 export default function AdminManagement() {
     const [data, setData] = useState({ users: [], hospitals: [] });
@@ -90,34 +88,12 @@ export default function AdminManagement() {
         }
     };
 
-    const runDemoRefresh = async () => {
-        if (!window.confirm('Refresh demo hospitals, users, and capacities? Existing placement history will stay.')) return;
-        setMessage('');
-        setError('');
-        try {
-            const res = await refreshDemoData();
-            setData({ users: res.data.users, hospitals: res.data.hospitals });
-            setMessage(res.data.message);
-        } catch (err) {
-            setError(err.response?.data?.message || 'Unable to refresh demo data.');
-        }
-    };
-
-    const adminCount = data.users.filter((user) => user.role === 'admin').length;
-    const activeHospitals = data.hospitals.filter((hospital) => hospital.status === 'active').length;
-
     return (
-        <div>
-            <div className="feature-hero admin-hero">
+        <div className="admin-page">
+            <div className="page-header">
                 <div>
-                    <span>System Control</span>
                     <h2>Admin Management</h2>
-                    <p>Manage hospital records, user roles, account approval, active status, and reset account passwords.</p>
-                </div>
-                <div className="hero-metrics">
-                    <div><strong>{data.users.length}</strong><small>Users</small></div>
-                    <div><strong>{activeHospitals}</strong><small>Active Hospitals</small></div>
-                    <div><strong>{adminCount}</strong><small>Admins</small></div>
+                    <p>Manage users, hospitals, account status, and system defaults.</p>
                 </div>
             </div>
 
@@ -125,13 +101,14 @@ export default function AdminManagement() {
             {error && <div className="alert alert-error">{error}</div>}
 
             <div className="admin-grid">
+                <div className="admin-column">
                 <div className="card admin-form-card">
                     <div className="card-header">
                         <span>{editingUserId ? 'Edit User' : 'Create User'}</span>
                         {editingUserId && <button className="btn btn-outline btn-sm" type="button" onClick={() => { setEditingUserId(null); setUserForm(blankUser); }}>New</button>}
                     </div>
                     <div className="card-body">
-                        <form onSubmit={saveUser}>
+                        <form className="admin-compact-form" onSubmit={saveUser}>
                             <div className="form-group">
                                 <label>Name</label>
                                 <input value={userForm.name} onChange={(e) => setUserForm({ ...userForm, name: e.target.value })} required />
@@ -176,13 +153,34 @@ export default function AdminManagement() {
                     </div>
                 </div>
 
+                <div className="card admin-table-card">
+                    <div className="card-header">Users</div>
+                    <div className="card-body table-wrapper">
+                        <table>
+                            <tbody>
+                                {data.users.map((user) => (
+                                    <tr key={user.id}>
+                                        <td><strong>{user.name}</strong><br /><small>{user.email}</small></td>
+                                        <td><span className={`admin-role-chip role-${user.role}`}>{roleLabel(user.role)}</span></td>
+                                        <td><span className={`badge badge-${user.account_status || 'approved'}`}>{(user.account_status || 'approved').replace('_', ' ')}</span></td>
+                                        <td>{user.hospital?.name || 'System-wide'}</td>
+                                        <td><button className="btn btn-outline btn-sm" onClick={() => { setEditingUserId(user.id); setUserForm({ name: user.name, email: user.email, role: user.role, hospital_id: user.hospital_id || '', password: '', account_status: user.account_status || 'approved' }); }}>Edit</button></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                </div>
+
+                <div className="admin-column">
                 <div className="card admin-form-card">
                     <div className="card-header">
                         <span>{editingHospitalId ? 'Edit Hospital' : 'Create Hospital'}</span>
                         {editingHospitalId && <button className="btn btn-outline btn-sm" type="button" onClick={() => { setEditingHospitalId(null); setHospitalForm(blankHospital); }}>New</button>}
                     </div>
                     <div className="card-body">
-                        <form onSubmit={saveHospital}>
+                        <form className="admin-compact-form admin-hospital-form" onSubmit={saveHospital}>
                             <div className="form-group">
                                 <label>Name</label>
                                 <input value={hospitalForm.name} onChange={(e) => setHospitalForm({ ...hospitalForm, name: e.target.value })} required />
@@ -234,50 +232,14 @@ export default function AdminManagement() {
                         </form>
                     </div>
                 </div>
-            </div>
 
-            <div className="admin-grid mt-24">
-                <div className="card role-matrix-card">
-                    <div className="card-header">Role Matrix</div>
-                    <div className="card-body">
-                        <div className="role-matrix-list">
-                            {roleMatrix.map(([role, profile]) => (
-                                <article className={`role-matrix-row role-${role}`} key={role}>
-                                    <div>
-                                        <span className="role-matrix-kicker">{profile.home}</span>
-                                        <h3>{profile.label}</h3>
-                                        <p>{profile.purpose}</p>
-                                    </div>
-                                    <div>
-                                        <strong>Pages</strong>
-                                        <p>{profile.pages.join(', ')}</p>
-                                    </div>
-                                    <div>
-                                        <strong>Allowed Actions</strong>
-                                        <ul>
-                                            {profile.actions.slice(0, 4).map((action) => <li key={action}>{action}</li>)}
-                                        </ul>
-                                    </div>
-                                    <div>
-                                        <strong>Limits</strong>
-                                        <ul>
-                                            {profile.boundaries.map((boundary) => <li key={boundary}>{boundary}</li>)}
-                                        </ul>
-                                    </div>
-                                </article>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="card">
+                <div className="card admin-settings-card">
                     <div className="card-header">
                         <span>System Settings</span>
-                        <button type="button" className="btn btn-warning btn-sm" onClick={runDemoRefresh}>Refresh Demo Data</button>
                     </div>
                     <div className="card-body">
                         {settings && (
-                            <form onSubmit={saveSettings}>
+                            <form className="admin-settings-form" onSubmit={saveSettings}>
                                 <div className="form-grid">
                                     <div className="form-group">
                                         <label>Reservation Minutes</label>
@@ -305,27 +267,7 @@ export default function AdminManagement() {
                         )}
                     </div>
                 </div>
-            </div>
 
-            <div className="admin-grid mt-24">
-                <div className="card admin-table-card">
-                    <div className="card-header">Users</div>
-                    <div className="card-body table-wrapper">
-                        <table>
-                            <tbody>
-                                {data.users.map((user) => (
-                                    <tr key={user.id}>
-                                        <td><strong>{user.name}</strong><br /><small>{user.email}</small></td>
-                                        <td><span className={`admin-role-chip role-${user.role}`}>{roleLabel(user.role)}</span></td>
-                                        <td><span className={`badge badge-${user.account_status || 'approved'}`}>{(user.account_status || 'approved').replace('_', ' ')}</span></td>
-                                        <td>{user.hospital?.name || 'System-wide'}</td>
-                                        <td><button className="btn btn-outline btn-sm" onClick={() => { setEditingUserId(user.id); setUserForm({ name: user.name, email: user.email, role: user.role, hospital_id: user.hospital_id || '', password: '', account_status: user.account_status || 'approved' }); }}>Edit</button></td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
                 <div className="card admin-table-card">
                     <div className="card-header">Hospitals</div>
                     <div className="card-body table-wrapper">
@@ -342,6 +284,7 @@ export default function AdminManagement() {
                             </tbody>
                         </table>
                     </div>
+                </div>
                 </div>
             </div>
         </div>

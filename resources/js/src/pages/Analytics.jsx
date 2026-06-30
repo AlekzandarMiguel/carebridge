@@ -34,7 +34,12 @@ export default function Analytics() {
 
     return (
         <div>
-            <h2 style={{ fontSize: '20px', marginBottom: '24px' }}>Department Analytics</h2>
+            <div className="page-header">
+                <div>
+                    <h2>Department Analytics</h2>
+                    <p>Review placement volume, rejection reasons, SLA pressure, and delivery movement across the department.</p>
+                </div>
+            </div>
 
             {/* Summary Cards */}
             <div className="summary-grid">

@@ -142,7 +142,7 @@ export default function TransferTracking() {
 
     return (
         <div>
-            <div className="feature-hero">
+            <div className="page-header">
                 <div>
                     <span>{user.role === 'sending_staff' ? 'Rejected Case Queue' : 'Delivery Department Monitoring'}</span>
                     <h2>Delivery Tracking</h2>

@@ -114,52 +114,84 @@ export default function Settings() {
 
     return (
         <div>
-            <h2 style={{ fontSize: '20px', marginBottom: '8px' }}>Settings</h2>
-            <p style={{ color: 'var(--gray-500)', marginBottom: '24px' }}>
-                Manage your account and review permissions for your role.
-            </p>
+            <div className="page-header">
+                <div>
+                    <h2>Settings</h2>
+                    <p>Manage your account and review permissions for your role.</p>
+                </div>
+            </div>
 
             {success && <div className="alert alert-success">{success}</div>}
             {error && <div className="alert alert-error">{error}</div>}
 
             <div className="settings-grid">
-                <div className="card">
-                    <div className="card-header">Profile</div>
-                    <div className="card-body">
-                        <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label>Full Name</label>
-                                <input name="name" value={form.name} onChange={handleChange} required />
-                            </div>
+                <div className="settings-stack">
+                    <div className="card">
+                        <div className="card-header">Profile</div>
+                        <div className="card-body">
+                            <form onSubmit={handleSubmit}>
+                                <div className="form-grid">
+                                    <div className="form-group">
+                                        <label>Full Name</label>
+                                        <input name="name" value={form.name} onChange={handleChange} required />
+                                    </div>
 
-                            <div className="form-group">
-                                <label>Email Address</label>
-                                <input type="email" name="email" value={form.email} onChange={handleChange} required />
-                            </div>
+                                    <div className="form-group">
+                                        <label>Email Address</label>
+                                        <input type="email" name="email" value={form.email} onChange={handleChange} required />
+                                    </div>
+                                </div>
 
-                            <div className="form-group">
-                                <label>Current Password</label>
-                                <input type="password" name="current_password" value={form.current_password} onChange={handleChange} placeholder="Required only when changing password" />
-                            </div>
+                                <div className="form-grid">
+                                    <div className="form-group">
+                                        <label>Current Password</label>
+                                        <input type="password" name="current_password" value={form.current_password} onChange={handleChange} placeholder="Only when changing password" />
+                                    </div>
 
-                            <div className="form-group">
-                                <label>New Password</label>
-                                <input type="password" name="password" value={form.password} onChange={handleChange} minLength={8} />
-                            </div>
+                                    <div className="form-group">
+                                        <label>New Password</label>
+                                        <input type="password" name="password" value={form.password} onChange={handleChange} minLength={8} />
+                                    </div>
+                                </div>
 
-                            <div className="form-group">
-                                <label>Confirm New Password</label>
-                                <input type="password" name="password_confirmation" value={form.password_confirmation} onChange={handleChange} minLength={8} />
-                            </div>
+                                <div className="form-group">
+                                    <label>Confirm New Password</label>
+                                    <input type="password" name="password_confirmation" value={form.password_confirmation} onChange={handleChange} minLength={8} />
+                                </div>
 
-                            <button type="submit" className="btn btn-primary" disabled={saving}>
-                                {saving ? 'Saving...' : 'Save Settings'}
-                            </button>
-                        </form>
+                                <button type="submit" className="btn btn-primary" disabled={saving}>
+                                    {saving ? 'Saving...' : 'Save Settings'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div className="card">
+                        <div className="card-header">Notification Preferences</div>
+                        <div className="card-body">
+                            <div className="settings-list settings-list-compact">
+                                {[
+                                    ['sla_breach', 'SLA breach and long-wait alerts'],
+                                    ['assigned_case', 'Assigned case alerts'],
+                                    ['arrival', 'Patient arrival alerts'],
+                                    ['completed_delivery', 'Completed delivery alerts'],
+                                    ['declined_case', 'Declined case and reroute alerts'],
+                                ].map(([key, label]) => (
+                                    <label className="settings-list-item preference-row" key={key}>
+                                        <input
+                                            type="checkbox"
+                                            checked={Boolean(notificationPrefs[key])}
+                                            onChange={() => toggleNotificationPref(key)}
+                                        />
+                                        <p>{label}</p>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div className="card">
+                <div className="card settings-role-card">
                     <div className="card-header">Role Settings</div>
                     <div className="card-body">
                         <div className="role-panel role-onboarding-panel">
@@ -175,7 +207,7 @@ export default function Settings() {
                             {profile.pages.map((page) => <span key={page}>{page}</span>)}
                         </div>
 
-                        <div className="settings-list">
+                        <div className="settings-list settings-permission-grid">
                             {profile.permissions.map((permission) => (
                                 <div className="settings-list-item" key={permission}>
                                     <span>OK</span>
@@ -187,30 +219,6 @@ export default function Settings() {
                         <div className="role-boundary-box">
                             <strong>Role limits</strong>
                             {profile.boundaries.map((boundary) => <p key={boundary}>{boundary}</p>)}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="card">
-                    <div className="card-header">Notification Preferences</div>
-                    <div className="card-body">
-                        <div className="settings-list">
-                            {[
-                                ['sla_breach', 'SLA breach and long-wait alerts'],
-                                ['assigned_case', 'Assigned case alerts'],
-                                ['arrival', 'Patient arrival alerts'],
-                                ['completed_delivery', 'Completed delivery alerts'],
-                                ['declined_case', 'Declined case and reroute alerts'],
-                            ].map(([key, label]) => (
-                                <label className="settings-list-item preference-row" key={key}>
-                                    <input
-                                        type="checkbox"
-                                        checked={Boolean(notificationPrefs[key])}
-                                        onChange={() => toggleNotificationPref(key)}
-                                    />
-                                    <p>{label}</p>
-                                </label>
-                            ))}
                         </div>
                     </div>
                 </div>

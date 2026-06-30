@@ -48,6 +48,9 @@ export default function Layout({ children, theme, toggleTheme }) {
     const user = getUser();
     const roleClass = `role-${user.role || 'unknown'}`;
     const currentRoleLabel = roleLabel(user.role);
+    const topbarDisplayName = (user.name || 'User').startsWith(`${currentRoleLabel} - `)
+        ? (user.name || 'User').replace(`${currentRoleLabel} - `, '')
+        : (user.name || user.hospital?.name || 'User');
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
@@ -76,7 +79,7 @@ export default function Layout({ children, theme, toggleTheme }) {
         }
         localStorage.removeItem('carebridge_token');
         localStorage.removeItem('carebridge_user');
-        navigate('/');
+        navigate('/', { replace: true });
     };
 
     const handleMarkRead = async (id) => {
@@ -179,7 +182,7 @@ export default function Layout({ children, theme, toggleTheme }) {
                             )}
                         </div>
                         <div className={`topbar-user ${roleClass}`}>
-                            <strong>{user.name}</strong>
+                            <strong>{topbarDisplayName}</strong>
                             <span>{currentRoleLabel}</span>
                         </div>
                     </div>

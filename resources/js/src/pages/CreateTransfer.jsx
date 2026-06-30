@@ -167,10 +167,12 @@ export default function CreateTransfer() {
 
     return (
         <div>
-            <h2 style={{ fontSize: '20px', marginBottom: '8px' }}>Create Rejected Patient Case</h2>
-            <p style={{ color: 'var(--gray-500)', marginBottom: '24px' }}>
-                From: <strong>{user.hospital?.name}</strong> - Send this rejected patient case to the placement department queue.
-            </p>
+            <div className="page-header">
+                <div>
+                    <h2>Create Rejected Patient Case</h2>
+                    <p>From: <strong>{user.hospital?.name}</strong> - Send this rejected patient case to the placement department queue.</p>
+                </div>
+            </div>
 
             {error && <div className="alert alert-error">{error}</div>}
 

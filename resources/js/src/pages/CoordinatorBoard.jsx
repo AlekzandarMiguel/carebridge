@@ -26,6 +26,7 @@ export default function CoordinatorBoard() {
     const [hospitals, setHospitals] = useState([]);
     const [dispatchers, setDispatchers] = useState([]);
     const [settings, setSettings] = useState({ sla_pending_minutes: 20 });
+    const [selectedLane, setSelectedLane] = useState('rejected');
 
     const loadBoard = async () => {
         try {
@@ -114,10 +115,20 @@ export default function CoordinatorBoard() {
         .filter((hospital) => hospital.totalBeds > 0)
         .sort((a, b) => b.totalBeds - a.totalBeds)
         .slice(0, 3);
+    const laneSummaries = columns.map(([lane, label, filter], index) => ({
+        lane,
+        label,
+        index,
+        caption: ['en_route', 'arrived'].includes(lane) ? 'Delivery movement' : 'Department queue',
+        requests: allRequests
+            .filter(filter)
+            .sort((a, b) => urgencyOrder.indexOf(a.urgency_level) - urgencyOrder.indexOf(b.urgency_level)),
+    }));
+    const selectedLaneSummary = laneSummaries.find((summary) => summary.lane === selectedLane) || laneSummaries[0];
 
     return (
-        <div>
-            <div className="feature-hero">
+        <div className="command-board-page">
+            <div className="page-header">
                 <div>
                     <span>Department Dispatch</span>
                     <h2>Rejected Patient Command View</h2>
@@ -133,134 +144,140 @@ export default function CoordinatorBoard() {
             {message && <div className="alert alert-success">{message}</div>}
             {error && <div className="alert alert-error">{error}</div>}
 
-            <div className="insight-grid mb-24">
-                <div className="insight-panel">
-                    <span>Escalation Dashboard</span>
-                    <strong>{escalatedRequests.length}</strong>
-                    <p>Rejected patient cases already flagged for follow-up.</p>
-                </div>
-                <div className="insight-panel">
-                    <span>SLA Timers</span>
-                    <strong>{delayedRequests.length}</strong>
-                    <p>Pending or accepted cases waiting {slaMinutes}+ minutes.</p>
-                </div>
-                <div className="insight-panel">
-                    <span>Network Pressure</span>
-                    <strong>{pressureHospitals[0]?.totalBeds ?? 0}</strong>
-                    <p>Lowest available bed count for placement decisions.</p>
-                </div>
-            </div>
-
-            <div className="detail-grid mb-24">
-                <div className="card">
-                    <div className="card-header">Hospitals Under Pressure</div>
-                    <div className="card-body compact-list">
-                        {pressureHospitals.map((hospital) => (
-                            <div key={hospital.id}>
-                                <strong>{hospital.name}</strong>
-                                <span>{hospital.totalBeds} beds open</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <div className="card">
-                    <div className="card-header">Placement Suggestions</div>
-                    <div className="card-body compact-list">
-                        {rerouteHospitals.map((hospital) => (
-                            <div key={hospital.id}>
-                                <strong>{hospital.name}</strong>
-                                <span>{hospital.totalBeds} beds open - {hospital.contact_number}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            <div className="board-grid">
-                {columns.map(([lane, label, filter], index) => {
-                    const laneRequests = allRequests
-                        .filter(filter)
-                        .sort((a, b) => urgencyOrder.indexOf(a.urgency_level) - urgencyOrder.indexOf(b.urgency_level));
-
-                    return (
-                    <section className="board-column" key={lane}>
-                        <div className={`board-column-header board-lane-${index}`}>
-                            <div>
-                                <strong>{label}</strong>
-                                <small>{['en_route', 'arrived'].includes(lane) ? 'Delivery movement' : 'Department queue'}</small>
-                            </div>
-                            <span>{laneRequests.length}</span>
+            <div className="command-lane-button-grid">
+                {laneSummaries.map((summary) => (
+                    <button
+                        type="button"
+                        key={summary.lane}
+                        className={`command-lane-button board-lane-${summary.index} ${selectedLane === summary.lane ? 'is-active' : ''}`}
+                        onClick={() => setSelectedLane(summary.lane)}
+                    >
+                        <div>
+                            <strong>{summary.label}</strong>
+                            <small>{summary.caption}</small>
                         </div>
-                        <div className="board-card-list">
-                            {laneRequests.map((req) => (
-                                <Link to={`/placement-cases/${req.id}`} className="board-card" key={req.id}>
-                                    <div className="flex-between">
-                                        <strong>{req.patient_reference_code}</strong>
-                                        <StatusBadge status={req.status} />
-                                    </div>
-                                    {req.is_escalated && (
-                                        <span className="escalation-banner">Escalated: {req.escalation_reason || 'Needs attention'}</span>
-                                    )}
-                                    {req.needs_attention && (
-                                        <span className={`sla-banner sla-${req.sla_state || req.delivery_eta_state}`}>
-                                            {req.sla_state === 'breached' ? 'SLA breached' : req.sla_state === 'warning' ? 'Approaching SLA' : req.delivery_eta_state === 'late' ? 'ETA late' : 'Needs attention'}
-                                        </span>
-                                    )}
-                                    <p>{req.sending_hospital?.name} to {req.receiving_hospital?.name || '-'}</p>
-                                    <div className="board-card-meta">
-                                        <span className={`urgency-${req.urgency_level}`}>{req.urgency_level}</span>
-                                        <small>{req.case_type}</small>
-                                        <small>{req.waiting_minutes ?? waitingMinutes(req.created_at)} min waiting</small>
-                                    </div>
-                                    <div className="board-location">{req.delivery_last_location || 'No delivery movement yet'}</div>
-                                    <div className="assignment-strip">
-                                        <small>Dispatcher</small>
-                                        <strong>{req.assigned_dispatcher?.name || 'Unassigned'}</strong>
-                                    </div>
-                                    {['pending', 'accepted', 'reserved', 'in_transfer'].includes(req.status) && (
-                                        <div className="assignment-control" onClick={(event) => event.preventDefault()}>
-                                            <select
-                                                value={assignmentDrafts[req.id] ?? req.assigned_dispatcher_id ?? ''}
-                                                onChange={(event) => setAssignmentDrafts({ ...assignmentDrafts, [req.id]: event.target.value })}
-                                                onClick={(event) => {
-                                                    event.preventDefault();
-                                                    event.stopPropagation();
-                                                }}
-                                            >
-                                                <option value="">Assign monitor</option>
-                                                {dispatchers.map((dispatcher) => (
-                                                    <option value={dispatcher.id} key={dispatcher.id}>{dispatcher.name} ({dispatcher.role.replace('_', ' ')})</option>
-                                                ))}
-                                            </select>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline btn-sm"
-                                                disabled={assigningId === req.id}
-                                                onClick={(event) => handleAssign(event, req)}
-                                            >
-                                                Assign
-                                            </button>
-                                        </div>
-                                    )}
-                                    {['pending', 'accepted', 'reserved', 'in_transfer'].includes(req.status) && !req.is_escalated && (
-                                        <button
-                                            type="button"
-                                            className="btn btn-warning btn-sm"
-                                            disabled={escalatingId === req.id}
-                                            onClick={(event) => handleEscalate(event, req)}
-                                        >
-                                            Escalate
-                                        </button>
-                                    )}
-                                </Link>
-                            ))}
-                            {laneRequests.length === 0 && (
-                                <div className="board-empty">No cases in this lane.</div>
+                        <span>{summary.requests.length}</span>
+                    </button>
+                ))}
+            </div>
+
+            <div className="command-lane-panel">
+                <div className="section-heading-row">
+                    <h3>{selectedLaneSummary.label}</h3>
+                    <span>{selectedLaneSummary.requests.length} cases</span>
+                </div>
+                <div className="board-card-list command-lane-card-list">
+                    {selectedLaneSummary.requests.map((req) => (
+                        <Link to={`/placement-cases/${req.id}`} className="board-card" key={req.id}>
+                            <div className="flex-between">
+                                <strong>{req.patient_reference_code}</strong>
+                                <StatusBadge status={req.status} />
+                            </div>
+                            {req.is_escalated && (
+                                <span className="escalation-banner">Escalated: {req.escalation_reason || 'Needs attention'}</span>
                             )}
+                            {req.needs_attention && (
+                                <span className={`sla-banner sla-${req.sla_state || req.delivery_eta_state}`}>
+                                    {req.sla_state === 'breached' ? 'SLA breached' : req.sla_state === 'warning' ? 'Approaching SLA' : req.delivery_eta_state === 'late' ? 'ETA late' : 'Needs attention'}
+                                </span>
+                            )}
+                            <p>{req.sending_hospital?.name} to {req.receiving_hospital?.name || '-'}</p>
+                            <div className="board-card-meta">
+                                <span className={`urgency-${req.urgency_level}`}>{req.urgency_level}</span>
+                                <small>{req.case_type}</small>
+                                <small>{req.waiting_minutes ?? waitingMinutes(req.created_at)} min waiting</small>
+                            </div>
+                            <div className="board-location">{req.delivery_last_location || 'No delivery movement yet'}</div>
+                            <div className="assignment-strip">
+                                <small>Dispatcher</small>
+                                <strong>{req.assigned_dispatcher?.name || 'Unassigned'}</strong>
+                            </div>
+                            {['pending', 'accepted', 'reserved', 'in_transfer'].includes(req.status) && (
+                                <div className="assignment-control" onClick={(event) => event.preventDefault()}>
+                                    <select
+                                        value={assignmentDrafts[req.id] ?? req.assigned_dispatcher_id ?? ''}
+                                        onChange={(event) => setAssignmentDrafts({ ...assignmentDrafts, [req.id]: event.target.value })}
+                                        onClick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                        }}
+                                    >
+                                        <option value="">Assign monitor</option>
+                                        {dispatchers.map((dispatcher) => (
+                                            <option value={dispatcher.id} key={dispatcher.id}>{dispatcher.name} ({dispatcher.role.replace('_', ' ')})</option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline btn-sm"
+                                        disabled={assigningId === req.id}
+                                        onClick={(event) => handleAssign(event, req)}
+                                    >
+                                        Assign
+                                    </button>
+                                </div>
+                            )}
+                            {['pending', 'accepted', 'reserved', 'in_transfer'].includes(req.status) && !req.is_escalated && (
+                                <button
+                                    type="button"
+                                    className="btn btn-warning btn-sm"
+                                    disabled={escalatingId === req.id}
+                                    onClick={(event) => handleEscalate(event, req)}
+                                >
+                                    Escalate
+                                </button>
+                            )}
+                        </Link>
+                    ))}
+                    {selectedLaneSummary.requests.length === 0 && (
+                        <div className="board-empty">No cases in this lane.</div>
+                    )}
+                </div>
+            </div>
+
+            <div className="command-support-grid">
+                <div className="insight-grid command-insight-grid">
+                    <div className="insight-panel">
+                        <span>Escalated</span>
+                        <strong>{escalatedRequests.length}</strong>
+                        <p>Cases flagged for follow-up.</p>
+                    </div>
+                    <div className="insight-panel">
+                        <span>SLA</span>
+                        <strong>{delayedRequests.length}</strong>
+                        <p>Cases waiting {slaMinutes}+ minutes.</p>
+                    </div>
+                    <div className="insight-panel">
+                        <span>Pressure</span>
+                        <strong>{pressureHospitals[0]?.totalBeds ?? 0}</strong>
+                        <p>Lowest available bed count.</p>
+                    </div>
+                </div>
+
+                <div className="detail-grid command-detail-grid">
+                    <div className="card">
+                        <div className="card-header">Hospitals Under Pressure</div>
+                        <div className="card-body compact-list">
+                            {pressureHospitals.map((hospital) => (
+                                <div key={hospital.id}>
+                                    <strong>{hospital.name}</strong>
+                                    <span>{hospital.totalBeds} beds open</span>
+                                </div>
+                            ))}
                         </div>
-                    </section>
-                    );
-                })}
+                    </div>
+                    <div className="card">
+                        <div className="card-header">Placement Suggestions</div>
+                        <div className="card-body compact-list">
+                            {rerouteHospitals.map((hospital) => (
+                                <div key={hospital.id}>
+                                    <strong>{hospital.name}</strong>
+                                    <span>{hospital.totalBeds} beds open - {hospital.contact_number}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

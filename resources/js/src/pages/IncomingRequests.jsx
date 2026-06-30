@@ -86,7 +86,7 @@ export default function IncomingRequests() {
 
     return (
         <div>
-            <div className="feature-hero">
+            <div className="page-header">
                 <div>
                     <span>Acceptance Desk</span>
                     <h2>Rejected Patient Acceptance Queue</h2>

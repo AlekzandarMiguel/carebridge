@@ -29,8 +29,8 @@ export default function Wallboard() {
     const { metrics, cases } = data;
 
     return (
-        <div>
-            <div className="feature-hero wallboard-hero">
+        <div className="wallboard-page">
+            <div className="page-header">
                 <div>
                     <span>Realtime Operations</span>
                     <h2>Department Wallboard</h2>
@@ -47,14 +47,16 @@ export default function Wallboard() {
             <div className="wallboard-grid">
                 {(cases || []).map((item) => (
                     <Link to={`/placement-cases/${item.id}`} className={`wallboard-card ${item.needs_attention ? 'needs-attention' : ''}`} key={item.id}>
-                        <div className="flex-between">
-                            <strong>{item.patient_reference_code}</strong>
+                        <div className="wallboard-card-head">
+                            <div>
+                                <strong>{item.patient_reference_code}</strong>
+                                <small>{item.case_type} / {item.urgency_level}</small>
+                            </div>
                             <StatusBadge status={item.status} />
                         </div>
                         <p>{item.sending_hospital?.name} to {item.receiving_hospital?.name}</p>
                         <div className="board-card-meta">
                             <span className={`urgency-${item.urgency_level}`}>{item.urgency_level}</span>
-                            <small>{item.case_type}</small>
                             <small>{item.waiting_minutes} min waiting</small>
                         </div>
                         <div className="wallboard-route">

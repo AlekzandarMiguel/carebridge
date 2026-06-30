@@ -43,8 +43,8 @@ export default function HospitalDirectory() {
     const ambulanceCount = hospitals.reduce((total, hospital) => total + (hospital.latest_capacity?.ambulance_available || 0), 0);
 
     return (
-        <div>
-            <div className="feature-hero directory-hero">
+        <div className="directory-page">
+            <div className="page-header">
                 <div>
                     <span>Placement Directory</span>
                     <h2>Accepting Hospital Directory</h2>
@@ -103,11 +103,20 @@ export default function HospitalDirectory() {
                                 </div>
                                 <span className={`badge badge-${hospital.status === 'active' ? 'completed' : 'cancelled'}`}>{hospital.status}</span>
                             </div>
-                            <strong className="directory-contact">{hospital.contact_number}</strong>
-                            <p>{hospital.transfer_contact_name || 'Placement desk'} {hospital.transfer_contact_phone || ''}</p>
-                            <p>{hospital.emergency_contact_name ? `Emergency: ${hospital.emergency_contact_name} ${hospital.emergency_contact_phone || ''}` : 'Emergency contact not listed'}</p>
+                            <div className="directory-card-body">
+                                <div className="directory-contact-block">
+                                    <span>Contact</span>
+                                    <strong className="directory-contact">{hospital.contact_number}</strong>
+                                    <small>{hospital.transfer_contact_name || 'Placement desk'} {hospital.transfer_contact_phone || ''}</small>
+                                    <small>{hospital.emergency_contact_name ? `Emergency: ${hospital.emergency_contact_name} ${hospital.emergency_contact_phone || ''}` : 'Emergency contact not listed'}</small>
+                                </div>
+                                <div className="directory-total-block">
+                                    <span>Total Beds</span>
+                                    <strong>{totalBeds}</strong>
+                                    <small>{capacity?.ambulance_available ?? 0} ambulance available</small>
+                                </div>
+                            </div>
                             <div className="capacity-strip">
-                                <span>{totalBeds} total beds</span>
                                 <span>General {capacity?.general_beds_available ?? 0}</span>
                                 <span>ER {capacity?.emergency_beds_available ?? 0}</span>
                                 <span>ICU {capacity?.icu_beds_available ?? 0}</span>
