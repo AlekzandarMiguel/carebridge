@@ -12,9 +12,11 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class TransferRequestController extends Controller
 {
@@ -194,7 +196,7 @@ class TransferRequestController extends Controller
             ->where('status', 'active')
             ->whereKeyNot($user->hospital_id)
             ->get()
-            ->map(function (Hospital $hospital) use ($bedColumn, $user) {
+            ->map(function (Hospital $hospital) use ($bedColumn, $caseType, $user) {
                 $capacity = $hospital->latestCapacity;
                 $matchingBeds = $capacity?->{$bedColumn} ?? 0;
                 $totalBeds = $capacity
@@ -204,6 +206,18 @@ class TransferRequestController extends Controller
                 $distance = ($origin?->latitude && $origin?->longitude && $hospital->latitude && $hospital->longitude)
                     ? round($this->distanceKm((float) $origin->latitude, (float) $origin->longitude, (float) $hospital->latitude, (float) $hospital->longitude) * 1.25, 2)
                     : null;
+                $ambulanceAvailable = $capacity?->ambulance_available ?? 0;
+                $reasons = [
+                    $matchingBeds > 0
+                        ? "{$matchingBeds} ".strtoupper($caseType).' bed'.($matchingBeds === 1 ? '' : 's').' available'
+                        : 'No matching bed currently open',
+                    $totalBeds > 0 ? "{$totalBeds} total beds open" : 'No open beds reported',
+                    $ambulanceAvailable > 0 ? "{$ambulanceAvailable} ambulance".($ambulanceAvailable === 1 ? '' : 's').' available' : 'No ambulance reported',
+                ];
+
+                if ($distance !== null) {
+                    $reasons[] = "{$distance} km estimated route";
+                }
 
                 return [
                     'id' => $hospital->id,
@@ -214,10 +228,11 @@ class TransferRequestController extends Controller
                     'latest_capacity' => $capacity,
                     'matching_beds' => $matchingBeds,
                     'total_beds' => $totalBeds,
-                    'ambulance_available' => $capacity?->ambulance_available ?? 0,
+                    'ambulance_available' => $ambulanceAvailable,
                     'distance_km' => $distance,
                     'estimated_travel_minutes' => $distance ? max(5, (int) ceil(($distance / 35) * 60)) : null,
                     'match_status' => $matchingBeds > 0 ? 'Can accept matching need' : 'No matching bed now',
+                    'recommendation_reasons' => $reasons,
                     'recommendation_score' => ($matchingBeds * 10) + $totalBeds + (($capacity?->ambulance_available ?? 0) * 2) - ($distance ? min(12, $distance / 4) : 0),
                 ];
             })
@@ -251,6 +266,48 @@ class TransferRequestController extends Controller
 
         return response()->json([
             'transfer_request' => $transferRequest,
+        ]);
+    }
+
+    public function routeSuggestion(Request $request, int $id): JsonResponse
+    {
+        $transferRequest = TransferRequest::with(['sendingHospital', 'receivingHospital'])->findOrFail($id);
+
+        if (!$this->canAccessTransfer($request, $transferRequest)) {
+            return response()->json(['message' => 'You are not allowed to view this placement route.'], 403);
+        }
+
+        $sending = $transferRequest->sendingHospital;
+        $receiving = $transferRequest->receivingHospital;
+
+        if (!$sending?->latitude || !$sending?->longitude || !$receiving?->latitude || !$receiving?->longitude) {
+            return response()->json([
+                'message' => 'Both hospitals need coordinates before a route can be calculated.',
+                'source' => 'unavailable',
+            ], 422);
+        }
+
+        $geoRoute = $this->geoApiRouteEstimate($sending, $receiving);
+
+        if ($geoRoute) {
+            return response()->json([
+                ...$geoRoute,
+                'message' => 'Route calculated from Geoapify geo API.',
+            ]);
+        }
+
+        $roadRoute = $this->roadRouteEstimate($sending, $receiving);
+
+        if ($roadRoute) {
+            return response()->json([
+                ...$roadRoute,
+                'message' => 'Road route calculated from routing service.',
+            ]);
+        }
+
+        return response()->json([
+            ...$this->fallbackRouteEstimate($sending, $receiving),
+            'message' => 'Routing service is unavailable. Showing coordinate-based estimate.',
         ]);
     }
 
@@ -1064,6 +1121,241 @@ class TransferRequestController extends Controller
             'route_distance_km' => $transferRequest->route_distance_km ?? $roadDistance,
             'estimated_travel_minutes' => $transferRequest->estimated_travel_minutes ?? max(5, (int) ceil(($roadDistance / 35) * 60)),
         ]);
+    }
+
+    private function roadRouteEstimate(Hospital $sending, Hospital $receiving): ?array
+    {
+        $baseUrl = rtrim((string) config('services.routing.osrm_url', 'https://router.project-osrm.org'), '/');
+        $timeout = (int) config('services.routing.timeout', 4);
+
+        if ($baseUrl === '') {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout($timeout)
+                ->acceptJson()
+                ->get($baseUrl.'/route/v1/driving/'
+                    .$sending->longitude.','.$sending->latitude.';'
+                    .$receiving->longitude.','.$receiving->latitude, [
+                        'overview' => 'full',
+                        'geometries' => 'geojson',
+                        'alternatives' => 'false',
+                        'steps' => 'false',
+                    ]);
+
+            if (!$response->successful()) {
+                return null;
+            }
+
+            $route = $response->json('routes.0');
+
+            if (!$route || !isset($route['distance'], $route['duration'])) {
+                return null;
+            }
+
+            $coordinates = collect($route['geometry']['coordinates'] ?? [])
+                ->filter(fn ($point) => is_array($point) && count($point) >= 2)
+                ->map(fn ($point) => [
+                    'lat' => round((float) $point[1], 7),
+                    'lng' => round((float) $point[0], 7),
+                ])
+                ->values()
+                ->all();
+
+            if (count($coordinates) < 2) {
+                return null;
+            }
+
+            return [
+                'source' => 'road',
+                'provider' => 'OSRM',
+                'distance_km' => round(((float) $route['distance']) / 1000, 2),
+                'estimated_travel_minutes' => max(1, (int) ceil(((float) $route['duration']) / 60)),
+                'geometry' => $this->thinRouteGeometry($coordinates),
+            ];
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function geoApiRouteEstimate(Hospital $sending, Hospital $receiving): ?array
+    {
+        $apiKey = (string) config('services.routing.geoapify_key', '');
+        $baseUrl = rtrim((string) config('services.routing.geoapify_url', 'https://api.geoapify.com'), '/');
+        $timeout = (int) config('services.routing.timeout', 4);
+
+        if ($apiKey === '' || $baseUrl === '') {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout($timeout)
+                ->acceptJson()
+                ->get($baseUrl.'/v1/routing', [
+                    'waypoints' => $sending->latitude.','.$sending->longitude.'|'.$receiving->latitude.','.$receiving->longitude,
+                    'mode' => 'drive',
+                    'details' => 'instruction_details',
+                    'apiKey' => $apiKey,
+                ]);
+
+            if (!$response->successful()) {
+                return null;
+            }
+
+            $feature = $response->json('features.0');
+            $properties = $feature['properties'] ?? [];
+            $coordinates = $this->geoJsonCoordinatesToPoints($feature['geometry']['coordinates'] ?? []);
+
+            if (count($coordinates) < 2 || !isset($properties['distance'], $properties['time'])) {
+                return null;
+            }
+
+            return [
+                'source' => 'geo',
+                'provider' => 'Geoapify',
+                'distance_km' => round(((float) $properties['distance']) / 1000, 2),
+                'estimated_travel_minutes' => max(1, (int) ceil(((float) $properties['time']) / 60)),
+                'geometry' => $this->thinRouteGeometry($coordinates),
+            ];
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function fallbackRouteEstimate(Hospital $sending, Hospital $receiving): array
+    {
+        $distance = $this->distanceKm((float) $sending->latitude, (float) $sending->longitude, (float) $receiving->latitude, (float) $receiving->longitude);
+        $geometry = $this->fallbackRouteGeometry($sending, $receiving);
+        $routeDistance = $this->routePolylineDistance($geometry);
+        $roadDistance = round(max($distance * 1.18, $routeDistance), 2);
+
+        return [
+            'source' => 'estimated',
+            'provider' => 'Local route estimate',
+            'distance_km' => $roadDistance,
+            'estimated_travel_minutes' => max(5, (int) ceil(($roadDistance / 35) * 60)),
+            'geometry' => $geometry,
+        ];
+    }
+
+    private function fallbackRouteGeometry(Hospital $sending, Hospital $receiving): array
+    {
+        $start = ['lat' => (float) $sending->latitude, 'lng' => (float) $sending->longitude];
+        $end = ['lat' => (float) $receiving->latitude, 'lng' => (float) $receiving->longitude];
+
+        if ($this->looksLikeMalaybalayValenciaRoute($start, $end)) {
+            $corridor = [
+                ['lat' => 8.1506, 'lng' => 125.1244],
+                ['lat' => 8.1138, 'lng' => 125.1198],
+                ['lat' => 8.0675, 'lng' => 125.1153],
+                ['lat' => 8.0218, 'lng' => 125.1115],
+                ['lat' => 7.9780, 'lng' => 125.1059],
+                ['lat' => 7.9365, 'lng' => 125.0996],
+                ['lat' => 7.9076, 'lng' => 125.0948],
+            ];
+            $points = $start['lat'] > $end['lat'] ? $corridor : array_reverse($corridor);
+            $points[0] = $start;
+            $points[count($points) - 1] = $end;
+
+            return $points;
+        }
+
+        $latDelta = $end['lat'] - $start['lat'];
+        $lngDelta = $end['lng'] - $start['lng'];
+
+        return [
+            $start,
+            [
+                'lat' => $start['lat'] + ($latDelta * 0.35),
+                'lng' => $start['lng'] + ($lngDelta * 0.35) + ($lngDelta === 0.0 ? 0.004 : $lngDelta * 0.12),
+            ],
+            [
+                'lat' => $start['lat'] + ($latDelta * 0.7),
+                'lng' => $start['lng'] + ($lngDelta * 0.7) - ($lngDelta === 0.0 ? 0.004 : $lngDelta * 0.08),
+            ],
+            $end,
+        ];
+    }
+
+    private function looksLikeMalaybalayValenciaRoute(array $start, array $end): bool
+    {
+        $north = max($start['lat'], $end['lat']);
+        $south = min($start['lat'], $end['lat']);
+        $west = min($start['lng'], $end['lng']);
+        $east = max($start['lng'], $end['lng']);
+
+        return $north >= 8.1
+            && $south <= 7.95
+            && $west >= 125.08
+            && $east <= 125.14;
+    }
+
+    private function routePolylineDistance(array $points): float
+    {
+        $distance = 0.0;
+
+        for ($index = 1, $count = count($points); $index < $count; $index += 1) {
+            $previous = $points[$index - 1];
+            $current = $points[$index];
+            $distance += $this->distanceKm($previous['lat'], $previous['lng'], $current['lat'], $current['lng']);
+        }
+
+        return $distance;
+    }
+
+    private function geoJsonCoordinatesToPoints(array $coordinates): array
+    {
+        $points = [];
+
+        $walk = function (array $items) use (&$walk, &$points): void {
+            foreach ($items as $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+
+                if (isset($item[0], $item[1]) && is_numeric($item[0]) && is_numeric($item[1])) {
+                    $points[] = [
+                        'lat' => round((float) $item[1], 7),
+                        'lng' => round((float) $item[0], 7),
+                    ];
+
+                    continue;
+                }
+
+                $walk($item);
+            }
+        };
+
+        $walk($coordinates);
+
+        return $points;
+    }
+
+    private function thinRouteGeometry(array $coordinates, int $limit = 120): array
+    {
+        $count = count($coordinates);
+
+        if ($count <= $limit) {
+            return $coordinates;
+        }
+
+        $step = (int) ceil($count / $limit);
+        $thinned = [];
+
+        foreach ($coordinates as $index => $coordinate) {
+            if ($index % $step === 0) {
+                $thinned[] = $coordinate;
+            }
+        }
+
+        $last = $coordinates[$count - 1];
+
+        if (end($thinned) !== $last) {
+            $thinned[] = $last;
+        }
+
+        return $thinned;
     }
 
     private function distanceKm(float $lat1, float $lon1, float $lat2, float $lon2): float

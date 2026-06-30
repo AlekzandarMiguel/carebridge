@@ -2,24 +2,25 @@ import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { getNotifications, logout, markAllNotificationsRead, markNotificationRead } from '../api/axios';
 import { getUser, roleCanAccess, roleLabel } from '../utils/roles';
+import AppIcon from './AppIcon';
 import ThemeToggle from './ThemeToggle';
 
 const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: 'DB' },
-    { path: '/hospital-capacity', label: 'Capacity Desk', icon: 'HC', roles: ['receiving_staff'] },
-    { path: '/intake', label: 'Rejected Intake', icon: '+', roles: ['sending_staff'] },
-    { path: '/incoming-requests', label: 'Acceptance Queue', icon: 'IN', roles: ['receiving_staff'] },
-    { path: '/placement-tracking', label: 'Case Tracking', icon: 'CT', roles: ['sending_staff', 'receiving_staff'] },
-    { path: '/dispatcher-board', label: 'Dispatcher Board', icon: 'DT', roles: ['dispatcher'] },
-    { path: '/placement-tracking', label: 'Delivery Board', icon: 'DT', roles: ['coordinator', 'admin'] },
-    { path: '/coordinator-board', label: 'Command View', icon: 'CV', roles: ['coordinator', 'admin'] },
-    { path: '/wallboard', label: 'Wallboard', icon: 'WB', roles: ['coordinator', 'dispatcher', 'admin'] },
-    { path: '/hospital-directory', label: 'Placement Directory', icon: 'PD', roles: ['sending_staff', 'coordinator', 'dispatcher', 'admin'] },
-    { path: '/analytics', label: 'Analytics', icon: 'AN', roles: ['coordinator', 'dispatcher', 'admin'] },
-    { path: '/admin', label: 'Admin', icon: 'AD', roles: ['admin'] },
-    { path: '/role-matrix', label: 'Role Matrix', icon: 'RM', roles: ['admin'] },
-    { path: '/audit-logs', label: 'Audit Logs', icon: 'AL', roles: ['admin'] },
-    { path: '/settings', label: 'Settings', icon: 'ST' },
+    { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
+    { path: '/hospital-capacity', label: 'Capacity Desk', icon: 'capacity', roles: ['receiving_staff'] },
+    { path: '/intake', label: 'Rejected Intake', icon: 'intake', roles: ['sending_staff'] },
+    { path: '/incoming-requests', label: 'Acceptance Queue', icon: 'inbox', roles: ['receiving_staff'] },
+    { path: '/placement-tracking', label: 'Case Tracking', icon: 'tracking', roles: ['sending_staff', 'receiving_staff'] },
+    { path: '/dispatcher-board', label: 'Dispatcher Board', icon: 'ambulance', roles: ['dispatcher'] },
+    { path: '/placement-tracking', label: 'Delivery Board', icon: 'route', roles: ['coordinator', 'admin'] },
+    { path: '/coordinator-board', label: 'Command View', icon: 'command', roles: ['coordinator', 'admin'] },
+    { path: '/wallboard', label: 'Wallboard', icon: 'wallboard', roles: ['coordinator', 'dispatcher', 'admin'] },
+    { path: '/hospital-directory', label: 'Placement Directory', icon: 'directory', roles: ['sending_staff', 'coordinator', 'dispatcher', 'admin'] },
+    { path: '/analytics', label: 'Analytics', icon: 'analytics', roles: ['coordinator', 'dispatcher', 'admin'] },
+    { path: '/admin', label: 'Admin', icon: 'admin', roles: ['admin'] },
+    { path: '/role-matrix', label: 'Role Matrix', icon: 'shield', roles: ['admin'] },
+    { path: '/audit-logs', label: 'Audit Logs', icon: 'audit', roles: ['admin'] },
+    { path: '/settings', label: 'Settings', icon: 'settings' },
 ];
 
 const notificationLabels = {
@@ -123,7 +124,7 @@ export default function Layout({ children, theme, toggleTheme }) {
                                 `sidebar-link ${isActive ? 'active' : ''}`
                             }
                         >
-                            <span>{item.icon}</span>
+                            <span><AppIcon name={item.icon} /></span>
                             {item.label}
                         </NavLink>
                     ))}
@@ -134,7 +135,7 @@ export default function Layout({ children, theme, toggleTheme }) {
                         <strong>{user.name || 'User'}</strong>
                         <small>{user.hospital?.name || 'Hospital workspace'}</small>
                     </div>
-                    <button onClick={handleLogout} className="btn btn-outline btn-sm" style={{ width: '100%' }}>
+                    <button onClick={handleLogout} className="btn btn-outline btn-sm sidebar-logout-button">
                         Logout
                     </button>
                 </div>
@@ -156,8 +157,18 @@ export default function Layout({ children, theme, toggleTheme }) {
                     <div className="topbar-actions">
                         <ThemeToggle theme={theme} onToggle={toggleTheme} />
                         <div className="notification-menu">
-                            <button type="button" className="theme-toggle" onClick={() => setShowNotifications(!showNotifications)}>
-                                <span>Alerts</span>
+                            <button
+                                type="button"
+                                className="theme-toggle notification-trigger"
+                                onClick={() => setShowNotifications(!showNotifications)}
+                                aria-label={unreadCount > 0 ? `Open notifications, ${unreadCount} unread` : 'Open notifications'}
+                                title="Notifications"
+                            >
+                                <svg className="control-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M18 9.5a6 6 0 0 0-12 0c0 7-2.25 7.5-2.25 7.5h16.5S18 16.5 18 9.5Z" />
+                                    <path d="M9.8 20.25a2.4 2.4 0 0 0 4.4 0" />
+                                </svg>
+                                <span className="sr-only">Notifications</span>
                                 {unreadCount > 0 && <em className="alert-count">{unreadCount}</em>}
                             </button>
                             {showNotifications && (

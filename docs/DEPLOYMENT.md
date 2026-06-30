@@ -1,6 +1,6 @@
 # CareBridge Deployment Guide
 
-This guide explains the production checklist for deploying CareBridge.
+This guide explains the production checklist for deploying CareBridge, a rejected patient placement and delivery coordination system.
 
 ## Requirements
 
@@ -35,11 +35,35 @@ APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://your-domain.example
 DB_CONNECTION=mysql
+DB_DATABASE=carebridge
+DB_USERNAME=carebridge_user
+DB_PASSWORD=use-a-strong-password
 SANCTUM_STATEFUL_DOMAINS=your-domain.example
 SESSION_SECURE_COOKIE=true
 FILESYSTEM_DISK=public
 QUEUE_CONNECTION=database
+GEOAPIFY_API_KEY=
+GEOAPIFY_API_URL=https://api.geoapify.com
+ROUTING_OSRM_URL=https://router.project-osrm.org
+ROUTING_TIMEOUT=4
 ```
+
+For local MySQL development, the default example database is:
+
+```text
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=overflowcare
+DB_USERNAME=root
+DB_PASSWORD=
+GEOAPIFY_API_KEY=
+GEOAPIFY_API_URL=https://api.geoapify.com
+ROUTING_OSRM_URL=https://router.project-osrm.org
+ROUTING_TIMEOUT=4
+```
+
+`GEOAPIFY_API_KEY` enables Geoapify routing for the delivery map. If it is empty or unavailable, CareBridge tries the configured OSRM-compatible service from `ROUTING_OSRM_URL`. If both geo services are unavailable, CareBridge falls back to coordinate-based route estimates.
 
 ## Storage and Attachments
 
@@ -95,7 +119,7 @@ The current app polls alerts, which is simple and reliable for school/demo deplo
 Recommended production path:
 
 1. Add broadcasting credentials to `.env`.
-2. Broadcast transfer log events when case actions are recorded.
+2. Broadcast placement case activity when case actions are recorded.
 3. Subscribe the React header and command board to private role or hospital channels.
 4. Keep polling as a fallback for poor connections.
 
@@ -145,6 +169,8 @@ You can create or update a real admin without demo seeders:
 php artisan carebridge:create-admin admin@example.com --name="System Admin"
 ```
 
+Production should not include seeded `@carebridge.com` demo accounts or sample cases unless the deployment is only for presentation or training.
+
 ## Recommended Server Tasks
 
 - Run `php artisan migrate --force` during deployments.
@@ -172,6 +198,7 @@ Then verify these workflows manually:
 - Create rejected patient case
 - Accept, reserve, start delivery, arrive, and complete
 - Assign dispatcher and add delivery timeline update
+- Confirm route map shows the path from origin to accepting destination
 - Upload and open a case attachment
 - Download a private attachment as an authenticated user
 - Archive and restore a closed case

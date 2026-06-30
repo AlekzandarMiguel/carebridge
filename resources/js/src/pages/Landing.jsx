@@ -4,7 +4,7 @@ import ThemeToggle from '../components/ThemeToggle';
 
 const stats = [
     { value: '7', label: 'Case states tracked' },
-    { value: '1', label: 'Focused placement department' },
+    { value: '5', label: 'Role-specific workspaces' },
     { value: '24/7', label: 'Delivery visibility' },
 ];
 
@@ -17,34 +17,67 @@ const features = [
     {
         number: '02',
         title: 'Placement and Acceptance',
-        text: 'Find hospitals with matching capacity, request acceptance, and reserve the needed bed before delivery starts.',
+        text: 'Match the case with available capacity, request acceptance, and reserve the needed bed before delivery starts.',
     },
     {
         number: '03',
         title: 'Delivery Monitoring',
-        text: 'Monitor patient movement, arrival, handoff, rejection reasons, and department performance across the network.',
+        text: 'Track ambulance details, ETA, route updates, arrival, handoff, rejection reasons, and department performance.',
     },
 ];
 
 const workflow = [
-    'A rejected patient case enters the department queue',
-    'The department finds a hospital that can accept',
-    'Capacity is reserved for the matching case type',
-    'Patient delivery is monitored until handoff',
+    'Rejected case is recorded',
+    'Accepting hospital is matched',
+    'Capacity is reserved',
+    'Delivery is monitored',
+    'Arrival and handoff are confirmed',
+];
+
+const statusPath = [
+    'Rejected',
+    'Searching',
+    'Accepted',
+    'Dispatching',
+    'En Route',
+    'Arrived',
+    'Completed',
+];
+
+const scenario = [
+    {
+        label: 'Before',
+        title: 'Manual searching after rejection',
+        text: 'When a hospital is full, staff may need to call around repeatedly while the patient waits for a clear accepting destination.',
+    },
+    {
+        label: 'With CareBridge',
+        title: 'One placement queue',
+        text: 'The rejected case enters a shared department workspace where capacity, acceptance, delivery, and handoff are tracked together.',
+    },
+    {
+        label: 'Result',
+        title: 'Less delay and uncertainty',
+        text: 'The patient-safe case code, decision trail, route details, and final handoff stay visible to the right role.',
+    },
 ];
 
 const roles = [
     {
         title: 'Intake Staff',
-        text: 'Submit rejected patient cases and start delivery after capacity is reserved.',
+        text: 'Create rejected patient cases, document rejection reason, urgency, required service, and suggested destination.',
     },
     {
         title: 'Acceptance Staff',
-        text: 'Review acceptance requests, reserve capacity, and confirm patient arrival.',
+        text: 'Review requests sent to their hospital, accept or decline, reserve capacity, and complete handoffs.',
+    },
+    {
+        title: 'Dispatcher',
+        text: 'Own delivery movement with ambulance assignment, ETA, route updates, delays, arrival, and transport notes.',
     },
     {
         title: 'Coordinator',
-        text: 'Act as the department dispatcher for rejected patient placement and delivery.',
+        text: 'Monitor all active cases, resolve delays, escalate SLA breaches, and reassign dispatcher coverage.',
     },
     {
         title: 'Admin',
@@ -55,7 +88,7 @@ const roles = [
 const differentiators = [
     {
         title: 'A dedicated rejected-patient department',
-        text: 'CareBridge works like a focused department for people who cannot be accepted because a hospital is already full.',
+        text: 'CareBridge is built for the exact moment a person cannot be accepted because a hospital is already full.',
     },
     {
         title: 'Placement before abandonment',
@@ -66,8 +99,8 @@ const differentiators = [
         text: 'The case does not stop at acceptance. The department monitors delivery, arrival, and handoff.',
     },
     {
-        title: 'Not a general transfer tool',
-        text: 'It is a focused operational safety net for rejection scenarios, not a full hospital record system.',
+        title: 'Not a full hospital record system',
+        text: 'It is a focused operational safety net for rejection scenarios, not a full EHR, ERP, or general hospital record system.',
     },
 ];
 
@@ -92,7 +125,7 @@ export default function Landing({ theme, toggleTheme }) {
                     <p className="landing-kicker">Rejected patient placement department</p>
                     <h1>CareBridge</h1>
                     <p>
-                        A specialized coordination workspace for rejected patients, helping staff find an accepting hospital and monitor delivery until handoff.
+                        A focused department workspace for patients who may be rejected because a hospital is full, helping staff find acceptance, reserve capacity, and monitor delivery until handoff.
                     </p>
 
                     <div className="landing-actions">
@@ -117,9 +150,9 @@ export default function Landing({ theme, toggleTheme }) {
                 </div>
 
                 <div className="landing-next">
-                    <span>Placement queue</span>
-                    <span>Delivery tracking</span>
-                    <span>Department roles</span>
+                    <span>Rejected intake</span>
+                    <span>Placement matching</span>
+                    <span>Delivery monitoring</span>
                     <span>Audit logs</span>
                 </div>
             </section>
@@ -141,6 +174,23 @@ export default function Landing({ theme, toggleTheme }) {
                 </div>
             </section>
 
+            <section className="landing-section landing-scenario">
+                <div className="landing-section-header">
+                    <p className="landing-section-kicker">The real problem</p>
+                    <h2>When a hospital is full, the next step should not be a manual search.</h2>
+                    <p>CareBridge turns rejection into a structured placement case with clear ownership from intake to delivery completion.</p>
+                </div>
+                <div className="landing-scenario-grid">
+                    {scenario.map((item) => (
+                        <div className="landing-scenario-card" key={item.title}>
+                            <span>{item.label}</span>
+                            <h3>{item.title}</h3>
+                            <p>{item.text}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
             <section className="landing-section landing-workflow-band">
                 <div className="landing-section-header">
                     <p className="landing-section-kicker">Workflow</p>
@@ -155,13 +205,18 @@ export default function Landing({ theme, toggleTheme }) {
                         </div>
                     ))}
                 </div>
+                <div className="landing-status-track" aria-label="CareBridge placement status path">
+                    {statusPath.map((status) => (
+                        <span key={status}>{status}</span>
+                    ))}
+                </div>
             </section>
 
             <section className="landing-section">
                 <div className="landing-section-header">
                     <p className="landing-section-kicker">Access by role</p>
-                    <h2>Each team gets the controls they need</h2>
-                    <p>CareBridge separates intake, acceptance, dispatch coordination, and administrative responsibilities.</p>
+                    <h2>Each role has a separate responsibility</h2>
+                    <p>CareBridge separates intake, acceptance, delivery movement, coordination oversight, and administrative governance.</p>
                 </div>
                 <div className="landing-role-grid">
                     {roles.map((role) => (
@@ -177,7 +232,7 @@ export default function Landing({ theme, toggleTheme }) {
                 <div className="landing-section-header">
                     <p className="landing-section-kicker">Why this idea is different</p>
                     <h2>CareBridge is built as a rejected-patient placement and delivery department.</h2>
-                    <p>When a hospital is full, people can be rejected, delayed, or redirected without a clear next step. This system focuses on that moment: finding an accepting hospital, reserving the right capacity, and tracking delivery until care is handed off.</p>
+                    <p>When a hospital is full, people can be rejected, delayed, or redirected without a clear next step. This system focuses on that moment: finding acceptance, reserving the right capacity, and tracking delivery until care is handed off.</p>
                 </div>
                 <div className="landing-different-grid">
                     {differentiators.map((item) => (
@@ -211,8 +266,8 @@ export default function Landing({ theme, toggleTheme }) {
             </section>
 
             <section className="landing-final">
-                <h2>Start coordinating rejected patient placement with a clearer view.</h2>
-                <p>Use a demo account or create a hospital staff account to explore the department workflow.</p>
+                <h2>Give rejected patient placement a clearer department workflow.</h2>
+                <p>Use a demo account or create a hospital staff account to explore intake, acceptance, dispatch, coordination, and admin views.</p>
                 <div className="landing-actions landing-final-actions">
                     <Link to="/login" className="landing-cta landing-cta-primary">
                         <span>Sign In</span>

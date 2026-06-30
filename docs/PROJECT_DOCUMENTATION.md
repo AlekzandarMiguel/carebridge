@@ -6,6 +6,8 @@ CareBridge is a web-based rejected patient placement and delivery coordination s
 
 The system is not meant to replace a full electronic health record system. It is a focused department-style coordination layer for capacity-based placement and delivery decisions between hospitals.
 
+CareBridge's current product language is "rejected patient placement" and "patient delivery coordination." Some internal code, database tables, and API endpoints still use the older word `transfer` because the project originally started from a broader hospital transfer concept.
+
 ## 2. Problem Statement
 
 Hospitals can become full in general wards, emergency departments, ICU units, or ambulance availability. When this happens, a patient may be rejected or delayed without a shared view of which partner hospital can accept them.
@@ -38,35 +40,47 @@ CareBridge addresses this by giving hospitals a shared department workflow for:
 
 ## 4. Use Case Scenario
 
-A patient arrives at a hospital needing urgent care, but the hospital is already full. There are no available beds, and the staff cannot safely admit another patient.
+A patient arrives at a hospital needing urgent care, but the hospital is already full. There are no available beds, and staff cannot safely admit another patient.
 
-Without CareBridge, the patient or staff may need to look for another hospital manually. This can mean calling different hospitals one by one, waiting for confirmation, repeating the patient's situation, and hoping the available bed information is still accurate. This creates stress, delay, and uncertainty.
+Without CareBridge, the patient or staff may need to look for another hospital manually. That can mean calling hospitals one by one, waiting for confirmation, repeating the same situation, and hoping the available bed information is still accurate. This creates stress, delay, and uncertainty.
 
 With CareBridge, staff can send the case to the placement department workspace. CareBridge shows which hospital can accept the patient based on available capacity, such as emergency beds, ICU beds, or general beds. The accepting hospital can accept, decline, or reserve the needed capacity directly in the system.
 
 Because of this, the hassle of manually searching for another hospital is reduced. The patient does not have to keep looking for an available hospital, and staff can quickly coordinate with a hospital that has space.
 
+### Scenario Flow
+
+1. A hospital cannot accept a patient because capacity is full.
+2. Intake Staff creates a rejected patient case using a patient-safe reference code.
+3. The system recommends possible accepting hospitals based on case type, bed availability, route distance, and ambulance availability.
+4. Acceptance Staff reviews the request sent to their hospital.
+5. The hospital accepts, declines, or reserves capacity.
+6. Dispatcher monitors ambulance and route progress after acceptance.
+7. Coordinator watches for SLA delays, unassigned cases, route risk, and stuck cases.
+8. Acceptance Staff confirms arrival and completes the handoff.
+9. Admin reviews users, hospitals, settings, demo data, and audit logs.
+
 ## 5. Target Users
 
 ### Intake Staff
 
-Intake staff work from the hospital that needs help placing a rejected patient. Their primary job is to submit rejected patient cases, choose an accepting hospital, provide patient reference details, reroute declined cases, and start delivery once capacity is reserved.
+Intake staff receive rejected patient cases and create the placement case. Their primary job is to record the rejection reason, urgency, required service or bed type, patient-safe reference code, document readiness, and suggested accepting destination.
 
 ### Acceptance Staff
 
-Acceptance staff work from the hospital that may accept a patient. Their primary job is to update their own hospital capacity, triage acceptance requests, accept or decline cases, reserve capacity, mark arrivals, and complete handoffs.
+Acceptance staff work from the hospital that may accept a patient. Their primary job is to review cases sent to their hospital, update only their own hospital capacity, accept or decline cases, reserve capacity, mark arrivals, and complete handoffs.
 
 ### Coordinator
 
-Coordinators supervise placement pressure across hospitals. They do not replace hospital staff decisions, but they can watch network pressure, use the command view, escalate active cases, add coordinator notes, and review analytics.
+Coordinators supervise placement pressure across the network. They do not replace hospital acceptance decisions, but they can watch active cases, use the command view, escalate SLA breaches, add coordinator notes, reassign dispatchers, and review analytics.
 
 ### Dispatcher
 
-Dispatchers work inside the placement and delivery department. Their primary job is to own delivery movement after acceptance: ambulance assignment, driver/contact, pickup time through delivery events, ETA, route updates, location updates, delays, arrival progress, and delivery timeline visibility.
+Dispatchers work inside the placement and delivery department. Their primary job is to own delivery movement after acceptance: ambulance assignment, driver or team contact, pickup time, ETA, route updates, current location updates, delay notes, arrival progress, and delivery timeline visibility.
 
 ### Admin
 
-Admins manage system records. They can create and update users, hospitals, role assignments, system settings, demo data, audit logs, analytics, the command view, and the role matrix.
+Admins manage system governance. They can create and update users, hospitals, role assignments, system settings, demo data, audit logs, analytics access, command view access, and the role matrix.
 
 ## 6. What Makes CareBridge Different
 
@@ -156,7 +170,7 @@ A rejected patient case contains:
 - Attachments.
 - SLA state.
 - ETA state.
-- Built-in route map.
+- Compact embedded Google-style route panel using hospital names and addresses, plus Geoapify road routing, OSRM fallback, and coordinate fallback for distance and ETA support.
 - Priority score and label.
 
 ### Accepting Hospital Recommendations
@@ -196,7 +210,7 @@ The delivery workflow tracks:
 - Delivery events, including departed, location update, delayed, accepting area arrival, and handoff completed.
 - SLA state for pending or accepted cases.
 - ETA state for active delivery movement.
-- Built-in route map based on hospital coordinates.
+- Route map based on hospital names, addresses, and coordinates. The frontend displays a compact embedded Google-style directions panel inside CareBridge. When `GEOAPIFY_API_KEY` is configured, the backend requests Geoapify for road distance, ETA, and route geometry. If Geoapify is unavailable or not configured, CareBridge tries the configured OSRM-compatible service, then falls back to a coordinate-based estimate.
 
 ### Dispatcher Board
 
@@ -339,7 +353,7 @@ Analytics include:
 
 ### Notifications
 
-Notifications are generated from transfer log activity. They include:
+Notifications are generated from placement case activity logs. They include:
 
 - Priority labels.
 - Read or unread state.
@@ -398,15 +412,15 @@ The wallboard is a large operational view for coordinators, dispatchers, and adm
 | View audit logs | No | No | No | No | Yes |
 | Update system settings | No | No | No | No | Yes |
 
-## 10. Transfer Status Lifecycle
+## 10. Placement Status Lifecycle
 
 ```mermaid
 flowchart LR
-    A["Pending"] --> B["Accepted"]
-    A --> C["Declined"]
-    B --> D["Reserved"]
-    D --> E["In Transfer"]
-    E --> F["Patient Arrived"]
+    A["Searching / Pending"] --> B["Accepted"]
+    A --> C["Rejected / Declined"]
+    B --> D["Dispatching / Reserved"]
+    D --> E["En Route"]
+    E --> F["Arrived"]
     F --> G["Completed"]
     A --> H["Cancelled"]
     B --> H
@@ -458,8 +472,8 @@ Important fields:
 
 Roles:
 
-- `sending_staff`
-- `receiving_staff`
+- `sending_staff` for Intake Staff
+- `receiving_staff` for Acceptance Staff
 - `coordinator`
 - `dispatcher`
 - `admin`
@@ -479,7 +493,7 @@ Important fields:
 
 ### transfer_requests
 
-Stores transfer workflow records.
+Stores rejected patient placement and delivery workflow records. The table name is still `transfer_requests` for compatibility with the original codebase, but the user-facing workflow is placement coordination.
 
 Important fields:
 
@@ -615,17 +629,18 @@ Important fields:
 | POST | `/api/transfer-requests` | Create rejected patient case. |
 | GET | `/api/transfer-board` | Get command board data. |
 | GET | `/api/transfer-requests/{id}` | Show placement and delivery details. |
+| GET | `/api/transfer-requests/{id}/route-suggestion` | Calculate road route geometry, distance, and ETA with coordinate fallback. |
 | GET | `/api/incoming-requests` | List acceptance queue cases for acceptance staff. |
 | GET | `/api/transfer-tracking` | List delivery tracking data. |
 
-### Transfer Actions
+### Placement Actions
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
 | PUT | `/api/transfer-requests/{id}/accept` | Accept pending request. |
 | PUT | `/api/transfer-requests/{id}/decline` | Decline pending request. |
 | PUT | `/api/transfer-requests/{id}/reserve` | Reserve capacity. |
-| PUT | `/api/transfer-requests/{id}/transfer` | Start transfer. |
+| PUT | `/api/transfer-requests/{id}/transfer` | Start patient delivery. |
 | PUT | `/api/transfer-requests/{id}/arrive` | Mark patient arrived. |
 | PUT | `/api/transfer-requests/{id}/complete` | Complete handoff. |
 | PUT | `/api/transfer-requests/{id}/cancel` | Cancel request. |
@@ -748,6 +763,25 @@ Important models:
 
 ### Setup Commands
 
+Create a MySQL database first. The default local database name is:
+
+```text
+overflowcare
+```
+
+Update `.env` for MySQL:
+
+```text
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=overflowcare
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Then run:
+
 ```bash
 composer install
 cp .env.example .env
@@ -789,15 +823,45 @@ password123
 
 Demo access includes:
 
-- Intake Staff: `intake.bpmc@carebridge.com`
-- Acceptance Staff: `acceptance.bethel@carebridge.com`
-- Coordinator: `coordinator@carebridge.com`
-- Dispatcher: `dispatcher@carebridge.com`
-- Admin: `admin@carebridge.com`
+| Role | Demo Email |
+| --- | --- |
+| Intake Staff | `intake.bpmc@carebridge.com` |
+| Acceptance Staff | `acceptance.bpmc@carebridge.com` |
+| Intake Staff | `intake.bethel@carebridge.com` |
+| Acceptance Staff | `acceptance.bethel@carebridge.com` |
+| Intake Staff | `intake.malaybalay@carebridge.com` |
+| Acceptance Staff | `acceptance.malaybalay@carebridge.com` |
+| Intake Staff | `intake.adventistvalencia@carebridge.com` |
+| Acceptance Staff | `acceptance.adventistvalencia@carebridge.com` |
+| Intake Staff | `intake.valenciapolymedic@carebridge.com` |
+| Acceptance Staff | `acceptance.valenciapolymedic@carebridge.com` |
+| Coordinator | `coordinator@carebridge.com` |
+| Dispatcher | `dispatcher@carebridge.com` |
+| Admin | `admin@carebridge.com` |
 
 The exact seeded names and emails are defined in `database/seeders/UserSeeder.php`.
 
 Seeded Bukidnon demo hospitals include Bukidnon Provincial Medical Center, Bethel Baptist Hospital Inc., Malaybalay Polymedic General Hospital, Adventist Medical Center - Valencia City, Valencia Polymedic General Hospital, and Valencia Medical Hospital. Coordinates and contact placeholders are for local demonstration and should be verified before production use.
+
+### Sample Placement Cases
+
+The `SampleCaseSeeder` creates sample cases that make the system flow visible immediately after seeding:
+
+| Case Code | Demo State | What It Demonstrates |
+| --- | --- | --- |
+| `CB-CASE-2026-001` | Declined | A rejected patient case that needs rerouting after decline. |
+| `CB-CASE-2026-002` | Pending and escalated | A case waiting beyond the SLA without final acceptance. |
+| `CB-CASE-2026-003` | Accepted | A case accepted by a hospital but not yet dispatched. |
+| `CB-CASE-2026-004` | Reserved / dispatching | Capacity is reserved and delivery preparation is active. |
+| `CB-CASE-2026-005` | En route | Dispatcher is monitoring an active patient delivery. |
+| `CB-CASE-2026-006` | Arrived | Patient arrived and is waiting for final handoff completion. |
+| `CB-CASE-2026-007` | Completed | A complete placement and delivery workflow. |
+
+Refresh only these sample cases with:
+
+```bash
+php artisan db:seed --class=SampleCaseSeeder
+```
 
 ## 18. Testing
 
@@ -870,7 +934,8 @@ Current feature tests cover:
 
 - Notifications currently use 5-second polling rather than realtime broadcasting, with a deployment path documented for Laravel broadcasting.
 - There are no browser automation tests yet.
-- There is no real SMS, email, ambulance dispatch, or external route-distance API integration.
+- There is no real SMS, email, or ambulance dispatch integration.
+- Road route estimates use Geoapify when `GEOAPIFY_API_KEY` is configured. If unavailable, CareBridge falls back to OSRM-compatible routing, then coordinate estimates. The visible map stays inside CareBridge as an embedded Google-style directions panel.
 - Production password reset should use a configured mail provider.
 - The system is a coordination tool, not a complete EHR.
 
@@ -878,7 +943,7 @@ Current feature tests cover:
 
 - Add realtime notifications with Laravel broadcasting.
 - Add browser-level tests for major React workflows.
-- Add external map-based distance estimates.
+- Add optional authenticated/commercial routing provider support for production-grade traffic-aware ETA.
 - Add analytics chart export.
 - Add optional SMS/dispatch notifications.
 

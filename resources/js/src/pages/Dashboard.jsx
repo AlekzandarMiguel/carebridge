@@ -69,19 +69,19 @@ const roleDashboard = {
 };
 
 const statCards = {
-    total_requests: { icon: 'ALL', label: 'Total Cases', color: 'blue' },
-    pending_requests: { icon: '...', label: 'Pending', color: 'yellow' },
-    accepted_requests: { icon: 'OK', label: 'Accepted', color: 'cyan' },
-    in_transfer: { icon: 'DT', label: 'In Delivery', color: 'blue' },
-    en_route_patients: { icon: 'GO', label: 'Patients En Route', color: 'cyan' },
-    arrived_patients: { icon: 'IN', label: 'Patients Arrived', color: 'yellow' },
-    completed_requests: { icon: 'DONE', label: 'Completed', color: 'green' },
-    declined_requests: { icon: 'NO', label: 'Declined', color: 'red' },
-    waiting_patients: { icon: 'WAIT', label: 'Waiting Patients', color: 'yellow' },
-    delayed_cases: { icon: 'SLA', label: 'Delayed Cases', color: 'red' },
-    assigned_cases: { icon: 'ASG', label: 'Assigned Cases', color: 'green' },
-    unassigned_cases: { icon: 'OPEN', label: 'Unassigned Cases', color: 'blue' },
-    avg_travel_minutes: { icon: 'ETA', label: 'Avg Travel Min', color: 'cyan' },
+    total_requests: { icon: 'cases', label: 'Total Cases', color: 'blue' },
+    pending_requests: { icon: 'pending', label: 'Pending', color: 'yellow' },
+    accepted_requests: { icon: 'accepted', label: 'Accepted', color: 'cyan' },
+    in_transfer: { icon: 'ambulance', label: 'In Delivery', color: 'blue' },
+    en_route_patients: { icon: 'route', label: 'Patients En Route', color: 'cyan' },
+    arrived_patients: { icon: 'arrived', label: 'Patients Arrived', color: 'yellow' },
+    completed_requests: { icon: 'completed', label: 'Completed', color: 'green' },
+    declined_requests: { icon: 'declined', label: 'Declined', color: 'red' },
+    waiting_patients: { icon: 'waiting', label: 'Waiting Patients', color: 'yellow' },
+    delayed_cases: { icon: 'delayed', label: 'Delayed Cases', color: 'red' },
+    assigned_cases: { icon: 'assigned', label: 'Assigned Cases', color: 'green' },
+    unassigned_cases: { icon: 'unassigned', label: 'Unassigned Cases', color: 'blue' },
+    avg_travel_minutes: { icon: 'eta', label: 'Avg Travel Min', color: 'cyan' },
 };
 
 export default function Dashboard() {

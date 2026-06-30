@@ -382,6 +382,11 @@ export default function CreateTransfer() {
                                     <small>
                                         {hospital.distance_km ? `${hospital.distance_km} km / ${hospital.estimated_travel_minutes} min` : 'Distance pending'} - {hospital.contact_number}
                                     </small>
+                                    <span className="recommendation-reasons">
+                                        {(hospital.recommendation_reasons || []).slice(0, 4).map((reason) => (
+                                            <em key={reason}>{reason}</em>
+                                        ))}
+                                    </span>
                                 </span>
                                 <span className="recommendation-meter" aria-hidden="true">
                                     <span style={{ width: `${Math.min(100, hospital.matching_beds * 18)}%` }}></span>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { addDeliveryEvent, assignDispatcher, getTransferTracking, updateRouteEstimate } from '../api/axios';
+import RouteMap from '../components/RouteMap';
 import StatusBadge from '../components/StatusBadge';
 
 const deliveryLabels = {
@@ -9,6 +10,14 @@ const deliveryLabels = {
     arrived: 'Arrived',
     delivered: 'Delivered',
 };
+
+const quickEvents = [
+    { type: 'departed', label: 'Start pickup', location: 'Departed from rejected patient origin' },
+    { type: 'location_update', label: 'Location update', location: 'Current route checkpoint' },
+    { type: 'delayed', label: 'Report delay', location: 'Delayed along route' },
+    { type: 'arrived_gate', label: 'Accepting area', location: 'Arrived at accepting hospital area' },
+    { type: 'handoff_completed', label: 'Handoff done', location: 'Handoff completed at accepting hospital' },
+];
 
 const formatDateTime = (value) => value ? new Date(value).toLocaleString() : '-';
 
@@ -91,6 +100,20 @@ export default function DispatcherBoard() {
         }
     };
 
+    const setQuickEvent = (request, quickEvent) => {
+        const draft = eventDrafts[request.id] || {};
+        setExpandedCaseId(request.id);
+        setEventDrafts({
+            ...eventDrafts,
+            [request.id]: {
+                ...draft,
+                event_type: quickEvent.type,
+                location: quickEvent.location,
+                notes: quickEvent.label,
+            },
+        });
+    };
+
     if (loading) return <div className="loading">Loading dispatcher board...</div>;
 
     const unassigned = rows.filter((item) => !item.assigned_dispatcher_id);
@@ -146,8 +169,27 @@ export default function DispatcherBoard() {
                     </div>
                 )}
 
+                {canEdit && (
+                    <div className="dispatcher-quick-events">
+                        {quickEvents.map((quickEvent) => (
+                            <button
+                                key={quickEvent.type}
+                                className={eventDraft.event_type === quickEvent.type ? 'active' : ''}
+                                type="button"
+                                onClick={() => setQuickEvent(request, quickEvent)}
+                            >
+                                {quickEvent.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 {canEdit && isExpanded && (
                     <div className="dispatcher-actions">
+                        <div className="dispatcher-route-map">
+                            <RouteMap transfer={request} />
+                        </div>
+
                         <div className="dispatcher-form-panel">
                             <div className="dispatcher-form-head">
                                 <strong>Transport Details</strong>

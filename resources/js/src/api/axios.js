@@ -56,6 +56,7 @@ export const getTransferRequests = (page = 1, filters = {}) => api.get('/transfe
 export const getTransferRecommendations = (caseType = 'general') => api.get('/transfer-recommendations?case_type=' + caseType);
 export const createTransferRequest = (data) => api.post('/transfer-requests', data);
 export const getTransferRequest = (id) => api.get(`/transfer-requests/${id}`);
+export const getRouteSuggestion = (id) => api.get(`/transfer-requests/${id}/route-suggestion`);
 export const exportTransferRequests = (filters = {}) => api.get('/transfer-requests/export', { params: filters, responseType: 'blob' });
 export const getWallboard = () => api.get('/wallboard');
 

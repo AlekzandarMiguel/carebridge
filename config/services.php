@@ -22,6 +22,13 @@ return [
         'key' => env('RESEND_API_KEY'),
     ],
 
+    'routing' => [
+        'geoapify_key' => env('GEOAPIFY_API_KEY'),
+        'geoapify_url' => env('GEOAPIFY_API_URL', 'https://api.geoapify.com'),
+        'osrm_url' => env('ROUTING_OSRM_URL', 'https://router.project-osrm.org'),
+        'timeout' => env('ROUTING_TIMEOUT', 4),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

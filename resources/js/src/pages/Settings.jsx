@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getSettings, updateSettings } from '../api/axios';
 import { roleProfile } from '../utils/roles';
+import AppIcon from '../components/AppIcon';
 
 export default function Settings() {
     const defaultNotificationPrefs = {
@@ -210,7 +211,7 @@ export default function Settings() {
                         <div className="settings-list settings-permission-grid">
                             {profile.permissions.map((permission) => (
                                 <div className="settings-list-item" key={permission}>
-                                    <span>OK</span>
+                                    <span><AppIcon name="accepted" /></span>
                                     <p>{permission}</p>
                                 </div>
                             ))}

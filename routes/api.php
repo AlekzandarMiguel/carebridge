@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/transfer-requests/export', [TransferRequestController::class, 'export']);
     Route::post('/transfer-requests', [TransferRequestController::class, 'store']);
     Route::get('/transfer-board', [TransferRequestController::class, 'board']);
+    Route::get('/transfer-requests/{id}/route-suggestion', [TransferRequestController::class, 'routeSuggestion']);
     Route::get('/transfer-requests/{id}', [TransferRequestController::class, 'show']);
 
     // Incoming Requests

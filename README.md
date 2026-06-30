@@ -4,9 +4,21 @@ CareBridge is a rejected patient placement and delivery coordination system. It 
 
 The system helps intake staff submit rejected patient cases, acceptance staff review and reserve capacity, coordinators supervise the placement department, dispatchers monitor delivery movement, and admins manage users, hospitals, settings, and audit logs.
 
+## At a Glance
+
+| Area | Details |
+| --- | --- |
+| Main problem | People can be rejected or delayed because a hospital is full, then staff must manually search for another hospital that can accept them. |
+| Main solution | A placement department workspace that records the rejected case, finds possible accepting hospitals, confirms capacity, and monitors delivery until handoff. |
+| Primary users | Intake Staff, Acceptance Staff, Dispatcher, Coordinator, and Admin. |
+| Demo network | Bukidnon-based hospital seed data with sample placement cases across the full workflow. |
+| Privacy approach | Patient-safe reference codes are used instead of real patient names. |
+
 ## Project Purpose
 
 Many hospital systems focus on internal records. CareBridge focuses on the department-like coordination moment when one hospital cannot accept a patient because capacity is full. Instead of treating this as a simple patient transfer tool, it acts as a specialized placement and delivery workspace for rejected patients.
+
+CareBridge is not a full electronic health record, ambulance dispatch platform, or hospital ERP. Its purpose is narrower: help a placement department coordinate where a rejected patient can be accepted and how the patient delivery is progressing.
 
 ## Use Case Scenario
 
@@ -17,6 +29,18 @@ Without CareBridge, the patient or staff may need to look for another hospital m
 With CareBridge, staff can send the case to the placement department workspace. CareBridge shows which hospital can accept the patient based on available capacity, such as emergency beds, ICU beds, or general beds. The accepting hospital can accept, decline, or reserve the needed capacity directly in the system.
 
 Because of this, the hassle of manually searching for another hospital is reduced. The patient does not have to keep looking for an available hospital, and staff can quickly coordinate with a hospital that has space.
+
+## End-to-End Flow
+
+1. Intake Staff creates a rejected patient case using a patient-safe reference code.
+2. CareBridge suggests hospitals that may accept the case based on capacity, case type, route distance, and availability.
+3. Acceptance Staff reviews the request for their hospital.
+4. Acceptance Staff accepts, declines, or reserves matching capacity.
+5. Dispatcher claims or is assigned to the case after acceptance or reservation.
+6. Dispatcher records ambulance, contact, pickup, ETA, route, and delivery updates.
+7. Coordinator monitors stuck cases, SLA delays, unassigned deliveries, and route risks.
+8. Acceptance Staff confirms arrival and completes the handoff.
+9. Admin reviews users, hospitals, system settings, audit logs, and demo data.
 
 ## Main Features
 
@@ -36,7 +60,7 @@ Because of this, the hassle of manually searching for another hospital is reduce
 - Delivery event timeline for departed, location update, delayed, accepting area arrival, and handoff updates.
 - SLA and ETA warning states for cases that are waiting too long or running late.
 - Secure case attachments for referral notes, lab results, imaging, consent, transport forms, and supporting documents.
-- Built-in route map that plots the delivery path from origin to final accepting destination using hospital coordinates.
+- Compact embedded Google-style route panel using hospital names and addresses, with Geoapify/OSRM distance and ETA support.
 - Dedicated dispatcher board for unassigned cases, assigned cases, ETA risk, ambulance/driver/contact, pickup/arrival checklist, route details, and delivery updates.
 - Automatic priority scoring based on urgency, waiting time, status, assignment, case type, SLA state, and ETA risk.
 - Patient privacy guard that blocks obvious personal details in intake notes and asks staff to use reference codes.
@@ -59,11 +83,11 @@ Because of this, the hassle of manually searching for another hospital is reduce
 
 | Role | Main Purpose |
 | --- | --- |
-| Intake Staff | Submit rejected patient cases, monitor placement, reroute declined cases, and start delivery after reservation. |
-| Acceptance Staff | Update own hospital capacity, review acceptance queue, accept or decline, reserve beds, mark arrivals, and complete handoffs. |
-| Dispatcher | Own delivery movement after acceptance: ambulance assignment, driver/contact, ETA, route updates, location updates, delays, arrival progress, and delivery timeline. |
-| Coordinator | Watch all active cases, resolve delays, escalate SLA breaches, reassign dispatchers, and oversee stuck cases without acting as hospital staff. |
-| Admin | Manage users, hospitals, roles, settings, audit logs, demo data, role matrix, analytics, and system configuration. |
+| Intake Staff | Receives rejected patient cases, creates placement cases, records rejection reason, urgency, required service, documents, and suggested destination. |
+| Acceptance Staff | Reviews cases sent to their hospital, accepts or declines, reserves matching capacity, updates own capacity, marks arrival, and completes handoff. |
+| Dispatcher | Owns delivery movement after acceptance: ambulance assignment, driver/contact, pickup time, ETA, route updates, location updates, delays, arrival progress, and delivery timeline. |
+| Coordinator | Watches active cases, resolves delays, escalates SLA breaches, reassigns dispatchers, and oversees stuck cases without acting as hospital staff. |
+| Admin | Manages users, hospitals, roles, settings, audit logs, demo data, role matrix, analytics, and system configuration. |
 
 ## Role Boundaries
 
@@ -72,6 +96,18 @@ Because of this, the hassle of manually searching for another hospital is reduce
 - Dispatchers cannot accept, decline, reserve, or update capacity; they own delivery movement only.
 - Coordinators do not perform hospital acceptance actions and delivery monitoring overrides require an audit reason.
 - Admins can manage configuration and governance, but routine hospital workflow should stay with the correct role.
+
+## Workflow Statuses
+
+| Status | Meaning |
+| --- | --- |
+| Rejected / Declined | A hospital could not accept the patient, or an acceptance request was declined. |
+| Searching / Pending | A placement case is waiting for an accepting hospital decision. |
+| Accepted | The receiving hospital agreed to accept the case. |
+| Dispatching / Reserved | Capacity is reserved and delivery preparation is active. |
+| En Route | Patient delivery is moving toward the accepting hospital. |
+| Arrived | Patient arrived and is waiting for final handoff. |
+| Completed | Placement and delivery handoff are finished. |
 
 ## Core Workflow
 
@@ -100,6 +136,29 @@ Because of this, the hassle of manually searching for another hospital is reduce
 - MySQL or MariaDB for local development
 
 ## Local Setup
+
+Create or select a MySQL database first. The default local database name is:
+
+```text
+overflowcare
+```
+
+Then configure `.env`:
+
+```text
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=overflowcare
+DB_USERNAME=root
+DB_PASSWORD=
+GEOAPIFY_API_KEY=
+GEOAPIFY_API_URL=https://api.geoapify.com
+ROUTING_OSRM_URL=https://router.project-osrm.org
+ROUTING_TIMEOUT=4
+```
+
+Run the project setup:
 
 ```bash
 composer install
@@ -139,13 +198,43 @@ password123
 
 Demo access includes:
 
-- Intake Staff: `intake.bpmc@carebridge.com`
-- Acceptance Staff: `acceptance.bethel@carebridge.com`
-- Coordinator: `coordinator@carebridge.com`
-- Dispatcher: `dispatcher@carebridge.com`
-- Admin: `admin@carebridge.com`
+| Role | Demo Email |
+| --- | --- |
+| Intake Staff | `intake.bpmc@carebridge.com` |
+| Acceptance Staff | `acceptance.bpmc@carebridge.com` |
+| Intake Staff | `intake.bethel@carebridge.com` |
+| Acceptance Staff | `acceptance.bethel@carebridge.com` |
+| Intake Staff | `intake.malaybalay@carebridge.com` |
+| Acceptance Staff | `acceptance.malaybalay@carebridge.com` |
+| Intake Staff | `intake.adventistvalencia@carebridge.com` |
+| Acceptance Staff | `acceptance.adventistvalencia@carebridge.com` |
+| Intake Staff | `intake.valenciapolymedic@carebridge.com` |
+| Acceptance Staff | `acceptance.valenciapolymedic@carebridge.com` |
+| Coordinator | `coordinator@carebridge.com` |
+| Dispatcher | `dispatcher@carebridge.com` |
+| Admin | `admin@carebridge.com` |
 
 The exact seeded emails are defined in `database/seeders/UserSeeder.php`.
+
+## Sample Cases
+
+The sample case seeder creates a complete demo flow so every role has something meaningful to test:
+
+| Case Code | Demo State | What It Shows |
+| --- | --- | --- |
+| `CB-CASE-2026-001` | Declined | A rejected patient case that needs rerouting after decline. |
+| `CB-CASE-2026-002` | Pending and escalated | A case waiting too long without acceptance. |
+| `CB-CASE-2026-003` | Accepted | A hospital accepted the case but delivery has not started. |
+| `CB-CASE-2026-004` | Reserved / dispatching | Capacity is reserved and delivery preparation is active. |
+| `CB-CASE-2026-005` | En route | Dispatcher is monitoring an active patient delivery. |
+| `CB-CASE-2026-006` | Arrived | Patient arrived and is waiting for handoff completion. |
+| `CB-CASE-2026-007` | Completed | Full placement and delivery flow is finished. |
+
+Refresh only the sample cases with:
+
+```bash
+php artisan db:seed --class=SampleCaseSeeder
+```
 
 ## Bukidnon Demo Hospitals
 
@@ -195,6 +284,8 @@ Full project documentation is available here:
 - [Deployment Guide](docs/DEPLOYMENT.md)
 
 ## Repository Notes
+
+Some internal class names, database table names, and API routes still use `transfer` because the project started from a broader hospital transfer concept. The user-facing language has been updated toward rejected patient placement and delivery coordination. A future database rename from `transfer_requests` to `placement_cases` would make the internals match the current product direction more closely.
 
 The repository intentionally excludes local secrets and generated dependencies:
 
