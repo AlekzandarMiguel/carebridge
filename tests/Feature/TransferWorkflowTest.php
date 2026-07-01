@@ -353,7 +353,7 @@ class TransferWorkflowTest extends TestCase
 
         $this->assertDatabaseHas('transfer_logs', [
             'transfer_request_id' => $transfer->id,
-            'action' => 'delivery_update',
+            'action' => 'location_update',
         ]);
     }
 
